@@ -16,12 +16,13 @@ class Anonymize(BaseClass):
                  experimenter=None,
                  participant_id=None):
         try:              
+            self.raw = raw.copy()
             raw.anonymize(daysback=daysback, verbose=True)
             # raw.set_meas_date(datetime.now(tz=timezone.utc))
             if experimenter is not None:
                 raw.info['experimenter'] = str(experimenter)
             if participant_id is not None:
                 raw.info['subject_info'] = {'his_id': str(participant_id)}
-            self.raw = raw
+            self.processed = raw
         except Exception as e:
             print(f"Error: {e}")
