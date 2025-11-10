@@ -15,10 +15,12 @@ class Anonymize(BaseClass):
                  daysback,
                  experimenter=None,
                  participant_id=None):
-        try:              
+        try:
             self.raw = raw.copy()
+
             raw.anonymize(daysback=daysback, verbose=True)
             # raw.set_meas_date(datetime.now(tz=timezone.utc))
+            
             if experimenter is not None:
                 raw.info['experimenter'] = str(experimenter)
             if participant_id is not None:
