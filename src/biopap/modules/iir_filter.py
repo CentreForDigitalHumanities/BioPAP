@@ -38,4 +38,4 @@ class IIRFilter(BaseClass):
            h_freq=h_freq,
            method='iir',
            iir_params=iir_params, 
-           verbose=True)
+           verbose=self.verbose)

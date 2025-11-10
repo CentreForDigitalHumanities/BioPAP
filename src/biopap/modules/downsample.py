@@ -32,11 +32,11 @@ class Downsample(BaseClass):
                 self.processed, self.events = raw.resample(
                     sfreq=sfreq, 
                     events=events,
-                    verbose=True)
+                    verbose=self.verbose)
             else:
                 self.processed = raw.resample(
                     sfreq=sfreq, 
-                    verbose=True)
+                    verbose=self.verbose)
 
             # RuntimeWarning: Resampling of the stim channels caused event information 
             # to become unreliable. Consider finding events on the original data and 

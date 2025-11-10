@@ -23,6 +23,7 @@ class Rereference(BaseClass):
             self.processed, self.ref_data = mne.set_eeg_reference(
                 self.raw,
                 ref_channels=ref_channels,
-                copy=copy)
+                copy=copy,
+                verbose=self.verbose)
         except Exception as e:
             print(f"Error: {e}")

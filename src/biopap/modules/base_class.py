@@ -2,9 +2,10 @@ class BaseClass():
 
     raw = None
     processed = None
+    verbose = False
 
-    def __init__(self):
-        pass
+    def __init__(self, verbose=False):
+        self.verbose = verbose
 
     @property
     def raw_data(self):

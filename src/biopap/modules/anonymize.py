@@ -11,20 +11,21 @@ class Anonymize(BaseClass):
     #TODO: description
 
     def __init__(self,
-                 raw,
-                 daysback,
-                 experimenter=None,
-                 participant_id=None):
+                 raw: mne.io.Raw,
+                 daysback: int,
+                 experimenter: str=None,
+                 participant_id: str=None):
         try:
             self.raw = raw.copy()
 
-            raw.anonymize(daysback=daysback, verbose=True)
+            raw.anonymize(daysback=daysback, verbose=self.verbose)
             # raw.set_meas_date(datetime.now(tz=timezone.utc))
             
             if experimenter is not None:
                 raw.info['experimenter'] = str(experimenter)
             if participant_id is not None:
                 raw.info['subject_info'] = {'his_id': str(participant_id)}
+
             self.processed = raw
         except Exception as e:
             print(f"Error: {e}")

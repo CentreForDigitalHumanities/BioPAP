@@ -42,7 +42,8 @@ class EOGChannels(BaseClass):
                 cathode=cathode_channels,
                 ch_name=ref_channels,
                 copy=copy,
-                drop_refs=drop_refs)
+                drop_refs=drop_refs,
+                verbose=self.verbose)
 
             self.processed = raw
         except Exception as e:
