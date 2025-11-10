@@ -3,7 +3,7 @@
 import mne
 from biopap.modules.base_class import BaseClass
 
-class Filtering(BaseClass):
+class IIRFilter(BaseClass):
 
     def __init__(self,
                  raw,
