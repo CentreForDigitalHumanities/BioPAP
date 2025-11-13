@@ -12,6 +12,7 @@ from biopap.modules.rereference import Rereference
 from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.downsample import Downsample
+from biopap.modules.segmentation import Segmentation
 
 @dataclass
 class PipelineStep:
@@ -60,7 +61,7 @@ class Pipeline:
         data = self.initial_data.copy()
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__} <- {step.Cfg}")
-            inst = step.Module(**step.Cfg | {'raw': data })
+            inst = step.Module(**step.Cfg if step.Cfg else {} | {'raw': data })
             data = inst.processed
             if step.Plot:
                 data.plot()
@@ -94,12 +95,15 @@ if __name__=="__main__":
         config_file=args.config_file,
         initial_data=data)
 
+
     pipe.add_step(Anonymize)
     pipe.add_step(Rereference)
     pipe.add_step(EOGChannels)
     pipe.add_step(IIRFilter)
     pipe.add_step(Downsample)
  
+    # pipe.add_step(Segmentation)
+
     pipe.run(plot=True)
 
     # ref_file = '/data/BioPAP/data/CBN1BD071212-Cropped-Change Sampling Rate.edf'
