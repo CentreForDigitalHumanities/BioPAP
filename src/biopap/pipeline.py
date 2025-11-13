@@ -1,5 +1,9 @@
+import argparse
+import matplotlib.pyplot as plt
 import mne
+import yaml
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from biopap.modules.load_data import LoadData
@@ -14,31 +18,58 @@ class PipelineStep:
     Module: Any
     Cfg: dict
     Order: int
+    Plot: bool
 
 class Pipeline:
 
     _steps = []
 
-    def __init__(self, initial_data):
+    def __init__(self, config_file, initial_data):
+        self.config = self.read_config(config_file)
         self.initial_data = initial_data
 
-    def add_step(self, module, cfg):
+    @staticmethod
+    def read_config(config_file):
+        with open(config_file, 'r') as file:
+            config = yaml.safe_load(file)
+
+        return config
+
+    def add_step(self, module, cfg=None, plot=False, cfg_label=None):
+        """
+        cfg adds to/overwrites values from config file (if any)
+        cfg_label for referencing different settings for same class
+        """
+        lookup = cfg_label if cfg_label else module.__name__
+
+        if lookup in self.config:
+            p_cfg = self.config[lookup]
+            cfg = p_cfg if cfg is None else p_cfg | cfg
+
         order = max([x.Order+1 for x in self._steps], default=0)
         self._steps.append(
             PipelineStep(
                 Module=module,
                 Cfg=cfg,
-                Order=order
+                Order=order,
+                Plot=plot
             ))
 
-    def run(self):
+    def run(self, plot=False):
         self.steps.sort(key=lambda x: x.Order)
         data = self.initial_data.copy()
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__} <- {step.Cfg}")
             inst = step.Module(**step.Cfg | {'raw': data })
             data = inst.processed
+            if step.Plot:
+                data.plot()
+                plt.show()
         self.processed = inst.processed
+        if plot:
+            self.processed.plot()
+            plt.show()
+
 
     @property
     def steps(self):
@@ -51,38 +82,28 @@ class Pipeline:
 
 if __name__=="__main__":
 
-    bdf_file = '/data/BioPAP/data/CBN4IL230113.bdf'
-    data = LoadData(bdf_file).raw_data
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input_file', type=Path, required=True)
+    parser.add_argument('-c', '--config_file', type=Path, required=True)
+    args = parser.parse_args()
 
-    pipe = Pipeline(initial_data=data)
+    # assuming BDF file as input
+    data = LoadData(args.input_file).raw_data
 
-    pipe.add_step(Downsample, {
-        'sfreq': 500
-    })
+    pipe = Pipeline(
+        config_file=args.config_file,
+        initial_data=data)
 
-    pipe.add_step(Anonymize, {
-        'daysback': 23,
-        'experimenter': 'J. Jansen', 
-        'participant_id': 'AB00123'
-    })
+    pipe.add_step(Anonymize)
+    pipe.add_step(Rereference)
+    pipe.add_step(EOGChannels)
+    pipe.add_step(IIRFilter)
+    pipe.add_step(Downsample)
  
-    pipe.add_step(EOGChannels, {
-        'ref_channels': ['hEOG', 'vEOG'],
-        'anode_channels': ['EXG3','EXG5'],
-        'cathode_channels': ['EXG4','EXG6']
-    })
+    pipe.run(plot=True)
 
-    pipe.add_step(IIRFilter, {
-        'l_freq': 0.1,
-        'h_freq': 35
-    })
+    # ref_file = '/data/BioPAP/data/CBN1BD071212-Cropped-Change Sampling Rate.edf'
+    # ref_data = mne.io.read_raw_edf(ref_file)
+    # ref_data.plot()
+    # plt.show()
 
-    pipe.add_step(Rereference, {
-        'ref_channels': ['EXG1', 'EXG2']
-    })
-
-    print(pipe.initial_data.info['experimenter'])
-
-    pipe.run()
-
-    print(pipe.processed_data.info['experimenter'])

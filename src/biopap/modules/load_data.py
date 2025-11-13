@@ -1,4 +1,4 @@
-"""Class for loading BDF files"""
+"""Class for loading files"""
 
 import mne
 from pathlib import Path
@@ -15,10 +15,15 @@ class LoadData(BaseClass):
             if not file_path.exists():
                 raise ValueError(f"File '{file_path}' does not exist")
 
-            if not file_path.suffix.lower()=='.bdf':
-                raise ValueError(f"'{file_path}' is not a BDF file")
-
-            self.raw = mne.io.read_raw_bdf(file_path, preload=preload)
+            if file_path.suffix.lower()=='.bdf':
+                self.raw = self.read_bdf(file_path, preload)
+            else:
+                raise ValueError(f"'{file_path}' is not a supported file")
 
         except Exception as e:
             print(f"Error: {e}")
+
+    @staticmethod
+    def read_bdf(file_path, preload):
+        return mne.io.read_raw_bdf(file_path, preload=preload)
+        
