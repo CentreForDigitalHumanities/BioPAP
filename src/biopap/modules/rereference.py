@@ -18,12 +18,16 @@ class Rereference(BaseClass):
             raw: Data with EEG channels re-referenced.
             ref_data: Array of reference data subtracted from EEG channels.
         """
+        self.raw = raw
+        self.ref_channels = ref_channels
+        self.copy = copy
+
+    def run(self):
         try:
-            self.raw = raw
             self.processed, self.ref_data = mne.set_eeg_reference(
                 self.raw,
-                ref_channels=ref_channels,
-                copy=copy,
+                ref_channels=self.ref_channels,
+                copy=self.copy,
                 verbose=self.verbose)
         except Exception as e:
             print(f"Error: {e}")

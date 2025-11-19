@@ -1,4 +1,6 @@
-class BaseClass():
+from abc import ABC, abstractmethod
+
+class BaseClass(ABC):
 
     raw = None
     processed = None
@@ -6,6 +8,10 @@ class BaseClass():
 
     def __init__(self, verbose=False):
         self.verbose = verbose
+
+    @abstractmethod
+    def run(self):
+        pass
 
     @property
     def raw_data(self):

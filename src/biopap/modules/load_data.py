@@ -4,7 +4,7 @@ import mne
 from pathlib import Path
 from biopap.modules.base_class import BaseClass
 
-class LoadData(BaseClass):
+class LoadData():
 
     def __init__(self, 
                  file_path: str | Path,
@@ -26,4 +26,7 @@ class LoadData(BaseClass):
     @staticmethod
     def read_bdf(file_path, preload):
         return mne.io.read_raw_bdf(file_path, preload=preload)
+
+    def run(self):
+        pass
         

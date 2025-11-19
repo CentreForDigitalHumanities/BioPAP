@@ -12,13 +12,19 @@ class IIRFilter(BaseClass):
                  order=4, 
                  ftype='butter'):
 
+        self.raw = raw
+        self.l_freq = l_freq
+        self.h_freq = h_freq
+        self.order = order
+        self.ftype = ftype
+
+    def run(self):
         try:
-            self.raw = raw
             self.apply_iir(
-                l_freq=l_freq,
-                h_freq=h_freq,
-                order=order,
-                ftype=ftype)
+                l_freq=self.l_freq,
+                h_freq=self.h_freq,
+                order=self.order,
+                ftype=self.ftype)
         except Exception as e:
             print(f"Error: {e}")
 

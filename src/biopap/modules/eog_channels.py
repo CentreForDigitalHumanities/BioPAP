@@ -22,29 +22,36 @@ class EOGChannels(BaseClass):
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
                  drop_refs=False):
-        try:
-            self.raw = raw
+        self.raw = raw
+        self.ref_channels = ref_channels
+        self.anode_channels = anode_channels
+        self.cathode_channels = cathode_channels
+        self.copy = copy
+        self.drop_refs = drop_refs
 
+    def run(self):
+        try:
             # drop existing channels with same name as new ref channels
-            exist_channels = [x for x in ref_channels if x in raw.ch_names]
-            raw.drop_channels(exist_channels)
+            exist_channels = [x for x in self.ref_channels if x in self.raw.ch_names]
+            self.raw.drop_channels(exist_channels)
 
             # check if anode & cathode channels exist
-            missing_channels = [x for x in anode_channels + cathode_channels if x not in raw.ch_names]
+            missing_channels = [x for x in 
+                self.anode_channels + self.cathode_channels if x not in self.raw.ch_names]
 
             if len(missing_channels)>0:
                 raise ValueError(f"Non-existant channels: {'; '.join(missing_channels)}")
 
             # raw = mne.add_reference_channels(raw, ref_channels=ref_channels, copy=False)
             mne.set_bipolar_reference(
-                raw,
-                anode=anode_channels,
-                cathode=cathode_channels,
-                ch_name=ref_channels,
-                copy=copy,
-                drop_refs=drop_refs,
+                self.raw,
+                anode=self.anode_channels,
+                cathode=self.cathode_channels,
+                ch_name=self.ref_channels,
+                copy=self.copy,
+                drop_refs=self.drop_refs,
                 verbose=self.verbose)
 
-            self.processed = raw
+            self.processed = self.raw
         except Exception as e:
             print(f"Error: {e}")
