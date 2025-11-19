@@ -9,9 +9,10 @@ IIRFilter:
     h_freq: 35
 Downsample:
     sfreq: 500
+Downsample_1000:
+    sfreq: 1000
 Anonymize:
-    daysback: 23
+    daysback: 100
     experimenter: 'J. Jansen'
     participant_id: 'AB00123'
-Test:
-    sfreq: 10
+
