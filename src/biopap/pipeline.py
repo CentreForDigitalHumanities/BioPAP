@@ -40,7 +40,7 @@ class Pipeline:
 
         return config
 
-    def add_step(self, module, cfg=None, plot=False, cfg_label=None):
+    def add_step(self, module, cfg=None, cfg_label=None, plot=False):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
