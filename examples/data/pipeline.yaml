@@ -15,4 +15,21 @@ Anonymize:
     daysback: 100
     experimenter: 'J. Jansen'
     participant_id: 'AB00123'
-
+BIDSConversion:
+    eventsfile: 'data/events_metadata.csv'
+    bids_root: './bids'
+    subject: null       # always filled from raw.info?
+    session: '01'       # filled from? 
+    task: 'testing'     # filled from?
+    run: '01'           # filled from?
+    overwrite: True
+    dataset_description:
+        name: 'Do people get used to insulting language?'
+        data_license: 'CC-BY-4.0'
+        authors: 'Marijn Struiksma'
+        acknowledgements: ''
+        how_to_acknowledge: ''
+        funding: 'NWO 277-89-001'
+        references_and_links: ''
+        doi: 'doi:'
+        dataset_type: 'raw'
