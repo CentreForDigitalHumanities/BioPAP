@@ -25,7 +25,8 @@ class BIDSConversion(BaseClass):
                  task,
                  run,
                  overwrite=False,
-                 dataset_description=None):
+                 dataset_description=None,
+                 auto_run: bool=True):
                 
                 self.raw = raw
                 self.eventsfile = eventsfile
@@ -41,7 +42,9 @@ class BIDSConversion(BaseClass):
                 self.run_id = run
                 self.overwrite = overwrite
                 self.dataset_description = dataset_description or {}
- 
+                if auto_run:
+                    self.run()
+
     def run(self):
         try:
             # Parse events from raw data
