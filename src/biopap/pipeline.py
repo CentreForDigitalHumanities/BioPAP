@@ -83,7 +83,7 @@ class Pipeline:
             if step.Pause:
                 cont = False
                 while not cont:
-                    reply = input("Paused; press 'y' (and Enter) to continue, or 'q' to stop the pipeline altogether.").lower() 
+                    reply = input("Paused; press 'y'↵ to continue, or 'q'↵ to stop the pipeline altogether.").lower() 
                     cont = reply in ['y', 'q']
 
                 if reply=='q':
