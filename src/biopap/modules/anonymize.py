@@ -14,12 +14,15 @@ class Anonymize(BaseClass):
                  raw: mne.io.Raw,
                  daysback: int,
                  experimenter: str=None,
-                 participant_id: str=None):
+                 participant_id: str=None,
+                 auto_run: bool=True):
 
         self.raw = raw.copy()
         self.daysback = daysback
         self.experimenter = experimenter
         self.participant_id = participant_id
+        if auto_run:
+            self.run()
 
     def run(self):
         try:

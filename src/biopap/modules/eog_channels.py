@@ -21,13 +21,17 @@ class EOGChannels(BaseClass):
                  anode_channels=['EXG3','EXG5'], 
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
-                 drop_refs=False):
+                 drop_refs=False,
+                 auto_run: bool=True):
+
         self.raw = raw
         self.ref_channels = ref_channels
         self.anode_channels = anode_channels
         self.cathode_channels = cathode_channels
         self.copy = copy
         self.drop_refs = drop_refs
+        if auto_run:
+            self.run()
 
     def run(self):
         try:

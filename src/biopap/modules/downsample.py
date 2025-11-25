@@ -8,7 +8,8 @@ class Downsample(BaseClass):
     def __init__(self,
                  raw,
                  sfreq,
-                 resample_events=True):
+                 resample_events=True,
+                 auto_run: bool=True):
 
         # Downsampling
         # *** Change Sampling Rate / Resolution ***
@@ -26,6 +27,8 @@ class Downsample(BaseClass):
         self.raw = raw
         self.sfreq = sfreq
         self.resample_events = resample_events
+        if auto_run:
+            self.run()
 
     def run(self):
         try:

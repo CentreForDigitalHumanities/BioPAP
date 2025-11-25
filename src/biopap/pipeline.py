@@ -99,7 +99,7 @@ class Pipeline:
         errors = 0
         for step in self.steps:
             try:
-                inst = step.Module(** {'raw': self._initial_data } | step.Cfg if step.Cfg else {})
+                inst = step.Module(** {'raw': self._initial_data, 'auto_run': False } | step.Cfg if step.Cfg else {})
             except Exception as e:
                 if not quiet:
                     print(f"{step.Module.__name__}: {str(e)}")

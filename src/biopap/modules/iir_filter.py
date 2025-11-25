@@ -10,13 +10,16 @@ class IIRFilter(BaseClass):
                  l_freq,
                  h_freq,
                  order=4, 
-                 ftype='butter'):
+                 ftype='butter',
+                 auto_run: bool=True):
 
         self.raw = raw
         self.l_freq = l_freq
         self.h_freq = h_freq
         self.order = order
         self.ftype = ftype
+        if auto_run:
+            self.run()
 
     def run(self):
         try:

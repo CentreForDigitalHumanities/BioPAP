@@ -13,7 +13,8 @@ class Rereference(BaseClass):
     def __init__(self,
                  raw,
                  ref_channels=['EXG1', 'EXG2'],
-                 copy=False):
+                 copy=False,
+                 auto_run: bool=True):
         """
             raw: Data with EEG channels re-referenced.
             ref_data: Array of reference data subtracted from EEG channels.
@@ -21,6 +22,8 @@ class Rereference(BaseClass):
         self.raw = raw
         self.ref_channels = ref_channels
         self.copy = copy
+        if auto_run:
+            self.run()
 
     def run(self):
         try:
