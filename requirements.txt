@@ -1,1 +1,2 @@
 mne
+mne_bids
