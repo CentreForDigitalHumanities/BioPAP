@@ -1,4 +1,4 @@
-"""Class for sefgmentaion (Epochs)"""
+"""Class for segmentaion (Epochs)"""
 
 import mne
 from biopap.modules.base_class import BaseClass
@@ -23,17 +23,25 @@ class Segmentation(BaseClass):
     # Data was cached to a temporary file.
 
     def __init__(self,
-                 raw):
+                 raw,
+                 stim_channel,
+                 start,
+                 end,
+                 auto_run: bool=True):
+        
+        self.raw = raw
+        self.stim_channel = stim_channel
+        self.start = start
+        self.end = end
+        if auto_run:
+            self.run()
+       
+    def run(self):
         try:
-            self.raw = raw
 
-            # , stim_channel="STI 014"
-            events = mne.find_events(raw, stim_channel="Status")
-            epochs = mne.Epochs(raw, events, tmin=-0.2, tmax=1)
+            events = mne.find_events(self.raw, stim_channel=self.stim_channel, verbose='WARNING')
+            epochs = mne.Epochs(self.raw, events, tmin=self.start, tmax=self.end, baseline=None)
 
-            print(events)
-            print(epochs)
-
-            self.processed = raw
+            self.processed = self.raw
         except Exception as e:
             print(f"Error: {e}")
