@@ -55,6 +55,9 @@ class EOGChannels(BaseClass):
                 copy=self.copy,
                 drop_refs=self.drop_refs,
                 verbose=self.verbose)
+            
+            # Set channel type 'eog' for reference channels
+            self.raw.set_channel_types({eog_ch: 'eog' for eog_ch in self.ref_channels})
 
             self.processed = self.raw
         except Exception as e:
