@@ -19,6 +19,7 @@ Segmentation:
     stim_channel: 'Status'
     start: -0.2
     end: 1
+    baseline: [-0.2, 0]
 BIDSConversion:
     eventsfile: 'data/events_metadata.csv'
     bids_root: './bids'

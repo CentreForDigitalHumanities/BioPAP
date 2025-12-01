@@ -22,17 +22,22 @@ class Segmentation(BaseClass):
     # Skip bad intervals?        No
     # Data was cached to a temporary file.
 
+    # *** Baseline Correction ***
+    # Begin: -200.00 ms End: 0.00 ms
+
     def __init__(self,
                  raw,
                  stim_channel,
                  start,
                  end,
+                 baseline=None,
                  auto_run: bool=True):
         
         self.raw = raw
         self.stim_channel = stim_channel
         self.start = start
         self.end = end
+        self.baseline = baseline
         if auto_run:
             self.run()
        
@@ -40,8 +45,12 @@ class Segmentation(BaseClass):
         try:
 
             events = mne.find_events(self.raw, stim_channel=self.stim_channel, verbose='WARNING')
-            epochs = mne.Epochs(self.raw, events, tmin=self.start, tmax=self.end, baseline=None)
-
-            self.processed = self.raw
+            epochs = mne.Epochs(self.raw, 
+                                events, 
+                                tmin=self.start, 
+                                tmax=self.end, 
+                                baseline=self.baseline)
+            
+            self.processed = epochs
         except Exception as e:
             print(f"Error: {e}")
