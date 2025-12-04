@@ -44,7 +44,7 @@ class Segmentation(BaseClass):
     def run(self):
         try:
 
-            events = mne.find_events(self.raw, stim_channel=self.stim_channel, verbose='WARNING')
+            events = mne.find_events(self.raw, stim_channel=self.stim_channel, verbose=self.verbose)
             epochs = mne.Epochs(self.raw, 
                                 events, 
                                 tmin=self.start, 
