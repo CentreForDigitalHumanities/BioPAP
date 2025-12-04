@@ -1,4 +1,4 @@
-"""Class for segmentaion (Epochs)"""
+"""Class for segmentaion and artifact rejection (Epochs)"""
 
 import mne
 from biopap.modules.base_class import BaseClass
@@ -25,12 +25,33 @@ class Segmentation(BaseClass):
     # *** Baseline Correction ***
     # Begin: -200.00 ms End: 0.00 ms
 
+    # *** Artifact Rejection - Automatic Inspection ***
+    # Used Channels: all
+
+    # Check Gradient: # NOT IMPLEMENTED!
+    # Maximal allowed voltage step: 50 µV/ms
+    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
+
+    # Check Amplitude:
+    # Minimal allowed amplitude: -75 µV
+    # Maximal allowed amplitude: 75 µV
+    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
+
+    # Check Low Activity:
+    # Lowest allowed activity in intervals: 0.5 µV
+    # Interval Length: 100 ms
+    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
+
     def __init__(self,
                  raw,
                  stim_channel,
                  start,
                  end,
                  baseline=None,
+                 reject_tmin=None,
+                 reject_tmax=None,
+                 reject_criteria=None,
+                 flat_criteria=None,
                  auto_run: bool=True):
         
         self.raw = raw
@@ -38,6 +59,12 @@ class Segmentation(BaseClass):
         self.start = start
         self.end = end
         self.baseline = baseline
+        self.reject_tmin = reject_tmin
+        self.reject_tmax = reject_tmax
+        self.reject_criteria = ({k: float(v) for k, v in reject_criteria.items()}
+                                if reject_criteria else None)
+        self.flat_criteria = ({k: float(v) for k, v in flat_criteria.items()}
+                              if flat_criteria else None)
         if auto_run:
             self.run()
        
@@ -49,8 +76,15 @@ class Segmentation(BaseClass):
                                 events, 
                                 tmin=self.start, 
                                 tmax=self.end, 
-                                baseline=self.baseline)
+                                reject_tmin=self.reject_tmin,
+                                reject_tmax=self.reject_tmax,
+                                reject=self.reject_criteria,
+                                flat=self.flat_criteria,
+                                baseline=self.baseline,
+                                verbose=self.verbose)
             
+            epochs.drop_bad()
+
             self.processed = epochs
         except Exception as e:
             print(f"Error: {e}")
