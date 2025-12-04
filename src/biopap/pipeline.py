@@ -20,7 +20,6 @@ class PipelineStep:
     Cfg: dict
     Order: int
     Plot: bool = False
-    Pause: bool = False
 
     def __repr__(self):
         return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}; {'' if self.Plot else 'not '}plotting"
@@ -41,7 +40,7 @@ class Pipeline:
 
         return config
 
-    def add_step(self, module, cfg=None, cfg_label=None, plot=False, pause=False):
+    def add_step(self, module, cfg=None, cfg_label=None, plot=False):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
@@ -58,8 +57,7 @@ class Pipeline:
                 Module=module,
                 Cfg=cfg,
                 Order=order,
-                Plot=plot,
-                Pause=pause
+                Plot=plot
             ))
 
     def run(self, plot=False, test_config=False):
@@ -77,23 +75,11 @@ class Pipeline:
             data = inst.processed
 
             if step.Plot:
-                data.plot()
-                plt.show()
-
-            if step.Pause:
-                cont = False
-                while not cont:
-                    reply = input("Paused; press 'y'↵ to continue, or 'q'↵ to stop the pipeline altogether.").lower() 
-                    cont = reply in ['y', 'q']
-
-                if reply=='q':
-                    print("Aborted pipeline.")
-                    break
+                data.plot(block=True)
             
         self._processed_data = inst.processed
         if plot:
-            self._processed_data.plot()
-            plt.show()
+            self._processed_data.plot(block=True)
 
     def test_config(self, quiet=False):
         errors = 0
