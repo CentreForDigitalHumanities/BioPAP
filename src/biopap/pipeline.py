@@ -70,7 +70,9 @@ class Pipeline:
         data = self._initial_data.copy()
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__} ← {step.Cfg}")
-            inst = step.Module(**{'raw': data } | step.Cfg if step.Cfg else {})
+            # inst = step.Module(**{'raw': data } | step.Cfg if step.Cfg else {})
+            cfg = step.Cfg if step.Cfg else {}
+            inst = step.Module(** {'raw' : data } | cfg )
             inst.run()
             data = inst.processed
 
@@ -85,7 +87,9 @@ class Pipeline:
         errors = 0
         for step in self.steps:
             try:
-                inst = step.Module(** {'raw': self._initial_data, 'auto_run': False } | step.Cfg if step.Cfg else {})
+                # inst = step.Module(** {'raw': self._initial_data, 'auto_run': False } | step.Cfg if step.Cfg else {})
+                cfg = step.Cfg if step.Cfg else {}
+                inst = step.Module(** {'raw' : self._initial_data, 'auto_run': False } | cfg )
             except Exception as e:
                 if not quiet:
                     print(f"{step.Module.__name__}: {str(e)}")
