@@ -22,26 +22,18 @@ class EOGChannels(BaseClass):
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
                  drop_refs=False,
-                 auto_run: bool=True):
+                 **kwargs):
 
         self.raw = raw
-        self.ref_channels = ref_channels
-        self.anode_channels = anode_channels
-        self.cathode_channels = cathode_channels
-        self.copy = copy
-        self.drop_refs = drop_refs
-        if auto_run:
-            self.run()
 
-    def run(self):
         try:
             # drop existing channels with same name as new ref channels
-            exist_channels = [x for x in self.ref_channels if x in self.raw.ch_names]
+            exist_channels = [x for x in ref_channels if x in self.raw.ch_names]
             self.raw.drop_channels(exist_channels)
 
             # check if anode & cathode channels exist
             missing_channels = [x for x in 
-                self.anode_channels + self.cathode_channels if x not in self.raw.ch_names]
+                anode_channels + cathode_channels if x not in self.raw.ch_names]
 
             if len(missing_channels)>0:
                 raise ValueError(f"Non-existant channels: {'; '.join(missing_channels)}")
@@ -49,16 +41,17 @@ class EOGChannels(BaseClass):
             # raw = mne.add_reference_channels(raw, ref_channels=ref_channels, copy=False)
             mne.set_bipolar_reference(
                 self.raw,
-                anode=self.anode_channels,
-                cathode=self.cathode_channels,
-                ch_name=self.ref_channels,
-                copy=self.copy,
-                drop_refs=self.drop_refs,
-                verbose=self.verbose)
+                anode=anode_channels,
+                cathode=cathode_channels,
+                ch_name=ref_channels,
+                copy=copy,
+                drop_refs=drop_refs,
+                verbose=self.verbose,
+                **kwargs)
             
             # Set channel type 'eog' for reference channels
-            self.raw.set_channel_types({eog_ch: 'eog' for eog_ch in self.ref_channels})
-
+            self.raw.set_channel_types({eog_ch: 'eog' for eog_ch in ref_channels})
             self.processed = self.raw
+
         except Exception as e:
             print(f"Error: {e}")
