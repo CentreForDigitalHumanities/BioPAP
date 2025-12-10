@@ -9,7 +9,7 @@ class Downsample(BaseClass):
                  raw,
                  sfreq,
                  resample_events=True,
-                 auto_run: bool=True):
+                 **kwargs):
 
         # Downsampling
         # *** Change Sampling Rate / Resolution ***
@@ -24,24 +24,22 @@ class Downsample(BaseClass):
         # In MNE-Python, the resampling methods (raw.resample(), epochs.resample() 
         # and evoked.resample()) apply a low-pass filter to the signal to avoid
         # aliasing, so you don’t need to explicitly filter it yourself first. 
-        self.raw = raw
-        self.sfreq = sfreq
-        self.resample_events = resample_events
-        if auto_run:
-            self.run()
 
-    def run(self):
+        self.raw = raw
+
         try:
-            if self.resample_events:
+            if resample_events:
                 events = mne.find_events(self.raw)
-                self.processed, self.events = self.raw.resample(
-                    sfreq=self.sfreq, 
-                    events=events,
-                    verbose=self.verbose)
+                self.processed, self.events = self.raw.resample(** {
+                    'sfreq': sfreq, 
+                    'events': events,
+                    'verbose': self.verbose
+                    } | kwargs)
             else:
-                self.processed = self.raw.resample(
-                    sfreq=self.sfreq, 
-                    verbose=self.verbose)
+                self.processed = self.raw.resample(** {
+                    'sfreq': sfreq, 
+                    'verbose': self.verbose
+                    } | kwargs)
 
             # RuntimeWarning: Resampling of the stim channels caused event information 
             # to become unreliable. Consider finding events on the original data and 
