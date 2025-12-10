@@ -67,10 +67,6 @@ class Pipeline:
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__} ← {step.Cfg}")
             cfg = step.Cfg if step.Cfg else {}
-
-            print({'raw' : data } | cfg)
-
-
             inst = step.Module(** {'raw' : data } | cfg )
             data = inst.processed
 
