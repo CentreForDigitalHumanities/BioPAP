@@ -25,44 +25,34 @@ class BIDSConversion(BaseClass):
                  task,
                  run,
                  overwrite=False,
-                 dataset_description=None,
-                 auto_run: bool=True):
+                 dataset_description=None):
                 
-                self.raw = raw
-                self.eventsfile = eventsfile
-                self.bids_root = Path(bids_root)
+        self.raw = raw
+        
+        bids_root = Path(bids_root)
 
-                if subject is None:
-                    self.subject = raw.info.get("subject_info", {}).get("his_id", None)
-                else:
-                    self.subject = subject
+        if subject is None:
+            subject = raw.info.get("subject_info", {}).get("his_id", None)
 
-                self.session = session
-                self.task = task
-                self.run_id = run
-                self.overwrite = overwrite
-                self.dataset_description = dataset_description or {}
-                if auto_run:
-                    self.run()
+        dataset_description = dataset_description or {}
 
-    def run(self):
         try:
             # Parse events from raw data
             events = mne.find_events(self.raw)
 
             # Build mappings from eventfile
-            event_id, range_map = self.build_event_dict(self.eventsfile)
+            event_id, range_map = self.build_event_dict(eventsfile)
             merged_events = self.merge_event_ranges(events, range_map)
             merged_events = self.sanitize_events(merged_events, event_id)
 
             # Create BIDS Path
             bids_path = BIDSPath(
-                subject=self.subject,
-                session=self.session,
-                task=self.task,
-                run=self.run_id,
+                subject=subject,
+                session=session,
+                task=task,
+                run=run,
                 datatype="eeg",
-                root=self.bids_root
+                root=bids_root
             )
 
             write_raw_bids(
@@ -72,7 +62,7 @@ class BIDSConversion(BaseClass):
                 events=merged_events, 
                 event_id=event_id, 
                 allow_preload=True, 
-                overwrite=self.overwrite
+                overwrite=overwrite
             )
 
             # Write dataset_description.json
@@ -98,7 +88,7 @@ class BIDSConversion(BaseClass):
         }
 
         make_dataset_description(
-            path=self.bids_root,
+            path=bids_root,
             overwrite=True,
             **dd
         )
