@@ -60,11 +60,7 @@ class Pipeline:
                 Plot=plot
             ))
 
-    def run(self, plot=False, test_config=False):
-        if test_config:
-            if not self.test_config(quiet=True):
-                print("Encountered errors in config. Run 'test_config()' for details.")
-                return
+    def run(self, plot=False):
 
         self.steps.sort(key=lambda x: x.Order)
         data = self._initial_data.copy()
@@ -81,23 +77,6 @@ class Pipeline:
         self._processed_data = inst.processed
         if plot:
             self._processed_data.plot(block=True)
-
-    def test_config(self, quiet=False):
-        errors = 0
-        for step in self.steps:
-            try:
-                cfg = step.Cfg if step.Cfg else {}
-                inst = step.Module(** {'raw' : self._initial_data, 'auto_run': False } | cfg )
-            except Exception as e:
-                if not quiet:
-                    print(f"{step.Module.__name__}: {str(e)}")
-                errors += 1
-
-        if errors==0 and not quiet:
-            print("No errors")
-            return True
-
-        return False
 
     def reset(self):
         self._steps = []
@@ -137,8 +116,7 @@ if __name__=="__main__":
 
     # pipe.add_step(Segmentation)
 
-    if pipe.test_config():
-        pipe.run(plot=True)
+    pipe.run(plot=True)
 
     # ref_file = '/data/BioPAP/data/CBN1BD071212-Cropped-Change Sampling Rate.edf'
     # ref_data = mne.io.read_raw_edf(ref_file)
