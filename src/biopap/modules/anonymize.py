@@ -15,26 +15,22 @@ class Anonymize(BaseClass):
                  daysback: int,
                  experimenter: str=None,
                  participant_id: str=None,
-                 auto_run: bool=True):
+                 **kwargs):
 
         self.raw = raw.copy()
-        self.daysback = daysback
-        self.experimenter = experimenter
-        self.participant_id = participant_id
-        if auto_run:
-            self.run()
 
-    def run(self):
         try:
             self.raw.anonymize(
-                daysback=self.daysback,
-                verbose=self.verbose)
+                daysback=daysback,
+                verbose=self.verbose,
+                **kwargs)
+
             # self.raw.set_meas_date(datetime.now(tz=timezone.utc))
             
-            if self.experimenter is not None:
-                self.raw.info['experimenter'] = str(self.experimenter)
-            if self.participant_id is not None:
-                self.raw.info['subject_info'] = {'his_id': str(self.participant_id)}
+            if experimenter is not None:
+                self.raw.info['experimenter'] = str(experimenter)
+            if participant_id is not None:
+                self.raw.info['subject_info'] = {'his_id': str(participant_id)}
 
             self.processed = self.raw
         except Exception as e:
