@@ -151,3 +151,4 @@ uv.lock
 build/
 dist/
 
+examples/my_config.ipynb
