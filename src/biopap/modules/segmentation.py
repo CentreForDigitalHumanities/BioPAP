@@ -48,35 +48,19 @@ class Segmentation(BaseClass):
                  start,
                  end,
                  baseline=None,
+                 reject_tmin=None,
+                 reject_tmax=None,
+                 reject_criteria=None,
+                 flat_criteria=None,
                  **kwargs):
         
         self.raw = raw
-
-                 reject_tmin=None,
-                 reject_tmax=None,
-                 reject_criteria=None,
-                 flat_criteria=None,
-                 reject_tmin=None,
-                 reject_tmax=None,
-                 reject_criteria=None,
-                 flat_criteria=None,
-                 auto_run: bool=True):
-        
-        self.raw = raw
-        self.stim_channel = stim_channel
-        self.start = start
-        self.end = end
-        self.baseline = baseline
-        self.reject_tmin = reject_tmin
-        self.reject_tmax = reject_tmax
-        self.reject_criteria = ({k: float(v) for k, v in reject_criteria.items()}
-                                if reject_criteria else None)
-        self.flat_criteria = ({k: float(v) for k, v in flat_criteria.items()}
-                              if flat_criteria else None)
-        if auto_run:
-            self.run()
+               
+        reject_criteria = ({k: float(v) for k, v in reject_criteria.items()}
+                           if reject_criteria else None)
+        flat_criteria = ({k: float(v) for k, v in flat_criteria.items()}
+                         if flat_criteria else None)
        
-    def run(self):
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
@@ -86,21 +70,19 @@ class Segmentation(BaseClass):
                                      stim_channel=stim_channel,
                                      verbose=self.verbose,
                                      **f_kwargs)
+            
             epochs = mne.Epochs(self.raw, 
                                 events, 
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
+                                reject_tmin=reject_tmin,
+                                reject_tmax=reject_tmax,
+                                reject=reject_criteria,
+                                flat=flat_criteria,
+                                verbose=self.verbose,
                                 **e_kwargs)
-                                tmin=self.start, 
-                                tmax=self.end, 
-                                reject_tmin=self.reject_tmin,
-                                reject_tmax=self.reject_tmax,
-                                reject=self.reject_criteria,
-                                flat=self.flat_criteria,
-                                baseline=self.baseline,
-                                verbose=self.verbose)
-            
+                                            
             epochs.drop_bad()
 
             self.processed = epochs
