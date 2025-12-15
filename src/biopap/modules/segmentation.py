@@ -56,6 +56,10 @@ class Segmentation(BaseClass):
                  reject_tmax=None,
                  reject_criteria=None,
                  flat_criteria=None,
+                 reject_tmin=None,
+                 reject_tmax=None,
+                 reject_criteria=None,
+                 flat_criteria=None,
                  auto_run: bool=True):
         
         self.raw = raw
