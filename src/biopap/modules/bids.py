@@ -25,7 +25,8 @@ class BIDSConversion(BaseClass):
                  task,
                  run,
                  overwrite=False,
-                 dataset_description=None):
+                 dataset_description=None,
+                 **kwargs):
                 
         self.raw = raw
         
@@ -37,8 +38,15 @@ class BIDSConversion(BaseClass):
         dataset_description = dataset_description or {}
 
         try:
+
+            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+            b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
+            w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
+            mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
+        
             # Parse events from raw data
-            events = mne.find_events(self.raw)
+            events = mne.find_events(self.raw,
+                                     **f_kwargs)
 
             # Build mappings from eventfile
             event_id, range_map = self.build_event_dict(eventsfile)
@@ -52,7 +60,8 @@ class BIDSConversion(BaseClass):
                 task=task,
                 run=run,
                 datatype="eeg",
-                root=bids_root
+                root=bids_root,
+                **b_kwargs
             )
 
             write_raw_bids(
@@ -62,11 +71,12 @@ class BIDSConversion(BaseClass):
                 events=merged_events, 
                 event_id=event_id, 
                 allow_preload=True, 
-                overwrite=overwrite
+                overwrite=overwrite,
+                **w_kwargs
             )
 
             # Write dataset_description.json
-            self.write_dataset_description()
+            self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
             self.processed = self.raw
             print("BIDS conversion completed.")
@@ -74,23 +84,25 @@ class BIDSConversion(BaseClass):
         except Exception as e:
             print(f"[BIDSConversion ERROR] {e}")
 
-    def write_dataset_description(self):
+    @staticmethod
+    def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
         dd = {
-            "name": self.dataset_description.get("name", "Untitled EEG Dataset"),
-            "data_license": self.dataset_description.get("data_license", "CC0"),
-            "authors": self.dataset_description.get("authors", ["Unknown"]),
-            "acknowledgements": self.dataset_description.get("acknowledgements", []),
-            "how_to_acknowledge": self.dataset_description.get("how_to_acknowledge", []),
-            "funding": self.dataset_description.get("funding", []),
-            "references_and_links": self.dataset_description.get("references", []),
-            "doi": self.dataset_description.get("doi", []),
-            "dataset_type": self.dataset_description.get("dataset_type", "raw")
+            "name": dataset_description.get("name", "Untitled EEG Dataset"),
+            "data_license": dataset_description.get("data_license", "CC0"),
+            "authors": dataset_description.get("authors", ["Unknown"]),
+            "acknowledgements": dataset_description.get("acknowledgements", []),
+            "how_to_acknowledge": dataset_description.get("how_to_acknowledge", []),
+            "funding": dataset_description.get("funding", []),
+            "references_and_links": dataset_description.get("references", []),
+            "doi": dataset_description.get("doi", []),
+            "dataset_type": dataset_description.get("dataset_type", "raw")
         }
 
         make_dataset_description(
             path=bids_root,
             overwrite=True,
-            **dd
+            **dd,
+            **mdd_kwargs
         )
 
     @staticmethod
