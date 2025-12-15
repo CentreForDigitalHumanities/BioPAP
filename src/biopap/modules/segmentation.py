@@ -31,25 +31,25 @@ class Segmentation(BaseClass):
                  start,
                  end,
                  baseline=None,
-                 auto_run: bool=True):
+                 **kwargs):
         
         self.raw = raw
-        self.stim_channel = stim_channel
-        self.start = start
-        self.end = end
-        self.baseline = baseline
-        if auto_run:
-            self.run()
-       
-    def run(self):
+
         try:
 
-            events = mne.find_events(self.raw, stim_channel=self.stim_channel, verbose=self.verbose)
+            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+            e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
+
+            events = mne.find_events(self.raw,
+                                     stim_channel=stim_channel,
+                                     verbose=self.verbose,
+                                     **f_kwargs)
             epochs = mne.Epochs(self.raw, 
                                 events, 
-                                tmin=self.start, 
-                                tmax=self.end, 
-                                baseline=self.baseline)
+                                tmin=start, 
+                                tmax=end, 
+                                baseline=baseline,
+                                **e_kwargs)
             
             self.processed = epochs
         except Exception as e:

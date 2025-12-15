@@ -15,10 +15,6 @@ class BaseClass(ABC):
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
         self.verbose = verbose
 
-    @abstractmethod
-    def run(self):
-        pass
-
     @property
     def raw_data(self):
         return self.raw
