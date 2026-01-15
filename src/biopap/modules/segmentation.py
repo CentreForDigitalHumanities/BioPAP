@@ -1,7 +1,8 @@
-"""Class for segmentaion and artifact rejection (Epochs)"""
+"""Class for segmentation (Epoching)"""
 
 import mne
 from biopap.modules.base_class import BaseClass
+
 
 class Segmentation(BaseClass):
 
@@ -25,22 +26,7 @@ class Segmentation(BaseClass):
     # *** Baseline Correction ***
     # Begin: -200.00 ms End: 0.00 ms
 
-    # *** Artifact Rejection - Automatic Inspection ***
-    # Used Channels: all
 
-    # Check Gradient: # NOT IMPLEMENTED!
-    # Maximal allowed voltage step: 50 µV/ms
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
-
-    # Check Amplitude:
-    # Minimal allowed amplitude: -75 µV
-    # Maximal allowed amplitude: 75 µV
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
-
-    # Check Low Activity:
-    # Lowest allowed activity in intervals: 0.5 µV
-    # Interval Length: 100 ms
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
 
     def __init__(self,
                  raw,
@@ -48,19 +34,10 @@ class Segmentation(BaseClass):
                  start,
                  end,
                  baseline=None,
-                 reject_tmin=None,
-                 reject_tmax=None,
-                 reject_criteria=None,
-                 flat_criteria=None,
                  **kwargs):
         
         self.raw = raw
-               
-        reject_criteria = ({k: float(v) for k, v in reject_criteria.items()}
-                           if reject_criteria else None)
-        flat_criteria = ({k: float(v) for k, v in flat_criteria.items()}
-                         if flat_criteria else None)
-       
+                     
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
@@ -76,15 +53,11 @@ class Segmentation(BaseClass):
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
-                                reject_tmin=reject_tmin,
-                                reject_tmax=reject_tmax,
-                                reject=reject_criteria,
-                                flat=flat_criteria,
+                                # reject_by_annotation=False,
                                 verbose=self.verbose,
+                                preload=True,
                                 **e_kwargs)
                                             
-            epochs.drop_bad()
-
             self.processed = epochs
         except Exception as e:
             print(f"Error: {e}")
