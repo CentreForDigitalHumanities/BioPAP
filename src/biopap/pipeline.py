@@ -1,5 +1,4 @@
 import argparse
-import matplotlib.pyplot as plt
 import mne
 import yaml
 from dataclasses import dataclass
@@ -19,10 +18,9 @@ class PipelineStep:
     Module: Any
     Cfg: dict
     Order: int
-    Plot: bool = False
 
     def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}; {'' if self.Plot else 'not '}plotting"
+        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
 
 class Pipeline:
 
@@ -40,7 +38,7 @@ class Pipeline:
 
         return config
 
-    def add_step(self, module, cfg=None, cfg_label=None, plot=False):
+    def add_step(self, module, cfg=None, cfg_label=None):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
@@ -56,11 +54,10 @@ class Pipeline:
             PipelineStep(
                 Module=module,
                 Cfg=cfg,
-                Order=order,
-                Plot=plot
+                Order=order
             ))
 
-    def run(self, plot=False):
+    def run(self):
 
         self.steps.sort(key=lambda x: x.Order)
         data = self._initial_data.copy()
@@ -68,14 +65,8 @@ class Pipeline:
             print(f"{step.Order:>02}. {step.Module.__name__} ← {step.Cfg}")
             cfg = step.Cfg if step.Cfg else {}
             inst = step.Module(** {'raw' : data } | cfg )
-            data = inst.processed
-
-            if step.Plot:
-                data.plot(block=True)
-            
+            data = inst.processed            
         self._processed_data = inst.processed
-        if plot:
-            self._processed_data.plot(block=True)
 
     def reset(self):
         self._steps = []
@@ -113,12 +104,4 @@ if __name__=="__main__":
     pipe.add_step(IIRFilter)
     pipe.add_step(Downsample)
 
-    # pipe.add_step(Segmentation)
-
-    pipe.run(plot=True)
-
-    # ref_file = '/data/BioPAP/data/CBN1BD071212-Cropped-Change Sampling Rate.edf'
-    # ref_data = mne.io.read_raw_edf(ref_file)
-    # ref_data.plot()
-    # plt.show()
-
+    pipe.run()
