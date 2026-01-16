@@ -1,2 +1,2 @@
-mne
+mne[full]
 mne_bids
