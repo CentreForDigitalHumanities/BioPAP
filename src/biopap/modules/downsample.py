@@ -28,7 +28,7 @@ class Downsample(BaseClass):
         self.raw = raw
 
         try:
-            if resample_events:
+            if resample_events and isinstance(self.raw, mne.io.BaseRaw):
                 events = mne.find_events(self.raw)
                 self.processed, self.events = self.raw.resample(** {
                     'sfreq': sfreq, 

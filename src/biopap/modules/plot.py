@@ -15,7 +15,13 @@ class Plot(BaseClass):
         self.raw = raw
         self.processed = self.raw.copy()
         try:
-            events = mne.find_events(self.processed)
+
+            if isinstance(self.processed, mne.io.BaseRaw):
+                events = mne.find_events(self.processed)
+
+            else:
+                events = self.processed.events
+
             _ = self.processed.plot(
                 events=events,
                 title=title,

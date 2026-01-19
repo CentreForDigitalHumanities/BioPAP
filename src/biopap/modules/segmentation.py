@@ -49,6 +49,7 @@ class Segmentation(BaseClass):
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
+                                preload=True,
                                 **e_kwargs)
             
             self.processed = epochs
