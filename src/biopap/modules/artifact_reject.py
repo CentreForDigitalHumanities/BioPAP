@@ -28,6 +28,8 @@ class ArtifactReject(BaseClass):
                 mode='interpolation',
                 max_gradient_uv=50,
                 max_amplitude_uv=75,
+                min_activity_uv=0.5,
+                interval_ms=100,
                 **kwargs):
         
         if not isinstance(raw, mne.Epochs):
@@ -40,6 +42,8 @@ class ArtifactReject(BaseClass):
         self.mode = mode
         self.max_gradient_uv = max_gradient_uv
         self.max_amplitude_uv = max_amplitude_uv
+        self.min_activity_uv = min_activity_uv
+        self.interval_ms = interval_ms
 
         try:
 
@@ -47,13 +51,20 @@ class ArtifactReject(BaseClass):
                 self.epochs,
                 self.max_gradient_uv,
                 self.max_amplitude_uv,
+                self.min_activity_uv,
+                self.interval_ms
             )
 
+            counts = bad_mask.sum(axis=0)
+
+            for ch, n in zip(self.epochs.ch_names, counts):
+                print(f"{ch}: bad in {n} epochs")
+
             if mode == "nan_replacement":
-                apply_nan_replacement(bad_mask, picks)
+                apply_nan_replacement(self.epochs, bad_mask, picks)
 
             elif mode == "interpolation":
-                apply_interpolation(bad_mask, picks)
+                apply_interpolation(self.epochs, bad_mask, picks)
 
             else:
                 raise ValueError(
@@ -66,56 +77,63 @@ class ArtifactReject(BaseClass):
         except Exception as e:
             print(f"Error: {e}")
 
-# TODO: Rewrite this function   
 @staticmethod
 def find_bad_channels(
-     epochs,
-     max_gradient_uv,
-     max_amplitude_uv
+    epochs,
+    max_gradient_uv_ms,
+    max_amplitude_uv,
+    min_activity_uv,
+    interval_ms
 ):
-          
-    # Thresholds
-    max_gradient_uv=50 * 1e-6  # data is in Volts?
-    max_amplitude_uv=75 * 1e-6  # data is in Volts?
-    # min_activity_uv=0.5 * 1e-6 
-    # activity_window_ms=100
+    sfreq = epochs.info["sfreq"]
 
-    # Thresholds in relation to time
-    sfreq = epochs.info["sfreq"] # sampling frequency per second (=500)
-    grad_thresh = max_gradient_uv * (1000 / sfreq)
-    # activity_win = int(activity_window_ms * sfreq / 1000)
+    picks = mne.pick_types(
+        epochs.info, meg=False, eeg=True, exclude="bads"
+    )
 
-    # if picks is None:
-    #     picks = mne.pick_types(epochs.info, meg=False, eeg=True, exclude="bads")
- 
-    ch_names = np.array(epochs.ch_names)[picks]
-    data = epochs.get_data(copy=False)[:, picks]
+    epoch_data = epochs.get_data(copy=False)[:, picks, :]  # (E, C, T)
 
-    bads_per_epoch = []
+    # 1. Gradient check (sample-to-sample)
+    threshold_v_s = max_gradient_uv_ms * 1e-6 / 1e-3   # µV/ms → V/s
+    threshold_v_sample = threshold_v_s / sfreq        # V/s → V/sample
 
-    for ep_data in data:
-        bad_mask = np.zeros(ep_data.shape[0], dtype=bool)
+    diff = np.diff(epoch_data, axis=2)                # (E, C, T-1)
+    grad_bad = np.any(np.abs(diff) > threshold_v_sample, axis=2)
 
-        # 1. Gradient check
-        gradient = np.abs(np.diff(ep_data, axis=1))
-        bad_mask |= np.max(gradient, axis=1) > grad_thresh
+    # 2. Amplitude check
+    amp_thresh = max_amplitude_uv * 1e-6               # µV → V
+    amp_bad = np.max(np.abs(epoch_data), axis=2) > amp_thresh
 
-        # 2. Amplitude check
-        bad_mask |= np.max(np.abs(ep_data), axis=1) > max_amplitude_uv
+    # 3. Low activity check
+    min_activity_v = min_activity_uv * 1e-6            # 0.5 µV → V 
+    interval_samples = (interval_ms / 1000) * sfreq    # samples in interval = seconds × (samples/second)
 
-        # 3. Low-activity check
-        # TO DO
+    low_activity = np.abs(epoch_data) < min_activity_v  # (E, C, T)
 
-        bads_per_epoch.append(list(ch_names[bad_mask]))
+    # flatten epochs and channels
+    E, C, T = epoch_data.shape
+    flat = low_activity.reshape(-1, T)          # (E*C, T)
 
-    return bads_per_epoch  
+    # Adjusted code from https://stackoverflow.com/q/69886314/ 
+    i = np.arange(T) + 1 
+    last_break = np.maximum.accumulate((~flat) * i, axis=1)
+    run_lengths = i - last_break
+    low_activity_bad_flat = np.any(run_lengths >= interval_samples, axis=1)
+
+    # reshape back to (E, C)
+    low_act_bad = low_activity_bad_flat.reshape(E, C)
+
+    # Combine criteria
+    bad_mask = grad_bad | amp_bad | low_act_bad        # (E, C)
+
+    return bad_mask, picks
 
 
-def apply_nan_replacement(self, bad_mask, picks):
+def apply_nan_replacement(epochs, bad_mask, picks):
     """
     Replace bad channels with NaNs per epoch
     """
-    data = self.epochs._data
+    data = epochs._data
 
     bad_mask_3d = bad_mask[:, :, np.newaxis]
 
@@ -126,16 +144,16 @@ def apply_nan_replacement(self, bad_mask, picks):
     )
 
 
-def apply_interpolation(self, bad_mask, picks):
+def apply_interpolation(epochs, bad_mask, picks):
     """
     Interpolate bad channels per epoch
     """
-    ch_names = np.array(self.epochs.ch_names)[picks]
+    ch_names = np.array(epochs.ch_names)[picks]
 
     for epoch_i, bad_ch in enumerate(bad_mask):
         if not np.any(bad_ch):
             continue
 
-        ep = self.epochs[epoch_i]
+        ep = epochs[epoch_i]
         ep.info["bads"] = list(ch_names[bad_ch])
         ep.interpolate_bads(reset_bads=False)  # reset_bads = remove the bads from info          
