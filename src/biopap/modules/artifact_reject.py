@@ -83,8 +83,10 @@ def find_bad_channels(
     max_gradient_uv_ms,
     max_amplitude_uv,
     min_activity_uv,
-    interval_ms
-):
+    interval_ms):
+    """
+    Determine bad channels based on criteria for gradient, amplitude, and activity
+    """
     sfreq = epochs.info["sfreq"]
 
     picks = mne.pick_types(
