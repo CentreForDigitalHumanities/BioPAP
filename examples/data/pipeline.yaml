@@ -4,6 +4,9 @@ EOGChannels:
     ref_channels: ['hEOG', 'vEOG']
     anode_channels: ['EXG3','EXG5']
     cathode_channels: ['EXG4','EXG6']
+    misc_channels: ['EXG1','EXG2','EXG3','EXG4','EXG5','EXG6','EXG7','EXG8','GSR1','GSR2','Erg1','Erg2','Resp','Plet','Temp']
+Montage:
+    mne_standard_montage: 'biosemi64'
 IIRFilter:
     l_freq: 0.1
     h_freq: 35
