@@ -41,6 +41,9 @@ class ArtifactReject(BaseClass):
                     f"the input must be an mne.Epochs instance, "
                     f"got {type(raw)} instead."
                 )
+            
+            p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
+            i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
 
             bad_mask, picks = find_bad_channels(
                 self.raw,
@@ -48,7 +51,7 @@ class ArtifactReject(BaseClass):
                 max_amplitude_uv,
                 min_activity_uv,
                 interval_ms,
-                **kwargs
+                **p_kwargs
             )
 
             counts = bad_mask.sum(axis=0)
@@ -61,7 +64,7 @@ class ArtifactReject(BaseClass):
                 apply_nan_replacement(self.raw, bad_mask, picks)
 
             elif mode == "interpolation":
-                apply_interpolation(self.raw, bad_mask, picks)
+                apply_interpolation(self.raw, bad_mask, picks, **i_kwargs)
 
             else:
                 raise ValueError(
@@ -141,7 +144,7 @@ def apply_nan_replacement(epochs, bad_mask, picks):
     )
 
 
-def apply_interpolation(epochs, bad_mask, picks):
+def apply_interpolation(epochs, bad_mask, picks, **i_kwargs):
     """
     Interpolate bad channels per epoch
     """
@@ -153,4 +156,4 @@ def apply_interpolation(epochs, bad_mask, picks):
 
         ep = epochs[epoch_i]
         ep.info["bads"] = list(ch_names[bad_ch])
-        ep.interpolate_bads(reset_bads=False)  # reset_bads = remove the bads from info          
+        ep.interpolate_bads(reset_bads=False, **i_kwargs)  # reset_bads = remove the bads from info          
