@@ -19,8 +19,11 @@ class Montage(BaseClass):
 
         try:
 
-            montage = mne.channels.make_standard_montage(mne_standard_montage)
-            self.raw.set_montage(montage)
+            m_kwargs = kwargs['make_standard_montage'] if 'make_standard_montage' in kwargs else {}
+            s_kwargs = kwargs['set_montage'] if 'set_montage' in kwargs else {}
+
+            montage = mne.channels.make_standard_montage(mne_standard_montage, **m_kwargs)
+            self.raw.set_montage(montage, **s_kwargs)
 
             self.processed = self.raw
 
