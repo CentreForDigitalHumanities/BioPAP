@@ -31,40 +31,37 @@ class ArtifactReject(BaseClass):
                 min_activity_uv=0.5,
                 interval_ms=100,
                 **kwargs):
-        
-        if not isinstance(raw, mne.Epochs):
-            raise TypeError(
-                f"the input must be an mne.Epochs instance, "
-                f"got {type(raw)} instead."
-            )
-    
-        self.epochs = raw
-        self.mode = mode
-        self.max_gradient_uv = max_gradient_uv
-        self.max_amplitude_uv = max_amplitude_uv
-        self.min_activity_uv = min_activity_uv
-        self.interval_ms = interval_ms
+          
+        self.raw = raw
 
         try:
 
+            if not isinstance(raw, mne.Epochs):
+                raise TypeError(
+                    f"the input must be an mne.Epochs instance, "
+                    f"got {type(raw)} instead."
+                )
+
             bad_mask, picks = find_bad_channels(
-                self.epochs,
-                self.max_gradient_uv,
-                self.max_amplitude_uv,
-                self.min_activity_uv,
-                self.interval_ms
+                self.raw,
+                max_gradient_uv,
+                max_amplitude_uv,
+                min_activity_uv,
+                interval_ms,
+                **kwargs
             )
 
             counts = bad_mask.sum(axis=0)
 
-            for ch, n in zip(self.epochs.ch_names, counts):
+            # TODO (EXTRA): create a plot out of this
+            for ch, n in zip(self.raw.ch_names, counts):
                 print(f"{ch}: bad in {n} epochs")
 
             if mode == "nan_replacement":
-                apply_nan_replacement(self.epochs, bad_mask, picks)
+                apply_nan_replacement(self.raw, bad_mask, picks)
 
             elif mode == "interpolation":
-                apply_interpolation(self.epochs, bad_mask, picks)
+                apply_interpolation(self.raw, bad_mask, picks)
 
             else:
                 raise ValueError(
@@ -72,26 +69,24 @@ class ArtifactReject(BaseClass):
                     "Use 'nan_replacement' or 'interpolation'."
                 )
             
-            self.processed = self.epochs
+            self.processed = self.raw
 
         except Exception as e:
             print(f"Error: {e}")
 
-@staticmethod
 def find_bad_channels(
     epochs,
     max_gradient_uv_ms,
     max_amplitude_uv,
     min_activity_uv,
-    interval_ms):
+    interval_ms,
+    **kwargs):
     """
     Determine bad channels based on criteria for gradient, amplitude, and activity
     """
     sfreq = epochs.info["sfreq"]
 
-    picks = mne.pick_types(
-        epochs.info, meg=False, eeg=True, exclude="bads"
-    )
+    picks = mne.pick_types(epochs.info, meg=False, eeg=True, exclude="bads", **kwargs)
 
     epoch_data = epochs.get_data(copy=False)[:, picks, :]  # (E, C, T)
 
