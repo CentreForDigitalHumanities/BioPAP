@@ -31,6 +31,7 @@ class Segmentation(BaseClass):
                  start,
                  end,
                  baseline=None,
+                 reference_markers=None,
                  **kwargs):
         
         self.raw = raw
@@ -44,6 +45,20 @@ class Segmentation(BaseClass):
                                      stim_channel=stim_channel,
                                      verbose=self.verbose,
                                      **f_kwargs)
+
+            include = None
+
+            if reference_markers.get("from") and reference_markers.get("to"):
+                include = list(range(reference_markers["from"], reference_markers["to"]+1))
+
+            elif reference_markers.get("list"):
+                include = reference_markers["list"]
+
+            if include:
+                events = mne.pick_events(events, include=include)
+            else:
+                print("No reference markers provided; epochs are created with all events")
+            
             epochs = mne.Epochs(self.raw, 
                                 events, 
                                 tmin=start, 
