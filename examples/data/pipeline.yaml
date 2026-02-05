@@ -16,6 +16,13 @@ Anonymize:
     experimenter: 'J. Jansen'
     participant_id: 'AB00123'
 Segmentation:
+    # 'list' contains explicit marker ids
+    # 'from' and 'to' define an inclusive range
+    # leave field blank if not used
+    reference_markers:
+        list:
+        from: 10
+        to: 69
     stim_channel: 'Status'
     start: -0.2
     end: 1
