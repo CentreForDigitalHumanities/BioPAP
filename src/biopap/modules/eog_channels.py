@@ -20,7 +20,6 @@ class EOGChannels(BaseClass):
                  ref_channels=['hEOG', 'vEOG'],
                  anode_channels=['EXG3','EXG5'], 
                  cathode_channels=['EXG4','EXG6'],
-                 misc_channels=[],
                  copy=False,
                  drop_refs=False,
                  **kwargs):
@@ -52,7 +51,6 @@ class EOGChannels(BaseClass):
             
             # Set channel type 'eog' for reference channels
             self.raw.set_channel_types({eog_ch: 'eog' for eog_ch in ref_channels})
-            self.raw.set_channel_types({misc_ch: 'misc' for misc_ch in misc_channels})
             self.processed = self.raw
 
         except Exception as e:
