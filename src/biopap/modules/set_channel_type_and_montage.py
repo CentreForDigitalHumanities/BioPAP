@@ -12,6 +12,7 @@ class SetChannelTypeAndMontage(BaseClass):
                 **kwargs):
 
         self.raw = raw
+        self.processed = self.raw.copy()
 
         try:
 
@@ -21,13 +22,13 @@ class SetChannelTypeAndMontage(BaseClass):
             
             # Set channel types
             for type in channel_types: 
-                self.raw.set_channel_types({chs: type for chs in channel_types.get(type)}, **s_kwargs)
+                self.processed.set_channel_types({chs: type for chs in channel_types.get(type)}, **s_kwargs)
 
             # Create montage of electrodes
             montage = mne.channels.make_standard_montage(mne_standard_montage, **m_kwargs)
-            self.raw.set_montage(montage, **sm_kwargs)
+            self.processed.set_montage(montage, **sm_kwargs)
 
-            self.processed = self.raw
+            self.processed = self.processed
         
         except Exception as e:
             print(f"Error: {e}")
