@@ -58,15 +58,14 @@ class Pipeline:
             ))
 
     def run(self):
-
         self.steps.sort(key=lambda x: x.Order)
-        data = self._initial_data.copy()
+        self._processed_data = self._initial_data.copy()
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__} ← {step.Cfg}")
             cfg = step.Cfg if step.Cfg else {}
-            inst = step.Module(** {'raw' : data } | cfg )
-            data = inst.processed            
-        self._processed_data = inst.processed
+            inst = step.Module(** {'raw' : self._processed_data } | cfg )
+            self._processed_data = inst.processed
+            del inst
 
     def reset(self):
         self._steps = []
