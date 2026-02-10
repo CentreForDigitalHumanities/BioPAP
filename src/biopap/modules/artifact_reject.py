@@ -32,21 +32,21 @@ class ArtifactReject(BaseClass):
                 interval_ms=100,
                 **kwargs):
           
-        self.raw = raw
+        self.processed = raw
 
         try:
 
-            if not isinstance(raw, mne.Epochs):
+            if not isinstance(self.processed, mne.Epochs):
                 raise TypeError(
                     f"the input must be an mne.Epochs instance, "
-                    f"got {type(raw)} instead."
+                    f"got {type(self.processed)} instead."
                 )
             
             p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
             i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
 
             bad_mask, picks = find_bad_channels(
-                self.raw,
+                self.processed,
                 max_gradient_uv,
                 max_amplitude_uv,
                 min_activity_uv,
@@ -57,14 +57,14 @@ class ArtifactReject(BaseClass):
             counts = bad_mask.sum(axis=0)
 
             # TODO (EXTRA): create a plot out of this
-            for ch, n in zip(self.raw.ch_names, counts):
+            for ch, n in zip(self.processed.ch_names, counts):
                 print(f"{ch}: bad in {n} epochs")
 
             if mode == "nan_replacement":
-                apply_nan_replacement(self.raw, bad_mask, picks)
+                apply_nan_replacement(self.processed, bad_mask, picks)
 
             elif mode == "interpolation":
-                apply_interpolation(self.raw, bad_mask, picks, **i_kwargs)
+                apply_interpolation(self.processed, bad_mask, picks, **i_kwargs)
 
             else:
                 raise ValueError(
@@ -72,8 +72,6 @@ class ArtifactReject(BaseClass):
                     "Use 'nan_replacement' or 'interpolation'."
                 )
             
-            self.processed = self.raw
-
         except Exception as e:
             print(f"Error: {e}")
 

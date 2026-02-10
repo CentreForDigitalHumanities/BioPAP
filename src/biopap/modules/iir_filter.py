@@ -13,7 +13,7 @@ class IIRFilter(BaseClass):
                  ftype='butter',
                  **kwargs):
 
-        self.raw = raw
+        self.processed = raw
 
         try:
 
@@ -27,7 +27,7 @@ class IIRFilter(BaseClass):
 
             iir_params = dict(order=order, ftype=ftype)
 
-            self.processed = self.raw.filter(l_freq=l_freq,
+            self.processed = self.processed.filter(l_freq=l_freq,
                h_freq=h_freq,
                method='iir',
                iir_params=iir_params, 

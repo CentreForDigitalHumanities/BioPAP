@@ -36,19 +36,19 @@ class Segmentation(BaseClass):
                  baseline=None,
                  **kwargs):
         
-        self.raw = raw
+        self.processed = raw
                      
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
-            events = mne.find_events(self.raw,
+            events = mne.find_events(self.processed,
                                      stim_channel=stim_channel,
                                      verbose=self.verbose,
                                      **f_kwargs)
             
-            epochs = mne.Epochs(self.raw, 
+            self.processed = mne.Epochs(self.processed, 
                                 events, 
                                 tmin=start, 
                                 tmax=end, 
@@ -58,6 +58,5 @@ class Segmentation(BaseClass):
                                 preload=True,
                                 **e_kwargs)
                                             
-            self.processed = epochs
         except Exception as e:
             print(f"Error: {e}")

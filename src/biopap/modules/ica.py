@@ -9,17 +9,15 @@ class ApplyICA(BaseClass):
                  raw,
                  **kwargs):
         
-        self.raw = raw
+        self.processed = raw
 
         try:
 
             n_components = 64
-            ica = mne.preprocessing.ICA(n_components = n_components, method='fastica', max_iter='auto').fit(raw)
-            raw = ica.apply(raw)
+            ica = mne.preprocessing.ICA(n_components = n_components, method='fastica', max_iter='auto').fit(self.processed)
+            self.processed = ica.apply(self.processed)
 
             # ica.plot_components()
-
-            self.processed = self.raw
 
         except Exception as e:
             print(f"Error: {e}")

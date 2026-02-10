@@ -28,12 +28,12 @@ class BIDSConversion(BaseClass):
                  dataset_description=None,
                  **kwargs):
                 
-        self.raw = raw
+        self.processed = raw
         
         bids_root = Path(bids_root)
 
         if subject is None:
-            subject = raw.info.get("subject_info", {}).get("his_id", None)
+            subject = self.processed.info.get("subject_info", {}).get("his_id", None)
 
         dataset_description = dataset_description or {}
 
@@ -45,7 +45,7 @@ class BIDSConversion(BaseClass):
             mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
         
             # Parse events from raw data
-            events = mne.find_events(self.raw,
+            events = mne.find_events(self.processed,
                                      **f_kwargs)
 
             # Build mappings from eventfile
@@ -65,7 +65,7 @@ class BIDSConversion(BaseClass):
             )
 
             write_raw_bids(
-                raw=self.raw, 
+                raw=self.processed, 
                 format='BrainVision', 
                 bids_path=bids_path, 
                 events=merged_events, 
@@ -78,7 +78,6 @@ class BIDSConversion(BaseClass):
             # Write dataset_description.json
             self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-            self.processed = self.raw
             print("BIDS conversion completed.")
 
         except Exception as e:

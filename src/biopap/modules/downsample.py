@@ -25,18 +25,18 @@ class Downsample(BaseClass):
         # and evoked.resample()) apply a low-pass filter to the signal to avoid
         # aliasing, so you don’t need to explicitly filter it yourself first. 
 
-        self.raw = raw
+        self.processed = raw
 
         try:
             if resample_events:
-                events = mne.find_events(self.raw)
-                self.processed, self.events = self.raw.resample(** {
+                events = mne.find_events(self.processed)
+                self.processed, self.events = self.processed.resample(** {
                     'sfreq': sfreq, 
                     'events': events,
                     'verbose': self.verbose
                     } | kwargs)
             else:
-                self.processed = self.raw.resample(** {
+                self.processed.resample(** {
                     'sfreq': sfreq, 
                     'verbose': self.verbose
                     } | kwargs)
