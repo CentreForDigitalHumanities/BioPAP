@@ -2,6 +2,7 @@
 
 import mne
 from biopap.modules.base_class import BaseClass
+import re
 
 class Segmentation(BaseClass):
 
@@ -48,8 +49,9 @@ class Segmentation(BaseClass):
 
             include = None
 
-            if reference_markers.get("from") and reference_markers.get("to"):
-                include = list(range(reference_markers["from"], reference_markers["to"]+1))
+            if reference_markers.get("range"):
+                range_markers = re.split('-|,|:', reference_markers.get("range"))
+                include = list(range(int(range_markers[0]), int(range_markers[1])+1))
 
             elif reference_markers.get("list"):
                 include = reference_markers["list"]

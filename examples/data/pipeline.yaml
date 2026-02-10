@@ -21,8 +21,7 @@ Segmentation:
     # leave field blank if not used
     reference_markers:
         list:
-        from: 10
-        to: 69
+        range: 10-69
     stim_channel: 'Status'
     start: -0.2
     end: 1
