@@ -1,8 +1,9 @@
-"""Class for segmentaion (Epochs)"""
+"""Class for segmentation (Epoching)"""
 
 import mne
 from biopap.modules.base_class import BaseClass
 import re
+
 
 class Segmentation(BaseClass):
 
@@ -26,6 +27,8 @@ class Segmentation(BaseClass):
     # *** Baseline Correction ***
     # Begin: -200.00 ms End: 0.00 ms
 
+
+
     def __init__(self,
                  raw,
                  stim_channel,
@@ -35,14 +38,14 @@ class Segmentation(BaseClass):
                  reference_markers=None,
                  **kwargs):
         
-        self.raw = raw
-
+        self.processed = raw
+                     
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
-            events = mne.find_events(self.raw,
+            events = mne.find_events(self.processed,
                                      stim_channel=stim_channel,
                                      verbose=self.verbose,
                                      **f_kwargs)
@@ -61,13 +64,15 @@ class Segmentation(BaseClass):
             else:
                 print("No reference markers provided; epochs are created with all events")
             
-            epochs = mne.Epochs(self.raw, 
+            self.processed = mne.Epochs(self.processed, 
                                 events, 
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
+                                # reject_by_annotation=False,
+                                verbose=self.verbose,
+                                preload=True,
                                 **e_kwargs)
-            
-            self.processed = epochs
+                                            
         except Exception as e:
             print(f"Error: {e}")

@@ -16,14 +16,14 @@ class Rereference(BaseClass):
                  copy=False,
                  **kwargs):
         """
-            raw: Data with EEG channels re-referenced.
+            processed: Data with EEG channels re-referenced.
             ref_data: Array of reference data subtracted from EEG channels.
         """
-        self.raw = raw
+        self.processed = raw
 
         try:
             self.processed, self.ref_data = mne.set_eeg_reference(
-                self.raw,
+                self.processed,
                 ref_channels=ref_channels,
                 copy=copy,
                 verbose=self.verbose,

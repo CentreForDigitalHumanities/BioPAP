@@ -38,6 +38,13 @@ Segmentation:
     start: -0.2
     end: 1
     baseline: [-0.2, 0]
+ArtifactReject:
+    # choose either 'interpolation' or 'nan_replacement'
+    mode: 'interpolation'
+    max_gradient_uv: 50
+    max_amplitude_uv: 75
+    min_activity_uv: 0.5
+    interval_ms: 100
 BIDSConversion:
     eventsfile: 'data/events_metadata.csv'
     bids_root: './bids'
