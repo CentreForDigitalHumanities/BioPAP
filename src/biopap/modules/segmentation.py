@@ -64,7 +64,7 @@ class Segmentation(BaseClass):
             else:
                 print("No reference markers provided; epochs are created with all events")
             
-            epochs = mne.Epochs(self.raw, 
+            self.processed = mne.Epochs(self.processed, 
                                 events, 
                                 tmin=start, 
                                 tmax=end, 
