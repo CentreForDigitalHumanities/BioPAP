@@ -1,7 +1,9 @@
-"""Class for segmentaion (Epochs)"""
+"""Class for segmentation (Epoching)"""
 
 import mne
 from biopap.modules.base_class import BaseClass
+import re
+
 
 class Segmentation(BaseClass):
 
@@ -25,33 +27,50 @@ class Segmentation(BaseClass):
     # *** Baseline Correction ***
     # Begin: -200.00 ms End: 0.00 ms
 
+
+
     def __init__(self,
                  raw,
                  stim_channel,
                  start,
                  end,
                  baseline=None,
+                 reference_markers=None,
                  **kwargs):
         
-        self.raw = raw
-
+        self.processed = raw
+                     
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
-            events = mne.find_events(self.raw,
+            events = mne.find_events(self.processed,
                                      stim_channel=stim_channel,
                                      verbose=self.verbose,
                                      **f_kwargs)
-            epochs = mne.Epochs(self.raw, 
+
+            include = None
+
+            if reference_markers.get("range"):
+                range_markers = re.split('-|,|:', reference_markers.get("range"))
+                include = list(range(int(range_markers[0]), int(range_markers[1])+1))
+
+            elif reference_markers.get("list"):
+                include = reference_markers["list"]
+
+            if include:
+                events = mne.pick_events(events, include=include)
+            else:
+                print("No reference markers provided; epochs are created with all events")
+            
+            self.processed = mne.Epochs(self.processed, 
                                 events, 
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
                                 preload=True,
                                 **e_kwargs)
-            
-            self.processed = epochs
+                                            
         except Exception as e:
             print(f"Error: {e}")

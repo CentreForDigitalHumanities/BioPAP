@@ -1,9 +1,21 @@
 Rereference:
     ref_channels: ['EXG1', 'EXG2']
+SetChannelTypeAndMontage:
+    # channel types in mne {'bio', 'chpi', 'dbs', 'dipole', 'ecg', 'ecog', 'eeg', 'emg',
+    # 'eog', 'exci', 'eyetrack', 'fnirs', 'gof', 'gsr', 'ias', 'misc',
+    # 'meg', 'ref_meg', 'resp', 'seeg', 'stim', 'syst', 'temperature'}
+    channel_types:
+        misc: ['EXG1','EXG2','EXG3','EXG4','EXG5','EXG6','EXG7','EXG8','Erg1','Erg2','Plet']
+        gsr: ['GSR1', 'GSR2']
+        resp: ['Resp']
+        temperature: ['Temp']
+    # mne standard montage list run mne.channels.get_builtin_montages() in notebook
+    mne_standard_montage: 'biosemi64'
 EOGChannels:
     ref_channels: ['hEOG', 'vEOG']
     anode_channels: ['EXG3','EXG5']
     cathode_channels: ['EXG4','EXG6']
+   
 IIRFilter:
     l_freq: 0.1
     h_freq: 35
@@ -16,10 +28,23 @@ Anonymize:
     experimenter: 'J. Jansen'
     participant_id: 'AB00123'
 Segmentation:
+    # 'list' contains explicit marker ids
+    # 'from' and 'to' define an inclusive range
+    # leave field blank if not used
+    reference_markers:
+        list:
+        range: 10-69
     stim_channel: 'Status'
     start: -0.2
     end: 1
     baseline: [-0.2, 0]
+ArtifactReject:
+    # choose either 'interpolation' or 'nan_replacement'
+    mode: 'interpolation'
+    max_gradient_uv: 50
+    max_amplitude_uv: 75
+    min_activity_uv: 0.5
+    interval_ms: 100
 BIDSConversion:
     eventsfile: 'data/events_metadata.csv'
     bids_root: './bids'
