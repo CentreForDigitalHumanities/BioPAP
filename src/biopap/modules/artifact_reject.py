@@ -3,6 +3,8 @@
 import mne
 from biopap.modules.base_class import BaseClass
 import numpy as np
+from mne.preprocessing.bads import _find_outliers
+
 
 class ArtifactReject(BaseClass):
             
@@ -45,7 +47,7 @@ class ArtifactReject(BaseClass):
             p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
             i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
 
-            bad_mask, picks = find_bad_channels(
+            bad_mask, picks = find_bad_channels_cutoff_based(
                 self.processed,
                 max_gradient_uv,
                 max_amplitude_uv,
@@ -53,9 +55,10 @@ class ArtifactReject(BaseClass):
                 interval_ms,
                 **p_kwargs
             )
-
+            
             counts = bad_mask.sum(axis=0)
 
+            
             # TODO (EXTRA): create a plot out of this
             for ch, n in zip(self.processed.ch_names, counts):
                 print(f"{ch}: bad in {n} epochs")
@@ -75,7 +78,7 @@ class ArtifactReject(BaseClass):
         except Exception as e:
             print(f"Error: {e}")
 
-def find_bad_channels(
+def find_bad_channels_cutoff_based(
     epochs,
     max_gradient_uv_ms,
     max_amplitude_uv,
@@ -83,7 +86,7 @@ def find_bad_channels(
     interval_ms,
     **kwargs):
     """
-    Determine bad channels based on criteria for gradient, amplitude, and activity
+    Determine bad channels based on cutoff criteria for gradient, amplitude, and activity
     """
     sfreq = epochs.info["sfreq"]
 
@@ -125,6 +128,56 @@ def find_bad_channels(
     bad_mask = grad_bad | amp_bad | low_act_bad        # (E, C)
 
     return bad_mask, picks
+
+# WORK IN PROGRES
+# TODO: fix outlier based bad channel detection 
+# def find_bad_channels_outlier_based(
+#     epochs,
+#     picks=None,
+#     thres=3,
+#     max_iter=1,
+#     eeg_ref_corr=False,
+#     use_metrics=None,
+#     return_by_metric=False,
+#     **kwargs
+# ):
+#     metrics = {
+#         "amplitude": lambda x: np.ptp(x, axis=2),
+#         "variance": lambda x: np.var(x, axis=2),
+#         "median_gradient": lambda x: np.median(np.abs(np.diff(x, axis=2)), axis=2),
+#     }
+
+#     if use_metrics is None:
+#         use_metrics = list(metrics.keys())
+
+#     picks = mne.pick_types(
+#             epochs.info, meg=False, eeg=True, exclude="bads", **kwargs
+#         )
+
+#     data = epochs.get_data(copy=False)[:, picks, :]  # (E, C, T)
+#     E, C, _ = data.shape
+
+#     bads_by_metric = {m: np.zeros((E, C), dtype=bool) for m in use_metrics}
+
+#     for metric in use_metrics:
+#         scores_epochs = metrics[metric](data)  
+#         print(scores_epochs.shape)
+
+#         for epoch_i in range(E):
+#             scores = scores_epochs[epoch_i]
+#             outliers = _find_outliers(scores, thres, max_iter)
+
+#             if len(outliers) > 0:
+#                 bads_by_metric[metric][epoch_i, outliers] = True
+
+#     # info = pick_info(epochs.info, picks, copy=True)
+#     # if return_by_metric:
+#     #     bads = dict((m, _bad_mask_to_names(info, v)) for m, v in bads.items())
+#     # else:
+#     #     bads = np.sum(list(bads.values()), axis=0).astype(bool)
+#     #     bads = _bad_mask_to_names(info, bads)
+
+#     return bads_by_metric
 
 
 def apply_nan_replacement(epochs, bad_mask, picks):
