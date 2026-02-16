@@ -69,8 +69,6 @@ class Segmentation(BaseClass):
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
-                                # reject_by_annotation=False,
-                                verbose=self.verbose,
                                 preload=True,
                                 **e_kwargs)
                                             

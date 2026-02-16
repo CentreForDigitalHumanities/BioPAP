@@ -37,6 +37,9 @@ class BIDSConversion(BaseClass):
 
         dataset_description = dataset_description or {}
 
+        if not isinstance(self.raw, mne.io.BaseRaw):
+            raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
+
         try:
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
