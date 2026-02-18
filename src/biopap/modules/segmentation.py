@@ -4,7 +4,6 @@ import mne
 from biopap.modules.base_class import BaseClass
 import re
 
-
 class Segmentation(BaseClass):
 
     # Segmentation Critical words S1-6
@@ -23,11 +22,6 @@ class Segmentation(BaseClass):
     # Allow overlapped segments? No
     # Skip bad intervals?        No
     # Data was cached to a temporary file.
-
-    # *** Baseline Correction ***
-    # Begin: -200.00 ms End: 0.00 ms
-
-
 
     def __init__(self,
                  raw,
