@@ -7,8 +7,13 @@ class BaseClass(ABC):
     processed = None
     verbose = None
 
-    def __init__(self):
-        pass
+    def __init__(self, 
+                 verbose: Optional[Union[bool, str, int]]=None):
+        # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
+        # The verbose keyword argument can be ‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’, ‘CRITICAL’, 
+        # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
+        # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
+        self.verbose = verbose
 
     @property
     def raw_data(self):
