@@ -37,7 +37,7 @@ class Plot(BaseClass):
                         p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
                         i += 1
             else:
-                f_out = None
+                p_out = None
 
             if isinstance(self.processed, mne.io.BaseRaw):
                 events = mne.find_events(self.processed)
@@ -51,14 +51,14 @@ class Plot(BaseClass):
                     'show': True,
                 }
 
-            if f_out:
+            if p_out:
                 args['block'] = False
                 args['show'] = False
                 args['verbose'] = False
 
             plot = self.processed.plot(** args | kwargs)
 
-            if f_out:
+            if p_out:
                 plot.grab().save(str(p_out))
 
         except Exception as e:
