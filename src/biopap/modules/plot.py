@@ -34,7 +34,7 @@ class Plot(BaseClass):
                 if not save_overwrite:
                     i = 1
                     while p_out.exists():
-                        p_out = d_out / f_new.with_name(f'{f_new}_({i}).png').name
+                        p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
                         i += 1
             else:
                 p_out = None
