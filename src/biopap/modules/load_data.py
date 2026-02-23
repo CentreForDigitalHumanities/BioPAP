@@ -3,6 +3,7 @@
 import mne
 import yaml
 from pathlib import Path
+from typing import Union, Optional
 from biopap.modules.base_class import BaseClass
 
 class LoadData():
@@ -11,7 +12,11 @@ class LoadData():
 
     def __init__(self, 
                  file_path: str | Path,
-                 preload: bool=True) -> None:
+                 preload: bool=True,
+                 verbose: Optional[Union[bool, str, int]]=None
+                 ) -> None:
+
+        p_log_level = mne.set_log_level(verbose=verbose, return_old_level=True)
 
         try:
             file_path = Path(file_path)
@@ -28,6 +33,8 @@ class LoadData():
 
         except Exception as e:
             print(f"Error: {e}")
+
+        mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
     @staticmethod
     def read_bdf(file_path, preload):
