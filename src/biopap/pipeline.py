@@ -3,7 +3,7 @@ import mne
 import yaml
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Union, Optional
 
 from biopap.modules.load_data import LoadData
 from biopap.modules.anonymize import Anonymize
@@ -26,8 +26,18 @@ class Pipeline:
 
     _steps = []
 
-    def __init__(self, config_file, data):
+    def __init__(self, 
+                 config_file,
+                 data, 
+                 verbose: Optional[Union[bool, str, int]]='WARNING'):
+        # https://mne.tools/stable/generated/mne.set_log_level.html
+        # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
+        # The verbose keyword argument can be ‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’, ‘CRITICAL’, 
+        # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
+        # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
+
         self.config = self.read_config(config_file)
+        self.verbose = verbose
         self._initial_data = data
         self._processed_data = None
 
@@ -58,14 +68,19 @@ class Pipeline:
             ))
 
     def run(self):
+
+        p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
+
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
         for step in self.steps:
-            print(f"{step.Order:>02}. {step.Module.__name__} ← {step.Cfg}")
             cfg = step.Cfg if step.Cfg else {}
+            print(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
             inst = step.Module(** {'raw' : self._processed_data } | cfg )
             self._processed_data = inst.processed
             del inst
+
+        mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
     def reset(self):
         self._steps = []
