@@ -12,7 +12,7 @@ class Plot(BaseClass):
                  title=None,
                  save_folder=None,
                  save_postfix=None,
-                 save_overwrite=True,
+                 save_overwrite=False,
                  **kwargs):
 
         self.raw = raw
@@ -22,10 +22,10 @@ class Plot(BaseClass):
             if save_folder:
                 d_out = Path(save_folder)
                 d_out.mkdir(parents=True, exist_ok=True)
-                f_src = Path(self.raw.filenames[0])
+                f_src = Path(self.raw.info['subject_info']['his_id'])
 
                 if save_postfix:
-                    f_new = Path(f_src.with_name(f'{f_src.stem}_{save_postfix}.png').name)
+                    f_new = Path(f_src.with_name(f'{f_src}_{save_postfix}.png').name)
                 else:
                     f_new = Path(f_src.with_suffix('.png').name)
 
@@ -37,7 +37,7 @@ class Plot(BaseClass):
                         p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
                         i += 1
             else:
-                f_out = None
+                p_out = None
 
             if isinstance(self.processed, mne.io.BaseRaw):
                 events = mne.find_events(self.processed)
@@ -51,14 +51,13 @@ class Plot(BaseClass):
                     'show': True,
                 }
 
-            if f_out:
+            if p_out:
                 args['block'] = False
                 args['show'] = False
-                args['verbose'] = False
 
             plot = self.processed.plot(** args | kwargs)
 
-            if f_out:
+            if p_out:
                 plot.grab().save(str(p_out))
 
         except Exception as e:
