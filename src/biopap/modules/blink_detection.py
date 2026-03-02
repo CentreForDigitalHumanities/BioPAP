@@ -1,10 +1,31 @@
-"""Class for automatic blink detection"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class BlinkDetection(BaseClass):
+    """
+    Class for automatic blink detection.
+
+    Detects blinks using MNE's ``find_eog_events()`` function and
+    generates annotations for the input data.
     
+    Parameters
+    ----------
+    raw : mne.Raw | mne.Epochs
+        Input data.
+    **kwargs
+        Additional keyword arguments passed to the underlying
+        ``find_eog_events()`` and ``Annotations()`` methods.
+
+    Attributes
+    ----------
+    processed : mne.Raw | mne.Epochs
+        Output data with annotations.
+
+    Notes
+    -----
+    The implementation is based on the MNE tutorial:
+    https://mne.tools/stable/auto_tutorials/preprocessing/20_rejecting_bad_data.html#generating-annotations-programmatically
+    """
     def __init__(self,
                  raw,
                  **kwargs):
