@@ -2,6 +2,7 @@ site_name: BioPAP
 nav:
 - Home: index.md
 - Installation: installation.md
+- User guide: guide.md
 - Modules:
   - ApplyICA: api/ica.md
   - ArtifactReject: api/artifact_reject.md
@@ -17,7 +18,8 @@ nav:
   - Plot: api/plot.md
   - Rereference: api/rereference.md
   - LoadData: api/load_data.md
-theme: material
+theme:
+  name: material
 plugins:
 - search
 - mkdocstrings:
