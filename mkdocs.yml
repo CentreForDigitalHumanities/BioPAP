@@ -1,17 +1,32 @@
 site_name: BioPAP
 nav:
-  - Home: index.md
-  - API: api.md
-theme: readthedocs
-
+- Home: index.md
+- Installation: installation.md
+- Modules:
+  - ApplyICA: api/ica.md
+  - ArtifactReject: api/artifact_reject.md
+  - Anonymize: api/anonymize.md
+  - BaselineCorrection: api/baseline_correction.md
+  - BlinkDetection: api/blink_detection.md
+  - EOGChannels: api/eog_channels.md
+  - Segmentation: api/segmentation.md
+  - Downsample: api/downsample.md
+  - IIRFilter: api/iir_filter.md
+  - BIDSConversion: api/bids.md
+  - SetChannelTypeAndMontage: api/set_channel_type_and_montage.md
+  - Plot: api/plot.md
+  - Rereference: api/rereference.md
+  - LoadData: api/load_data.md
+theme: material
 plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [src/biopap]
-          options:
-            docstring_style: numpy
-            show_root_heading: true
-            show_root_full_path: false
-            show_source: false
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        paths:
+        - src
+        options:
+          docstring_style: numpy
+          show_root_heading: false
+          show_root_full_path: false
+          show_source: false
