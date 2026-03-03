@@ -1,0 +1,17 @@
+site_name: BioPAP
+nav:
+  - Home: index.md
+  - API: api.md
+theme: readthedocs
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src/biopap]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
