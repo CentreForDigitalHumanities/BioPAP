@@ -197,8 +197,6 @@ if __name__=="__main__":
         mne_silent=True,
         logger=logger)
 
-    # print(load.mne_capture)
-
     if args.stored_pipeline and not args.config_file:
 
         pipe = Pipeline.from_file(

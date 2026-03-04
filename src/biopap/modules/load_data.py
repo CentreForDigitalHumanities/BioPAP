@@ -43,10 +43,10 @@ class LoadData():
 
     def read_bdf(self, file_path, preload, mne_silent):
         if mne_silent:
-            with Capturing() as self.mne_capture:
+            with Capturing() as capture:
                 raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
             
-            self.logger.info(f"MNE_stdout:{'; '.join(self.mne_capture)}")
+            self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
         else:
             raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
 
