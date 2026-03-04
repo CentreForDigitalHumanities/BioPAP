@@ -143,13 +143,23 @@ class Pipeline:
     def processed_data(self):
         return self._processed_data
 
-    def to_file(self, save_path):
+    def to_file(self, save_path, overwrite=False):
+        if not overwrite and save_path.exists():
+            p_save_path = save_path
+            n = 1
+            while p_save_path.exists():
+                p_save_path = save_path.parent / f"{save_path.stem}_({n}){save_path.suffix}"
+                n += 1
+            save_path = p_save_path
+
         with open(save_path, 'w+', encoding='utf-8') as file:
             json.dump({
                     'biopap_pipeline': [x.as_dict() for x in self.steps],
                     'config_file': str(self.config_file)  # not really necessary
                 }, file, ensure_ascii=True
             )
+
+        self.logger.info(f"wrote pipeline to '{save_path}'")
 
     @classmethod
     def from_file(cls, save_path, data, log_file: Optional[Union[Path, str]]=None):
@@ -181,16 +191,16 @@ if __name__=="__main__":
     parser.add_argument('-i', '--input_file', type=Path, required=True)
     parser.add_argument('-c', '--config_file', type=Path)
     parser.add_argument('-s', '--stored_pipeline', type=Path)
-    parser.add_argument('-l', '--log_file', type=Path)
+    parser.add_argument('--log_file', type=Path)
     args = parser.parse_args()
 
-    if (not args.config_file and not args.stored_pipeline) or (args.config_file and args.stored_pipeline):
-        raise ValueError('need either --config_file or --stored_pipeline')
+    if (not args.config_file and not args.stored_pipeline):
+        raise ValueError('need either --config_file and/or --stored_pipeline')
 
     # assuming BDF file as input
     data = LoadData(args.input_file).raw
 
-    if args.stored_pipeline:
+    if args.stored_pipeline and not args.config_file:
 
         pipe = Pipeline.from_file(
             save_path=args.stored_pipeline,
@@ -210,6 +220,6 @@ if __name__=="__main__":
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
 
-        pipe.to_file(save_path='/data/BioPAP/pipeline.json')
+        pipe.to_file(save_path=args.stored_pipeline)
 
     pipe.run()
