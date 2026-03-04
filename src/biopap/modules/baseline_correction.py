@@ -10,7 +10,9 @@ class BaselineCorrection(BaseClass):
 
     def __init__(self,
                  raw,
-                 baseline):
+                 baseline,
+                 logger = None,
+                 ):
         
         self.processed = raw
                      

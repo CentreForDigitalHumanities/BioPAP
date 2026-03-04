@@ -30,6 +30,7 @@ class Segmentation(BaseClass):
                  end,
                  baseline=None,
                  reference_markers=None,
+                 logger=None,
                  **kwargs):
         
         self.processed = raw

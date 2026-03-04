@@ -9,6 +9,7 @@ class SetChannelTypeAndMontage(BaseClass):
                 raw,
                 channel_types,
                 mne_standard_montage,
+                logger=None,
                 **kwargs):
 
         self.processed = raw

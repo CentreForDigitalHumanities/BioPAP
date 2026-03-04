@@ -11,6 +11,7 @@ class IIRFilter(BaseClass):
                  h_freq,
                  order=4, 
                  ftype='butter',
+                 logger=None,
                  **kwargs):
 
         self.processed = raw

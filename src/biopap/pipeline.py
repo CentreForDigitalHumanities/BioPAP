@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import mne
 import sys
 import yaml
@@ -45,7 +46,8 @@ class Pipeline:
 
     def __init__(self, 
                  config_file,
-                 data, 
+                 data,
+                 log_file: Optional[Union[Path, str]]=None,
                  verbose: Optional[Union[bool, str, int]]='WARNING'):
         # https://mne.tools/stable/generated/mne.set_log_level.html
         # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
@@ -53,11 +55,33 @@ class Pipeline:
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
+        self.logger = self.get_logger(verbose=verbose, log_file=log_file)
         self.config_file = config_file
         self.config = self.read_config(self.config_file)
         self.verbose = verbose
         self._initial_data = data
         self._processed_data = None
+
+    @staticmethod
+    def get_logger(verbose, log_file=None):
+
+        debug = verbose in [ 'DEBUG', 10 ]
+
+        log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+
+        logging.basicConfig(
+            level=logging.DEBUG if debug else logging.INFO,
+            format=log_format
+        )
+
+        logger = logging.getLogger()
+
+        if log_file is not None:
+            fh = logging.FileHandler(log_file)
+            fh.setFormatter(logging.Formatter(log_format))
+            logger.addHandler(fh)
+
+        return logger
 
     @staticmethod
     def read_config(config_file):
@@ -97,8 +121,8 @@ class Pipeline:
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            print(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
-            inst = step.Module(** {'raw' : self._processed_data } | cfg )
+            self.logger.info(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
+            inst = step.Module(** {'raw' : self._processed_data, 'logger': self.logger } | cfg )
             self._processed_data = inst.processed
             del inst
 
@@ -128,7 +152,7 @@ class Pipeline:
             )
 
     @classmethod
-    def from_file(cls, save_path, data):
+    def from_file(cls, save_path, data, log_file: Optional[Union[Path, str]]=None):
         if not Path(save_path).exists:
             raise FileNotFoundError(f"{save_path} does not exist")
 
@@ -138,7 +162,7 @@ class Pipeline:
         if not 'biopap_pipeline' in pipe_cfg:
             raise ValueError(f"'biopap_pipeline' section not found in {save_path}")
 
-        pipeline = cls(data=data, config_file=None)
+        pipeline = cls(data=data, config_file=None, log_file=log_file)
 
         for step in pipe_cfg['biopap_pipeline']:
             pipeline._steps.append(
@@ -157,6 +181,7 @@ if __name__=="__main__":
     parser.add_argument('-i', '--input_file', type=Path, required=True)
     parser.add_argument('-c', '--config_file', type=Path)
     parser.add_argument('-s', '--stored_pipeline', type=Path)
+    parser.add_argument('-l', '--log_file', type=Path)
     args = parser.parse_args()
 
     if (not args.config_file and not args.stored_pipeline) or (args.config_file and args.stored_pipeline):
@@ -169,13 +194,15 @@ if __name__=="__main__":
 
         pipe = Pipeline.from_file(
             save_path=args.stored_pipeline,
-            data=data)
+            data=data,
+            log_file=args.log_file)
     
     else:
 
         pipe = Pipeline(
             config_file=args.config_file,
-            data=data)
+            data=data,
+            log_file=args.log_file)
 
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)

@@ -22,6 +22,7 @@ class EOGChannels(BaseClass):
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
                  drop_refs=False,
+                 logger=None,
                  **kwargs):
 
         self.processed = raw

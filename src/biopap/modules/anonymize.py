@@ -15,6 +15,7 @@ class Anonymize(BaseClass):
                  daysback: int,
                  experimenter: str=None,
                  participant_id: str=None,
+                 logger = None,
                  **kwargs):
 
         self.processed = raw
@@ -33,4 +34,5 @@ class Anonymize(BaseClass):
                 self.processed.info['subject_info'] = {'his_id': str(participant_id)}
 
         except Exception as e:
-            print(f"Error: {e}")
+            #TODO: why catch the error?
+            logger.error(f"Error: {e}")

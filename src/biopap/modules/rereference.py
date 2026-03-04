@@ -14,6 +14,7 @@ class Rereference(BaseClass):
                  raw,
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
+                 logger=None,
                  **kwargs):
         """
             processed: Data with EEG channels re-referenced.

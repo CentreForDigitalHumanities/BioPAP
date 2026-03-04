@@ -13,6 +13,7 @@ class Plot(BaseClass):
                  save_folder=None,
                  save_postfix=None,
                  save_overwrite=False,
+                 logger=None,
                  **kwargs):
 
         self.raw = raw
