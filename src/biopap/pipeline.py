@@ -1,17 +1,26 @@
 import argparse
+import json
 import mne
+import sys
 import yaml
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Union, Optional
 
-from biopap.modules.load_data import LoadData
 from biopap.modules.anonymize import Anonymize
-from biopap.modules.rereference import Rereference
-from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.iir_filter import IIRFilter
+from biopap.modules.artifact_reject import ArtifactReject
+from biopap.modules.baseline_correction import BaselineCorrection
+from biopap.modules.bids import BIDSConversion
+from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
+from biopap.modules.eog_channels import EOGChannels
+from biopap.modules.ica import ApplyICA
+from biopap.modules.iir_filter import IIRFilter
+from biopap.modules.load_data import LoadData
+from biopap.modules.plot import Plot
+from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
+from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 @dataclass
 class PipelineStep:
@@ -21,6 +30,14 @@ class PipelineStep:
 
     def __repr__(self):
         return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
+
+    def as_dict(self):
+        return  {
+            'module': self.Module.__name__,
+            'cfg': self.Cfg,
+            'order': self.Order,
+            }
+
 
 class Pipeline:
 
@@ -36,13 +53,17 @@ class Pipeline:
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
-        self.config = self.read_config(config_file)
+        self.config_file = config_file
+        self.config = self.read_config(self.config_file)
         self.verbose = verbose
         self._initial_data = data
         self._processed_data = None
 
     @staticmethod
     def read_config(config_file):
+        if config_file is None:
+            return {}
+
         with open(config_file, 'r') as file:
             config = yaml.safe_load(file)
 
@@ -73,6 +94,7 @@ class Pipeline:
 
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
+
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
             print(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
@@ -97,25 +119,70 @@ class Pipeline:
     def processed_data(self):
         return self._processed_data
 
+    def to_file(self, save_path):
+        with open(save_path, 'w+', encoding='utf-8') as file:
+            json.dump({
+                    'biopap_pipeline': [x.as_dict() for x in self.steps],
+                    'config_file': str(self.config_file)  # not really necessary
+                }, file, ensure_ascii=True
+            )
+
+    @classmethod
+    def from_file(cls, save_path, data):
+        if not Path(save_path).exists:
+            raise FileNotFoundError(f"{save_path} does not exist")
+
+        with open(save_path, 'r') as file:
+            pipe_cfg = json.load(file)
+
+        if not 'biopap_pipeline' in pipe_cfg:
+            raise ValueError(f"'biopap_pipeline' section not found in {save_path}")
+
+        pipeline = cls(data=data, config_file=None)
+
+        for step in pipe_cfg['biopap_pipeline']:
+            pipeline._steps.append(
+                PipelineStep(
+                    Module=getattr(sys.modules[__name__], step['module']),
+                    Cfg=step['cfg'],
+                    Order=step['order']
+                ))
+
+        return pipeline
+
 
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input_file', type=Path, required=True)
-    parser.add_argument('-c', '--config_file', type=Path, required=True)
+    parser.add_argument('-c', '--config_file', type=Path)
+    parser.add_argument('-s', '--stored_pipeline', type=Path)
     args = parser.parse_args()
+
+    if (not args.config_file and not args.stored_pipeline) or (args.config_file and args.stored_pipeline):
+        raise ValueError('need either --config_file or --stored_pipeline')
 
     # assuming BDF file as input
     data = LoadData(args.input_file).raw
 
-    pipe = Pipeline(
-        config_file=args.config_file,
-        data=data)
+    if args.stored_pipeline:
 
-    pipe.add_step(Anonymize)
-    pipe.add_step(Rereference)
-    pipe.add_step(EOGChannels)
-    pipe.add_step(IIRFilter)
-    pipe.add_step(Downsample)
+        pipe = Pipeline.from_file(
+            save_path=args.stored_pipeline,
+            data=data)
+    
+    else:
+
+        pipe = Pipeline(
+            config_file=args.config_file,
+            data=data)
+
+        pipe.add_step(Anonymize)
+        pipe.add_step(Rereference)
+        pipe.add_step(EOGChannels)
+        pipe.add_step(IIRFilter)
+        pipe.add_step(Downsample)
+
+        pipe.to_file(save_path='/data/BioPAP/pipeline.json')
 
     pipe.run()
