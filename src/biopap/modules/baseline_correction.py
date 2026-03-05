@@ -21,4 +21,9 @@ class BaselineCorrection(BaseClass):
             self.processed = self.processed.apply_baseline(baseline)
                                             
         except Exception as e:
-            print(f"Error: {e}")
+
+            if logger:
+                logger.error(str(e))
+            else:
+                print(f"ERROR:{__class__.__name__}: {str(e)}")
+

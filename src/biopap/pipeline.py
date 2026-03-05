@@ -113,8 +113,13 @@ class Pipeline:
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            logger.info(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
-            inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
+            logger.info(f"step {step.Order:> 2}; {step.Module.__name__}; {cfg}")
+
+            try:
+                inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
+            except Exception as e:
+                logger.error(str(e))
+            
             self._processed_data = inst.processed
             del inst
 

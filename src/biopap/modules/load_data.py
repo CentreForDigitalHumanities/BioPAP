@@ -14,7 +14,7 @@ class LoadData():
 
     def __init__(self, 
                  file_path: str | Path,
-                 logger,
+                 logger=None,
                  preload: bool=True,
                  mne_silent: bool=False,
                  verbose: Optional[Union[bool, str, int]]=None
@@ -37,7 +37,10 @@ class LoadData():
             self.loaded_file = file_path
 
         except Exception as e:
-            self.logger.error(f"Error: {e}")
+            if logger:
+                logger.error(str(e))
+            else:
+                print(f"ERROR:{__class__.__name__}: {str(e)}")
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
@@ -45,8 +48,14 @@ class LoadData():
         if mne_silent:
             with Capturing() as capture:
                 raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
-            
-            self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
+
+            msg = f"MNE_stdout:{'; '.join(capture)}"
+
+            if self.logger:
+                logger.info(msg)
+            else:
+                print(f"INFO:{__class__.__name__}: {msg}")
+
         else:
             raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
 

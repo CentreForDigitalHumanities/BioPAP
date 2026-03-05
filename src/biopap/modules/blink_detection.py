@@ -31,4 +31,7 @@ class BlinkDetection(BaseClass):
             self.processed.set_annotations(blink_annot)
 
         except Exception as e:
-            print(f"Error: {e}")
+            if logger:
+                logger.error(str(e))
+            else:
+                print(f"ERROR:{__class__.__name__}: {str(e)}")

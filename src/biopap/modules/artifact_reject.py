@@ -25,12 +25,12 @@ class ArtifactReject(BaseClass):
 
     def __init__(self,
                 raw,
+                logger=None,
                 mode='interpolation',
                 max_gradient_uv=50,
                 max_amplitude_uv=75,
                 min_activity_uv=0.5,
                 interval_ms=100,
-                logger = None,
                 **kwargs):
           
         self.processed = raw
@@ -74,7 +74,10 @@ class ArtifactReject(BaseClass):
                 )
             
         except Exception as e:
-            print(f"Error: {e}")
+            if logger:
+                logger.error(str(e))
+            else:
+                print(f"ERROR:{__class__.__name__}: {str(e)}")
 
 def find_bad_channels(
     epochs,
