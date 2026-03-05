@@ -12,9 +12,9 @@ class Rereference(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
-                 logger=None,
                  **kwargs):
         """
             processed: Data with EEG channels re-referenced.
@@ -30,7 +30,5 @@ class Rereference(BaseClass):
                 verbose=self.verbose,
                 **kwargs)
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            logger.error(str(e))
+            self.exit_code = 1

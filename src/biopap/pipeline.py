@@ -117,6 +117,9 @@ class Pipeline:
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
+                if inst.exit_code != 0:
+                    logger.critical(f"step {step.Order}. {step.Module.__name__} failed; exiting pipeline")
+                    break
             except Exception as e:
                 logger.error(str(e))
             

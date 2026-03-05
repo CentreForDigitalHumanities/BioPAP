@@ -11,10 +11,11 @@ from biopap.modules.helpers import Capturing
 class LoadData():
 
     loaded_file = None
+    exit_code = 0
 
     def __init__(self, 
                  file_path: str | Path,
-                 logger=None,
+                 logger,
                  preload: bool=True,
                  mne_silent: bool=False,
                  verbose: Optional[Union[bool, str, int]]=None
@@ -37,10 +38,8 @@ class LoadData():
             self.loaded_file = file_path
 
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            self.logger.error(str(e))
+            self.exit_code = 1
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
@@ -49,12 +48,8 @@ class LoadData():
             with Capturing() as capture:
                 raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
 
-            msg = f"MNE_stdout:{'; '.join(capture)}"
-
-            if self.logger:
-                logger.info(msg)
-            else:
-                print(f"INFO:{__class__.__name__}: {msg}")
+            if len(capture)>0:
+                self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
 
         else:
             raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)

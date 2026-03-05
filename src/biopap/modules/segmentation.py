@@ -28,9 +28,9 @@ class Segmentation(BaseClass):
                  stim_channel,
                  start,
                  end,
+                 logger,
                  baseline=None,
                  reference_markers=None,
-                 logger=None,
                  **kwargs):
         
         self.processed = raw
@@ -68,8 +68,6 @@ class Segmentation(BaseClass):
                                 **e_kwargs)
                                             
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            logger.error(str(e))
+            self.exit_code = 1
 

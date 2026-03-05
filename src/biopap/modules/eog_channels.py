@@ -17,12 +17,12 @@ class EOGChannels(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  ref_channels=['hEOG', 'vEOG'],
                  anode_channels=['EXG3','EXG5'], 
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
                  drop_refs=False,
-                 logger=None,
                  **kwargs):
 
         self.processed = raw
@@ -54,7 +54,5 @@ class EOGChannels(BaseClass):
             self.processed.set_channel_types({eog_ch: 'eog' for eog_ch in ref_channels})
 
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            logger.error(str(e))
+            self.exit_code = 1

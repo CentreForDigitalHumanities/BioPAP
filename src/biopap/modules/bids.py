@@ -24,9 +24,9 @@ class BIDSConversion(BaseClass):
                  session,
                  task,
                  run,
+                 logger,
                  overwrite=False,
                  dataset_description=None,
-                 logger=None,
                  **kwargs):
                 
         self.processed = raw
@@ -83,13 +83,11 @@ class BIDSConversion(BaseClass):
             # Write dataset_description.json
             self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-            logger.info("BIDS conversion completed.")
+            self.logger.debug("BIDS conversion completed.")
 
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            self.logger.error(str(e))
+            self.exit_code = 1
 
     @staticmethod
     def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
@@ -166,10 +164,6 @@ class BIDSConversion(BaseClass):
                 raise ValueError(f"Event {set(events[:,-1]) - set(event_id.values())}"
                                 "has not been declared in eventsfile") 
 
-        msg = f"Found triggers: {[int(x) for x in set(events[:,-1])]}"
-        if self.logger:
-            logger.error(msg)
-        else:
-            print(f"INFO:{__class__.__name__}: {msg}")        
+        logger.info(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
 
         return events

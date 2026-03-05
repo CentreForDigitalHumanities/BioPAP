@@ -9,11 +9,11 @@ class Plot(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  title=None,
                  save_folder=None,
                  save_postfix=None,
                  save_overwrite=False,
-                 logger=None,
                  **kwargs):
 
         self.raw = raw
@@ -62,8 +62,6 @@ class Plot(BaseClass):
                 plot.grab().save(str(p_out))
 
         except Exception as e:
-            if logger:
-                logger.error(str(e))
-            else:
-                print(f"ERROR:{__class__.__name__}: {str(e)}")
+            logger.error(str(e))
+            self.exit_code = 1
 
