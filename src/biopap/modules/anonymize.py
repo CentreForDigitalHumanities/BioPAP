@@ -35,3 +35,4 @@ class Anonymize(BaseClass):
 
         except Exception as e:
             logger.error(str(e))
+            self.exit_code = 1
