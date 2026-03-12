@@ -79,7 +79,7 @@ class Pipeline:
         self.verbose = verbose
 
         if input_file is None and data is None:
-            raise ValueError("Need input_file or data")
+            raise ValueError("need input_file or data")
         elif data is not None:
             self._initial_data = data
         else:
@@ -107,7 +107,7 @@ class Pipeline:
             **kwargs)
 
         if load.exit_code == 1:
-            raise ValueError(f"Could not load '{input_file}'")
+            raise ValueError(f"could not load '{input_file}'")
 
         return load.raw
 
@@ -180,13 +180,13 @@ class Pipeline:
     @classmethod
     def from_file(cls, save_path, input_file, **kwargs):
         if not Path(save_path).exists:
-            raise FileNotFoundError(f"{save_path} does not exist")
+            raise FileNotFoundError(f"'{save_path}' does not exist")
 
         with open(save_path, 'r') as file:
             pipe_cfg = json.load(file)
 
         if not 'biopap_pipeline' in pipe_cfg:
-            raise ValueError(f"'biopap_pipeline' section not found in {save_path}")
+            raise ValueError(f"'biopap_pipeline' section not found in '{save_path}'")
 
         pipeline = cls(input_file=input_file, config_file=None, **kwargs)
 
