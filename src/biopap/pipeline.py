@@ -229,9 +229,10 @@ if __name__=="__main__":
 
     if args.stored_pipeline and not args.config_file:
 
-        pipe = Pipeline.from_file(
+        Pipeline.from_file(
             save_path=args.stored_pipeline,
-            input_file=args.input_file)
+            input_file=args.input_file
+        ).run()
     
     else:
 
@@ -248,4 +249,4 @@ if __name__=="__main__":
         if args.stored_pipeline:
             pipe.to_file(save_path=args.stored_pipeline)
 
-    pipe.run()
+        pipe.run()
