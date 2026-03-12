@@ -8,6 +8,7 @@ class Downsample(BaseClass):
     def __init__(self,
                  raw,
                  sfreq,
+                 logger,
                  resample_events=True,
                  **kwargs):
 
@@ -46,4 +47,5 @@ class Downsample(BaseClass):
             # passing the event matrix as a parameter.
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1

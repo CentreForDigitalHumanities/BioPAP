@@ -7,6 +7,7 @@ class IIRFilter(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  l_freq,
                  h_freq,
                  order=4, 
@@ -35,4 +36,5 @@ class IIRFilter(BaseClass):
                **kwargs)
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1

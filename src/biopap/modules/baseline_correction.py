@@ -10,7 +10,9 @@ class BaselineCorrection(BaseClass):
 
     def __init__(self,
                  raw,
-                 baseline):
+                 logger,
+                 baseline,
+                 ):
         
         self.processed = raw
                      
@@ -19,4 +21,6 @@ class BaselineCorrection(BaseClass):
             self.processed = self.processed.apply_baseline(baseline)
                                             
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1
+

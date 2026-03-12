@@ -1,17 +1,42 @@
 import argparse
+import json
+import logging
 import mne
+import sys
 import yaml
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
 
-from biopap.modules.load_data import LoadData
 from biopap.modules.anonymize import Anonymize
-from biopap.modules.rereference import Rereference
-from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.iir_filter import IIRFilter
+from biopap.modules.artifact_reject import ArtifactReject
+from biopap.modules.baseline_correction import BaselineCorrection
+from biopap.modules.bids import BIDSConversion
+from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
+from biopap.modules.eog_channels import EOGChannels
+from biopap.modules.ica import ApplyICA
+from biopap.modules.iir_filter import IIRFilter
+from biopap.modules.load_data import LoadData
+from biopap.modules.plot import Plot
+from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
+from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
+
+
+log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+logging.basicConfig(level=logging.INFO, format=log_format)
+logger = logging.getLogger(__name__)
+
+def add_logfile_handler(log_file=None):
+    global logger
+    if not log_file:
+        return
+    fh = logging.FileHandler(log_file)
+    fh.setFormatter(logging.Formatter(log_format))
+    logger.addHandler(fh)
+
 
 @dataclass
 class PipelineStep:
@@ -22,13 +47,21 @@ class PipelineStep:
     def __repr__(self):
         return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
 
+    def as_dict(self):
+        return  {
+            'module': self.Module.__name__,
+            'cfg': self.Cfg,
+            'order': self.Order,
+            }
+
+
 class Pipeline:
 
     _steps = []
 
     def __init__(self, 
                  config_file,
-                 data, 
+                 data,
                  verbose: Optional[Union[bool, str, int]]='WARNING'):
         # https://mne.tools/stable/generated/mne.set_log_level.html
         # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
@@ -36,13 +69,17 @@ class Pipeline:
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
-        self.config = self.read_config(config_file)
+        self.config_file = config_file
+        self.config = self.read_config(self.config_file)
         self.verbose = verbose
         self._initial_data = data
         self._processed_data = None
 
     @staticmethod
     def read_config(config_file):
+        if config_file is None:
+            return {}
+
         with open(config_file, 'r') as file:
             config = yaml.safe_load(file)
 
@@ -73,10 +110,21 @@ class Pipeline:
 
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
+
+        dgts = int(len(str(max([x.Order for x in self.steps]))))
+
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            print(f"{step.Order:>02}. {step.Module.__name__} ← {cfg}")
-            inst = step.Module(** {'raw' : self._processed_data } | cfg )
+            logger.info(f"step{step.Order:> {dgts}}; {step.Module.__name__}; {cfg}")
+
+            try:
+                inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
+                if inst.exit_code != 0:
+                    logger.critical(f"step {step.Order}. {step.Module.__name__} failed; exiting pipeline")
+                    break
+            except Exception as e:
+                logger.error(str(e))
+            
             self._processed_data = inst.processed
             del inst
 
@@ -97,25 +145,87 @@ class Pipeline:
     def processed_data(self):
         return self._processed_data
 
+    def to_file(self, save_path, overwrite=False):
+        if not overwrite and save_path.exists():
+            p_save_path = save_path
+            n = 1
+            while p_save_path.exists():
+                p_save_path = save_path.parent / f"{save_path.stem}_({n}){save_path.suffix}"
+                n += 1
+            save_path = p_save_path
+
+        with open(save_path, 'w+', encoding='utf-8') as file:
+            json.dump({
+                    'biopap_pipeline': [x.as_dict() for x in self.steps],
+                    'config_file': str(self.config_file)  # not really necessary
+                }, file, ensure_ascii=True
+            )
+
+        logger.info(f"wrote pipeline to '{save_path}'")
+
+    @classmethod
+    def from_file(cls, save_path, data):
+        if not Path(save_path).exists:
+            raise FileNotFoundError(f"{save_path} does not exist")
+
+        with open(save_path, 'r') as file:
+            pipe_cfg = json.load(file)
+
+        if not 'biopap_pipeline' in pipe_cfg:
+            raise ValueError(f"'biopap_pipeline' section not found in {save_path}")
+
+        pipeline = cls(data=data, config_file=None)
+
+        for step in pipe_cfg['biopap_pipeline']:
+            pipeline._steps.append(
+                PipelineStep(
+                    Module=getattr(sys.modules[__name__], step['module']),
+                    Cfg=step['cfg'],
+                    Order=step['order']
+                ))
+
+        return pipeline
+
 
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input_file', type=Path, required=True)
-    parser.add_argument('-c', '--config_file', type=Path, required=True)
+    parser.add_argument('-c', '--config_file', type=Path)
+    parser.add_argument('-s', '--stored_pipeline', type=Path)
+    parser.add_argument('--log_file', type=Path)
     args = parser.parse_args()
 
+    if (not args.config_file and not args.stored_pipeline):
+        raise ValueError('need either --config_file and/or --stored_pipeline')
+
+    add_logfile_handler(args.log_file)
+
     # assuming BDF file as input
-    data = LoadData(args.input_file).raw
+    load = LoadData(
+        file_path=args.input_file,
+        mne_silent=True,
+        logger=logger)
 
-    pipe = Pipeline(
-        config_file=args.config_file,
-        data=data)
+    if args.stored_pipeline and not args.config_file:
 
-    pipe.add_step(Anonymize)
-    pipe.add_step(Rereference)
-    pipe.add_step(EOGChannels)
-    pipe.add_step(IIRFilter)
-    pipe.add_step(Downsample)
+        pipe = Pipeline.from_file(
+            save_path=args.stored_pipeline,
+            data=load.raw)
+    
+    else:
+
+        pipe = Pipeline(
+            config_file=args.config_file,
+            data=load.raw)
+
+        pipe.add_step(Anonymize)
+        pipe.add_step(Rereference)
+        pipe.add_step(EOGChannels)
+        pipe.add_step(IIRFilter)
+        pipe.add_step(Downsample)
+
+        if args.stored_pipeline:
+            pipe.to_file(save_path=args.stored_pipeline)
 
     pipe.run()

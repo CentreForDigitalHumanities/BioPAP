@@ -9,6 +9,7 @@ class SetChannelTypeAndMontage(BaseClass):
                 raw,
                 channel_types,
                 mne_standard_montage,
+                logger,
                 **kwargs):
 
         self.processed = raw
@@ -28,4 +29,6 @@ class SetChannelTypeAndMontage(BaseClass):
             self.processed.set_montage(montage, **sm_kwargs)
         
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1
+

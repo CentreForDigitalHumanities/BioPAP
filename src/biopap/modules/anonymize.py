@@ -13,6 +13,7 @@ class Anonymize(BaseClass):
     def __init__(self,
                  raw: mne.io.Raw,
                  daysback: int,
+                 logger,
                  experimenter: str=None,
                  participant_id: str=None,
                  **kwargs):
@@ -33,4 +34,5 @@ class Anonymize(BaseClass):
                 self.processed.info['subject_info'] = {'his_id': str(participant_id)}
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1
