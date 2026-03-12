@@ -5,6 +5,7 @@ import mne
 import sys
 import yaml
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
 
@@ -110,9 +111,11 @@ class Pipeline:
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
 
+        dgts = int(len(str(max([x.Order for x in self.steps]))))
+
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            logger.info(f"step {step.Order:> 2}; {step.Module.__name__}; {cfg}")
+            logger.info(f"step{step.Order:> {dgts}}; {step.Module.__name__}; {cfg}")
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
@@ -222,6 +225,7 @@ if __name__=="__main__":
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
 
-        pipe.to_file(save_path=args.stored_pipeline)
+        if args.stored_pipeline:
+            pipe.to_file(save_path=args.stored_pipeline)
 
     pipe.run()
