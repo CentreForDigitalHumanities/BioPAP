@@ -1,9 +1,34 @@
-"""Class for plotting"""
 import mne
 from pathlib import Path
 from biopap.modules.base_class import BaseClass
 
 class Plot(BaseClass):
+    """
+    Class for plotting data interactively and optionally save part of the figure.
+
+    Displays the data using MNE's ``plot()`` method. If save options are
+    provided, a screenshot of the figure is saved to disk.
+
+    Parameters
+    ----------
+    raw : mne.io.Raw | mne.Epochs
+        Input data.
+    title : str | None
+        Title of the plot window.
+    save_folder : str | None
+        Folder in which to save the plot. If None, the figure is not saved.
+    save_postfix : str | None
+        Postfix appended to the plot filename.
+    save_overwrite : bool, default False
+        Whether to overwrite files with the same name.
+    **kwargs
+        Additional keyword arguments passed to MNE's ``plot()`` method.
+
+    Attributes
+    ----------
+    processed : mne.io.Raw | mne.Epochs
+        Output data (signal data unchanged; metadata may be modified via the interactive plot).
+    """
 
     # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
 

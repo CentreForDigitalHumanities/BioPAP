@@ -1,9 +1,29 @@
-"""Class for rereferencing"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class Rereference(BaseClass):
+    """
+    Class for rereferencing EEG data.
+
+    Applies MNE's ``set_eeg_reference()`` function to the input data.
+
+    Parameters
+    ----------
+    raw : mne.io.Raw | mne.Epochs
+        Input data.
+    ref_channels : list of str
+        Reference channel names to subtract from the EEG channels.
+    copy : bool, default False
+        If True, returns a copy of the data; otherwise modifies in place.
+    **kwargs
+        Additional keyword arguments passed to MNE's
+        ``set_eeg_reference()`` function.
+
+    Attributes
+    ----------
+    processed : mne.io.Raw | mne.Epochs
+        Output data after rereferencing.
+    """
 
     # https://mne.tools/stable/generated/mne.set_eeg_reference.html#mne.set_eeg_reference
     # raw: Array of reference data subtracted from EEG channels.
@@ -15,10 +35,7 @@ class Rereference(BaseClass):
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
                  **kwargs):
-        """
-            processed: Data with EEG channels re-referenced.
-            ref_data: Array of reference data subtracted from EEG channels.
-        """
+
         self.processed = raw
 
         try:
@@ -28,5 +45,6 @@ class Rereference(BaseClass):
                 copy=copy,
                 verbose=self.verbose,
                 **kwargs)
+            
         except Exception as e:
             print(f"Error: {e}")
