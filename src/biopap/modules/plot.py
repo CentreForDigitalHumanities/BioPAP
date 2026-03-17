@@ -34,6 +34,7 @@ class Plot(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  title=None,
                  save_folder=None,
                  save_postfix=None,
@@ -86,4 +87,6 @@ class Plot(BaseClass):
                 plot.grab().save(str(p_out))
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1
+

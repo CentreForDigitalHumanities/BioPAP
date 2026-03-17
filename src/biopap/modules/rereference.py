@@ -32,6 +32,7 @@ class Rereference(BaseClass):
 
     def __init__(self,
                  raw,
+                 logger,
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
                  **kwargs):
@@ -47,4 +48,5 @@ class Rereference(BaseClass):
                 **kwargs)
             
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1

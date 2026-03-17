@@ -7,6 +7,7 @@ class ApplyICA(BaseClass):
     
     def __init__(self,
                  raw,
+                 logger,
                  **kwargs):
         
         self.processed = raw
@@ -20,4 +21,5 @@ class ApplyICA(BaseClass):
             # ica.plot_components()
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(str(e))
+            self.exit_code = 1
