@@ -16,7 +16,7 @@ from biopap.modules.bids import BIDSConversion
 from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.ica import ApplyICA
+from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot
@@ -100,11 +100,13 @@ class Pipeline:
     def load_data(self, input_file, **kwargs):
         load = LoadData(
             file_path=input_file,
-            logger=logger,
             preload=True,
             silent=True,
             verbose=self.verbose,
             **kwargs)
+
+        if len(load.stdout)>0:
+            [logger.info(f"LoadData:{x}") for x in load.stdout]
 
         return load.raw
 
@@ -137,16 +139,14 @@ class Pipeline:
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
 
-        dgts = int(len(str(max([x.Order for x in self.steps]))))
-
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            logger.info(f"step{step.Order:> {dgts}}; {step.Module.__name__}; {cfg}")
+            logger.info(f"Running step {step.Order}, {step.Module.__name__} < {cfg}")
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
-                # log captured stdout
-                inst.clear_stdout()
+                if len(inst.stdout)>0:
+                    [logger.info(f"{step.Module.__name__}:{x}") for x in inst.stdout]
             except Exception as e:
                 logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)}")
                 break
