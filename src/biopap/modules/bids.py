@@ -24,13 +24,11 @@ class BIDSConversion(BaseClass):
                  session,
                  task,
                  run,
-                 logger,
                  overwrite=False,
                  dataset_description=None,
                  **kwargs):
                 
         self.processed = raw
-        self.logger = logger
         
         bids_root = Path(bids_root)
 
@@ -42,52 +40,47 @@ class BIDSConversion(BaseClass):
         if not isinstance(self.raw, mne.io.BaseRaw):
             raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
 
-        try:
+        f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+        b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
+        w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
+        mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
+    
+        # Parse events from raw data
+        events = mne.find_events(self.processed,
+                                    **f_kwargs)
 
-            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
-            b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
-            w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
-            mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
-        
-            # Parse events from raw data
-            events = mne.find_events(self.processed,
-                                     **f_kwargs)
+        # Build mappings from eventfile
+        event_id, range_map = self.build_event_dict(eventsfile)
+        merged_events = self.merge_event_ranges(events, range_map)
+        merged_events = self.sanitize_events(merged_events, event_id)
 
-            # Build mappings from eventfile
-            event_id, range_map = self.build_event_dict(eventsfile)
-            merged_events = self.merge_event_ranges(events, range_map)
-            merged_events = self.sanitize_events(merged_events, event_id)
+        # Create BIDS Path
+        bids_path = BIDSPath(
+            subject=subject,
+            session=session,
+            task=task,
+            run=run,
+            datatype="eeg",
+            root=bids_root,
+            **b_kwargs
+        )
 
-            # Create BIDS Path
-            bids_path = BIDSPath(
-                subject=subject,
-                session=session,
-                task=task,
-                run=run,
-                datatype="eeg",
-                root=bids_root,
-                **b_kwargs
-            )
+        write_raw_bids(
+            raw=self.processed, 
+            format='BrainVision', 
+            bids_path=bids_path, 
+            events=merged_events, 
+            event_id=event_id, 
+            allow_preload=True, 
+            overwrite=overwrite,
+            **w_kwargs
+        )
 
-            write_raw_bids(
-                raw=self.processed, 
-                format='BrainVision', 
-                bids_path=bids_path, 
-                events=merged_events, 
-                event_id=event_id, 
-                allow_preload=True, 
-                overwrite=overwrite,
-                **w_kwargs
-            )
+        # Write dataset_description.json
+        self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-            # Write dataset_description.json
-            self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
+        print("BIDS conversion completed.")
 
-            self.logger.debug("BIDS conversion completed.")
-
-        except Exception as e:
-            self.logger.error(str(e))
-            self.exit_code = 1
 
     @staticmethod
     def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
@@ -164,6 +157,6 @@ class BIDSConversion(BaseClass):
                 raise ValueError(f"Event {set(events[:,-1]) - set(event_id.values())}"
                                 "has not been declared in eventsfile") 
 
-        logger.info(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
+        print(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
 
         return events

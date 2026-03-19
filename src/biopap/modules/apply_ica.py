@@ -25,21 +25,15 @@ class ApplyICA(BaseClass):
     
     def __init__(self,
                  raw,
-                 logger,
                  n_components=None,
                  method='fastica',
                  **kwargs):
         
         self.processed = raw
 
-        try:
-            i_kwargs = kwargs['ICA'] if 'ICA' in kwargs else {}
-            f_kwargs = kwargs['fit'] if 'fit' in kwargs else {}
-            a_kwargs = kwargs['apply'] if 'apply' in kwargs else {}
+        i_kwargs = kwargs['ICA'] if 'ICA' in kwargs else {}
+        f_kwargs = kwargs['fit'] if 'fit' in kwargs else {}
+        a_kwargs = kwargs['apply'] if 'apply' in kwargs else {}
 
-            ica = mne.preprocessing.ICA(n_components=n_components, method=method, **i_kwargs).fit(self.processed, **f_kwargs)
-            self.processed = ica.apply(self.processed, **a_kwargs)
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
+        ica = mne.preprocessing.ICA(n_components=n_components, method=method, **i_kwargs).fit(self.processed, **f_kwargs)
+        self.processed = ica.apply(self.processed, **a_kwargs)

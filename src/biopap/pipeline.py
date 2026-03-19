@@ -61,12 +61,8 @@ class Pipeline:
 
     def __init__(self, 
                  config_file,
-                 input_file = None,
-                 data = None,
-                 verbose: Optional[Union[bool, str, int]]='WARNING',
-                 **kwargs): 
-        # **kwargs ultimately go into mne.io.read_raw_bdf via LoadData
-
+                 data,
+                 verbose: Optional[Union[bool, str, int]]='WARNING'):
         # https://mne.tools/stable/generated/mne.set_log_level.html
         # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
         # The verbose keyword argument can be ‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’, ‘CRITICAL’, 
@@ -75,16 +71,8 @@ class Pipeline:
 
         self.config_file = config_file
         self.config = self.read_config(self.config_file)
-
         self.verbose = verbose
-
-        if input_file is None and data is None:
-            raise ValueError("need input_file or data")
-        elif data is not None:
-            self._initial_data = data
-        else:
-            self._initial_data = self.load_data(input_file=input_file, **kwargs)
-        
+        self._initial_data = data
         self._processed_data = None
 
     @staticmethod
@@ -96,20 +84,6 @@ class Pipeline:
             config = yaml.safe_load(file)
 
         return config
-
-    def load_data(self, input_file, **kwargs):
-        load = LoadData(
-            file_path=input_file,
-            logger=logger,
-            preload=True,
-            mne_silent=True,
-            verbose=self.verbose,
-            **kwargs)
-
-        if load.exit_code == 1:
-            raise ValueError(f"could not load '{input_file}'")
-
-        return load.raw
 
     def add_step(self, module, cfg=None, cfg_label=None):
         """
@@ -129,9 +103,6 @@ class Pipeline:
                 Cfg=cfg,
                 Order=order
             ))
-
-    def reset(self):
-        self._steps = []
 
     def run(self):
 
@@ -159,6 +130,21 @@ class Pipeline:
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
+    def reset(self):
+        self._steps = []
+
+    @property
+    def steps(self):
+        return self._steps
+        
+    @property
+    def initial_data(self):
+        return self._initial_data
+
+    @property
+    def processed_data(self):
+        return self._processed_data
+
     def to_file(self, save_path, overwrite=False):
         if not overwrite and save_path.exists():
             p_save_path = save_path
@@ -178,17 +164,17 @@ class Pipeline:
         logger.info(f"wrote pipeline to '{save_path}'")
 
     @classmethod
-    def from_file(cls, save_path, input_file, **kwargs):
+    def from_file(cls, save_path, data):
         if not Path(save_path).exists:
-            raise FileNotFoundError(f"'{save_path}' does not exist")
+            raise FileNotFoundError(f"{save_path} does not exist")
 
         with open(save_path, 'r') as file:
             pipe_cfg = json.load(file)
 
         if not 'biopap_pipeline' in pipe_cfg:
-            raise ValueError(f"'biopap_pipeline' section not found in '{save_path}'")
+            raise ValueError(f"'biopap_pipeline' section not found in {save_path}")
 
-        pipeline = cls(input_file=input_file, config_file=None, **kwargs)
+        pipeline = cls(data=data, config_file=None)
 
         for step in pipe_cfg['biopap_pipeline']:
             pipeline._steps.append(
@@ -199,18 +185,6 @@ class Pipeline:
                 ))
 
         return pipeline
-
-    @property
-    def steps(self):
-        return self._steps
-        
-    @property
-    def initial_data(self):
-        return self._initial_data
-
-    @property
-    def processed_data(self):
-        return self._processed_data
 
 
 if __name__=="__main__":
@@ -227,18 +201,23 @@ if __name__=="__main__":
 
     add_logfile_handler(args.log_file)
 
+    # assuming BDF file as input
+    load = LoadData(
+        file_path=args.input_file,
+        mne_silent=True,
+        logger=logger)
+
     if args.stored_pipeline and not args.config_file:
 
-        Pipeline.from_file(
+        pipe = Pipeline.from_file(
             save_path=args.stored_pipeline,
-            input_file=args.input_file
-        ).run()
+            data=load.raw)
     
     else:
 
         pipe = Pipeline(
             config_file=args.config_file,
-            input_file=args.input_file)
+            data=load.raw)
 
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
@@ -249,4 +228,4 @@ if __name__=="__main__":
         if args.stored_pipeline:
             pipe.to_file(save_path=args.stored_pipeline)
 
-        pipe.run()
+    pipe.run()

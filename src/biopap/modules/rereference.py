@@ -32,21 +32,15 @@ class Rereference(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
                  **kwargs):
 
         self.processed = raw
 
-        try:
-            self.processed, self.ref_data = mne.set_eeg_reference(
-                self.processed,
-                ref_channels=ref_channels,
-                copy=copy,
-                verbose=self.verbose,
-                **kwargs)
-            
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
+        self.processed, self.ref_data = mne.set_eeg_reference(
+            self.processed,
+            ref_channels=ref_channels,
+            copy=copy,
+            verbose=self.verbose,
+            **kwargs)

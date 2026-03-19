@@ -6,7 +6,7 @@ class BaseClass(ABC):
     raw = None
     processed = None
     verbose = None
-    exit_code = 0
+    stdout = []
 
     def __init__(self, 
                  verbose: Optional[Union[bool, str, int]]=None):

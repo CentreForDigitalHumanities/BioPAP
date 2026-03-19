@@ -24,17 +24,8 @@ class BaselineCorrection(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  baseline,
                  ):
         
         self.processed = raw
-                     
-        try:
-        
-            self.processed = self.processed.apply_baseline(baseline)
-                                            
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
-
+        self.processed = self.processed.apply_baseline(baseline)

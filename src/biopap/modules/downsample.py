@@ -26,7 +26,6 @@ class Downsample(BaseClass):
     def __init__(self,
                  raw,
                  sfreq,
-                 logger,
                  resample_events=True,
                  **kwargs):
 
@@ -46,24 +45,20 @@ class Downsample(BaseClass):
 
         self.processed = raw
 
-        try:
-            if resample_events and isinstance(self.raw, mne.io.BaseRaw):
-                events = mne.find_events(self.raw)
-                self.processed, self.events = self.raw.resample(** {
-                    'sfreq': sfreq, 
-                    'events': events,
-                    'verbose': self.verbose
-                    } | kwargs)
-            else:
-                self.processed.resample(** {
-                    'sfreq': sfreq, 
-                    'verbose': self.verbose
-                    } | kwargs)
+        if resample_events and isinstance(self.raw, mne.io.BaseRaw):
+            events = mne.find_events(self.raw)
+            self.processed, self.events = self.raw.resample(** {
+                'sfreq': sfreq, 
+                'events': events,
+                'verbose': self.verbose
+                } | kwargs)
+        else:
+            self.processed.resample(** {
+                'sfreq': sfreq, 
+                'verbose': self.verbose
+                } | kwargs)
 
-            # RuntimeWarning: Resampling of the stim channels caused event information 
-            # to become unreliable. Consider finding events on the original data and 
-            # passing the event matrix as a parameter.
+        # RuntimeWarning: Resampling of the stim channels caused event information 
+        # to become unreliable. Consider finding events on the original data and 
+        # passing the event matrix as a parameter.
 
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
