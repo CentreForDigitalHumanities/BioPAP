@@ -28,6 +28,7 @@ class BlinkDetection(BaseClass):
     """
     def __init__(self,
                  raw,
+                 silent: bool=False,
                  **kwargs):
         
         self.processed = raw

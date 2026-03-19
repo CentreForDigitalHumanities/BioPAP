@@ -25,6 +25,7 @@ class BaselineCorrection(BaseClass):
     def __init__(self,
                  raw,
                  baseline,
+                 silent: bool=False,
                  ):
         
         self.processed = raw

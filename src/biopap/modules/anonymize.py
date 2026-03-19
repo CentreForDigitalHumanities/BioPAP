@@ -38,6 +38,7 @@ class Anonymize(BaseClass):
                  daysback: int,
                  experimenter: str=None,
                  participant_id: str=None,
+                 silent: bool=False,
                  **kwargs):
 
         self.processed = raw

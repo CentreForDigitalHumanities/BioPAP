@@ -39,6 +39,7 @@ class ArtifactReject(BaseClass):
                 max_amplitude_uv=75,
                 min_activity_uv=0.5,
                 interval_ms=100,
+                silent: bool=False,
                 **kwargs):
           
         self.processed = raw

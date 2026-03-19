@@ -26,6 +26,7 @@ class BIDSConversion(BaseClass):
                  run,
                  overwrite=False,
                  dataset_description=None,
+                 silent: bool=False,
                  **kwargs):
                 
         self.processed = raw

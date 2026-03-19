@@ -38,6 +38,7 @@ class Plot(BaseClass):
                  save_folder=None,
                  save_postfix=None,
                  save_overwrite=False,
+                 silent: bool=False,
                  **kwargs):
 
         self.raw = raw

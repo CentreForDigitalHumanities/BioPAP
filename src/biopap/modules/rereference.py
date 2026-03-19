@@ -34,6 +34,7 @@ class Rereference(BaseClass):
                  raw,
                  ref_channels=['EXG1', 'EXG2'],
                  copy=False,
+                 silent: bool=False,
                  **kwargs):
 
         self.processed = raw

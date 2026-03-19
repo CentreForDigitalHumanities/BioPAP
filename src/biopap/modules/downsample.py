@@ -27,6 +27,7 @@ class Downsample(BaseClass):
                  raw,
                  sfreq,
                  resample_events=True,
+                 silent: bool=False,
                  **kwargs):
 
         # Downsampling

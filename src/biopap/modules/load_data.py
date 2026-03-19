@@ -37,6 +37,7 @@ class LoadData(BaseClass):
                  file_path: str | Path,
                  preload: bool=True,
                  verbose: Optional[Union[bool, str, int]]=None,
+                 silent: bool=False,
                  **kwargs
                  ) -> None:
 

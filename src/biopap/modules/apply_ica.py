@@ -27,6 +27,7 @@ class ApplyICA(BaseClass):
                  raw,
                  n_components=None,
                  method='fastica',
+                 silent: bool=False,
                  **kwargs):
         
         self.processed = raw

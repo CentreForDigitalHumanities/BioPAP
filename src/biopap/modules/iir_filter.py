@@ -40,6 +40,7 @@ class IIRFilter(BaseClass):
                  h_freq,
                  order=4, 
                  ftype='butter',
+                 silent: bool=False,
                  **kwargs):
 
         self.processed = raw
