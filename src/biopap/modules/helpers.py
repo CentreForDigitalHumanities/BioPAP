@@ -1,21 +1,23 @@
 import sys
 from io import StringIO
 
-class Capturing(list):
+class CaptureStdout(list):
 
     """
-        usage:
-            with Capturing() as captured:
-                func(arg)
-        captures stdout from func() in var captured
+    captures stdout from func() in var captured
     """
+
+    def __init__(self, do_capture = True):
+        self.do_capture = do_capture
 
     def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
+        if self.do_capture:
+            self._stdout = sys.stdout
+            sys.stdout = self._stringio = StringIO()
         return self
 
     def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio
-        sys.stdout = self._stdout
+        if self.do_capture:
+            self.extend(self._stringio.getvalue().splitlines())
+            del self._stringio
+            sys.stdout = self._stdout
