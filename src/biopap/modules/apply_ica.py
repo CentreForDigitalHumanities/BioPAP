@@ -29,12 +29,16 @@ class ApplyICA(BaseClass):
                  method='fastica',
                  silent: bool=False,
                  **kwargs):
+
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
         
-        self.processed = raw
+            self.processed = raw
 
-        i_kwargs = kwargs['ICA'] if 'ICA' in kwargs else {}
-        f_kwargs = kwargs['fit'] if 'fit' in kwargs else {}
-        a_kwargs = kwargs['apply'] if 'apply' in kwargs else {}
+            i_kwargs = kwargs['ICA'] if 'ICA' in kwargs else {}
+            f_kwargs = kwargs['fit'] if 'fit' in kwargs else {}
+            a_kwargs = kwargs['apply'] if 'apply' in kwargs else {}
 
-        ica = mne.preprocessing.ICA(n_components=n_components, method=method, **i_kwargs).fit(self.processed, **f_kwargs)
-        self.processed = ica.apply(self.processed, **a_kwargs)
+            ica = mne.preprocessing.ICA(n_components=n_components, method=method, **i_kwargs).fit(self.processed, **f_kwargs)
+            self.processed = ica.apply(self.processed, **a_kwargs)

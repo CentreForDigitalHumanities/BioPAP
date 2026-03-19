@@ -41,17 +41,21 @@ class Anonymize(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
-        self.processed.anonymize(
-            daysback=daysback,
-            verbose=self.verbose,
-            **kwargs)
+        super().__init__(silent)
 
-        # self.processed.set_meas_date(datetime.now(tz=timezone.utc))
-        
-        if experimenter is not None:
-            self.processed.info['experimenter'] = str(experimenter)
+        with self.capture_stdout as self.stdout:
 
-        if participant_id is not None:
-            self.processed.info['subject_info'] = {'his_id': str(participant_id)}
+            self.processed = raw
 
+            self.processed.anonymize(
+                daysback=daysback,
+                verbose=self.verbose,
+                **kwargs)
+
+            # self.processed.set_meas_date(datetime.now(tz=timezone.utc))
+            
+            if experimenter is not None:
+                self.processed.info['experimenter'] = str(experimenter)
+
+            if participant_id is not None:
+                self.processed.info['subject_info'] = {'his_id': str(participant_id)}

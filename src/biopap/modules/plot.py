@@ -41,46 +41,50 @@ class Plot(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-        self.raw = raw
-        self.processed = self.raw.copy()
+        super().__init__(silent)
 
-        if save_folder:
-            d_out = Path(save_folder)
-            d_out.mkdir(parents=True, exist_ok=True)
-            f_src = Path(self.raw.info['subject_info']['his_id'])
+        with self.capture_stdout as self.stdout:
 
-            if save_postfix:
-                f_new = Path(f_src.with_name(f'{f_src}_{save_postfix}.png').name)
+            self.raw = raw
+            self.processed = self.raw.copy()
+
+            if save_folder:
+                d_out = Path(save_folder)
+                d_out.mkdir(parents=True, exist_ok=True)
+                f_src = Path(self.raw.info['subject_info']['his_id'])
+
+                if save_postfix:
+                    f_new = Path(f_src.with_name(f'{f_src}_{save_postfix}.png').name)
+                else:
+                    f_new = Path(f_src.with_suffix('.png').name)
+
+                p_out = d_out / f_new
+
+                if not save_overwrite:
+                    i = 1
+                    while p_out.exists():
+                        p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
+                        i += 1
             else:
-                f_new = Path(f_src.with_suffix('.png').name)
+                p_out = None
 
-            p_out = d_out / f_new
+            if isinstance(self.processed, mne.io.BaseRaw):
+                events = mne.find_events(self.processed)
+            else:
+                events = self.processed.events
 
-            if not save_overwrite:
-                i = 1
-                while p_out.exists():
-                    p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
-                    i += 1
-        else:
-            p_out = None
+            args = {
+                    'events': events,
+                    'title': title,
+                    'block': True,
+                    'show': True,
+                }
 
-        if isinstance(self.processed, mne.io.BaseRaw):
-            events = mne.find_events(self.processed)
-        else:
-            events = self.processed.events
+            if p_out:
+                args['block'] = False
+                args['show'] = False
 
-        args = {
-                'events': events,
-                'title': title,
-                'block': True,
-                'show': True,
-            }
+            plot = self.processed.plot(** args | kwargs)
 
-        if p_out:
-            args['block'] = False
-            args['show'] = False
-
-        plot = self.processed.plot(** args | kwargs)
-
-        if p_out:
-            plot.grab().save(str(p_out))
+            if p_out:
+                plot.grab().save(str(p_out))

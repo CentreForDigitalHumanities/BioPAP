@@ -37,11 +37,15 @@ class Rereference(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        self.processed, self.ref_data = mne.set_eeg_reference(
-            self.processed,
-            ref_channels=ref_channels,
-            copy=copy,
-            verbose=self.verbose,
-            **kwargs)
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
+
+            self.processed, self.ref_data = mne.set_eeg_reference(
+                self.processed,
+                ref_channels=ref_channels,
+                copy=copy,
+                verbose=self.verbose,
+                **kwargs)

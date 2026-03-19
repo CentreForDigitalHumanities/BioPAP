@@ -30,21 +30,25 @@ class BlinkDetection(BaseClass):
                  raw,
                  silent: bool=False,
                  **kwargs):
+
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
         
-        self.processed = raw
+            self.processed = raw
 
-        f_kwargs = kwargs['find_eog_events'] if 'find_eog_events' in kwargs else {}
-        a_kwargs = kwargs['Annotations'] if 'Annotations' in kwargs else {}
+            f_kwargs = kwargs['find_eog_events'] if 'find_eog_events' in kwargs else {}
+            a_kwargs = kwargs['Annotations'] if 'Annotations' in kwargs else {}
 
-        eog_events = mne.preprocessing.find_eog_events(self.processed, **f_kwargs)
-        onsets = eog_events[:, 0] / self.processed.info["sfreq"] - 0.25
-        durations = [0.5] * len(eog_events)
-        descriptions = ["bad blink"] * len(eog_events)
-        blink_annot = mne.Annotations(
-            onsets, 
-            durations, 
-            descriptions, 
-            orig_time=self.processed.info["meas_date"],
-            **a_kwargs
-        )
-        self.processed.set_annotations(blink_annot)
+            eog_events = mne.preprocessing.find_eog_events(self.processed, **f_kwargs)
+            onsets = eog_events[:, 0] / self.processed.info["sfreq"] - 0.25
+            durations = [0.5] * len(eog_events)
+            descriptions = ["bad blink"] * len(eog_events)
+            blink_annot = mne.Annotations(
+                onsets, 
+                durations, 
+                descriptions, 
+                orig_time=self.processed.info["meas_date"],
+                **a_kwargs
+            )
+            self.processed.set_annotations(blink_annot)

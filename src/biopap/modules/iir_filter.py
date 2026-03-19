@@ -43,21 +43,25 @@ class IIRFilter(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        # Zero phase shift Butterworth filters.
-        # Global filter settings:
-        # Low cutoff: 0.1 Hz, time constant 1.5915494309189535, order 4
-        # High cutoff: 35 Hz, order 4 
-        # Notch filter: ---
+        with self.capture_stdout as self.stdout:
 
-        # https://mne.tools/stable/generated/mne.filter.construct_iir_filter.html#mne.filter.construct_iir_filter
+            self.processed = raw
 
-        iir_params = dict(order=order, ftype=ftype)
+            # Zero phase shift Butterworth filters.
+            # Global filter settings:
+            # Low cutoff: 0.1 Hz, time constant 1.5915494309189535, order 4
+            # High cutoff: 35 Hz, order 4 
+            # Notch filter: ---
 
-        self.processed = self.processed.filter(l_freq=l_freq,
-            h_freq=h_freq,
-            method='iir',
-            iir_params=iir_params, 
-            verbose=self.verbose,
-            **kwargs)
+            # https://mne.tools/stable/generated/mne.filter.construct_iir_filter.html#mne.filter.construct_iir_filter
+
+            iir_params = dict(order=order, ftype=ftype)
+
+            self.processed = self.processed.filter(l_freq=l_freq,
+                h_freq=h_freq,
+                method='iir',
+                iir_params=iir_params, 
+                verbose=self.verbose,
+                **kwargs)

@@ -5,7 +5,6 @@ import yaml
 from pathlib import Path
 from typing import Union, Optional
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import Capturing
 
 
 class LoadData(BaseClass):
@@ -41,28 +40,25 @@ class LoadData(BaseClass):
                  **kwargs
                  ) -> None:
 
-        self.preload = preload
+        super().__init__(silent)
 
-        file_path = Path(file_path)
+        with self.capture_stdout as self.stdout:
 
-        if not file_path.exists():
-            raise ValueError(f"File '{file_path}' does not exist")
+            self.preload = preload
 
-        if file_path.suffix.lower()=='.bdf':
-            self.raw = self.read_bdf(file_path, **kwargs)
-        else:
-            raise ValueError(f"'{file_path}' is not a supported file")
+            file_path = Path(file_path)
 
-        self.loaded_file = file_path
+            if not file_path.exists():
+                raise ValueError(f"File '{file_path}' does not exist")
+
+            if file_path.suffix.lower()=='.bdf':
+                self.raw = self.read_bdf(file_path, **kwargs)
+            else:
+                raise ValueError(f"'{file_path}' is not a supported file")
+
+            self.loaded_file = file_path
 
 
     def read_bdf(self, file_path, **kwargs):
         raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
-
-        #     with Capturing() as capture:
-        #     if len(capture)>0:
-        #         self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
-        # else:
-        #     raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
-
         return raw_bdf

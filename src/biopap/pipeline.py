@@ -146,6 +146,7 @@ class Pipeline:
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
                 # log captured stdout
+                inst.clear_stdout()
             except Exception as e:
                 logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)}")
                 break

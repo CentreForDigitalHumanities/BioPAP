@@ -27,6 +27,9 @@ class BaselineCorrection(BaseClass):
                  baseline,
                  silent: bool=False,
                  ):
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
         
-        self.processed = raw
-        self.processed = self.processed.apply_baseline(baseline)
+            self.processed = raw
+            self.processed = self.processed.apply_baseline(baseline)

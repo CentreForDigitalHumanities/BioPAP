@@ -41,45 +41,48 @@ class ArtifactReject(BaseClass):
                 interval_ms=100,
                 silent: bool=False,
                 **kwargs):
-          
-        self.processed = raw
 
-        if not isinstance(self.processed, mne.Epochs):
-            raise TypeError(
-                "the input must be an mne.Epochs instance, "
-                f"got {type(self.processed)} instead."
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
+
+            if not isinstance(self.processed, mne.Epochs):
+                raise TypeError(
+                    "the input must be an mne.Epochs instance, "
+                    f"got {type(self.processed)} instead."
+                )
+            
+            p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
+            i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
+
+            bad_mask, picks = find_bad_channels(
+                self.processed,
+                max_gradient_uv,
+                max_amplitude_uv,
+                min_activity_uv,
+                interval_ms,
+                **p_kwargs
             )
-        
-        p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
-        i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
 
-        bad_mask, picks = find_bad_channels(
-            self.processed,
-            max_gradient_uv,
-            max_amplitude_uv,
-            min_activity_uv,
-            interval_ms,
-            **p_kwargs
-        )
+            counts = bad_mask.sum(axis=0)
 
-        counts = bad_mask.sum(axis=0)
+            # TODO (EXTRA): create a plot out of this
+            for ch, n in zip(self.processed.ch_names, counts):
+                print(f"{ch}: bad in {n} epochs")
 
-        # TODO (EXTRA): create a plot out of this
-        for ch, n in zip(self.processed.ch_names, counts):
-            print(f"{ch}: bad in {n} epochs")
+            if mode == "nan_replacement":
+                apply_nan_replacement(self.processed, bad_mask, picks)
 
-        if mode == "nan_replacement":
-            apply_nan_replacement(self.processed, bad_mask, picks)
+            elif mode == "interpolation":
+                apply_interpolation(self.processed, bad_mask, picks, **i_kwargs)
 
-        elif mode == "interpolation":
-            apply_interpolation(self.processed, bad_mask, picks, **i_kwargs)
-
-        else:
-            raise ValueError(
-                f"Unknown mode '{mode}'. "
-                "Use 'nan_replacement' or 'interpolation'."
-            )
-        
+            else:
+                raise ValueError(
+                    f"Unknown mode '{mode}'. "
+                    "Use 'nan_replacement' or 'interpolation'."
+                )
 
 
 def find_bad_channels(

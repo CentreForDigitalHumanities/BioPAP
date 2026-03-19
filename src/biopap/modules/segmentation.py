@@ -53,34 +53,38 @@ class Segmentation(BaseClass):
                  silent: bool=False,
                  **kwargs):
         
-        self.processed = raw
+        super().__init__(silent)
 
-        f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
-        e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
+        with self.capture_stdout as self.stdout:
 
-        events = mne.find_events(self.processed,
-                                    stim_channel=stim_channel,
-                                    verbose=self.verbose,
-                                    **f_kwargs)
+            self.processed = raw
 
-        include = None
+            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+            e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
-        if reference_markers.get("range"):
-            range_markers = re.split('-|,|:', reference_markers.get("range"))
-            include = list(range(int(range_markers[0]), int(range_markers[1])+1))
+            events = mne.find_events(self.processed,
+                                        stim_channel=stim_channel,
+                                        verbose=self.verbose,
+                                        **f_kwargs)
 
-        elif reference_markers.get("list"):
-            include = reference_markers["list"]
+            include = None
 
-        if include:
-            events = mne.pick_events(events, include=include)
-        else:
-            print("No reference markers provided; epochs are created with all events")
-        
-        self.processed = mne.Epochs(self.processed, 
-                            events, 
-                            tmin=start, 
-                            tmax=end, 
-                            baseline=baseline,
-                            preload=True,
-                            **e_kwargs)
+            if reference_markers.get("range"):
+                range_markers = re.split('-|,|:', reference_markers.get("range"))
+                include = list(range(int(range_markers[0]), int(range_markers[1])+1))
+
+            elif reference_markers.get("list"):
+                include = reference_markers["list"]
+
+            if include:
+                events = mne.pick_events(events, include=include)
+            else:
+                print("No reference markers provided; epochs are created with all events")
+            
+            self.processed = mne.Epochs(self.processed, 
+                                events, 
+                                tmin=start, 
+                                tmax=end, 
+                                baseline=baseline,
+                                preload=True,
+                                **e_kwargs)

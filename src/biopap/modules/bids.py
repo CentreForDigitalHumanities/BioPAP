@@ -28,60 +28,63 @@ class BIDSConversion(BaseClass):
                  dataset_description=None,
                  silent: bool=False,
                  **kwargs):
+
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
                 
-        self.processed = raw
+            self.processed = raw
+            
+            bids_root = Path(bids_root)
+
+            if subject is None:
+                subject = self.processed.info.get("subject_info", {}).get("his_id", None)
+
+            dataset_description = dataset_description or {}
+
+            if not isinstance(self.raw, mne.io.BaseRaw):
+                raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
+
+            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+            b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
+            w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
+            mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
         
-        bids_root = Path(bids_root)
+            # Parse events from raw data
+            events = mne.find_events(self.processed,
+                                        **f_kwargs)
 
-        if subject is None:
-            subject = self.processed.info.get("subject_info", {}).get("his_id", None)
+            # Build mappings from eventfile
+            event_id, range_map = self.build_event_dict(eventsfile)
+            merged_events = self.merge_event_ranges(events, range_map)
+            merged_events = self.sanitize_events(merged_events, event_id)
 
-        dataset_description = dataset_description or {}
+            # Create BIDS Path
+            bids_path = BIDSPath(
+                subject=subject,
+                session=session,
+                task=task,
+                run=run,
+                datatype="eeg",
+                root=bids_root,
+                **b_kwargs
+            )
 
-        if not isinstance(self.raw, mne.io.BaseRaw):
-            raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
+            write_raw_bids(
+                raw=self.processed, 
+                format='BrainVision', 
+                bids_path=bids_path, 
+                events=merged_events, 
+                event_id=event_id, 
+                allow_preload=True, 
+                overwrite=overwrite,
+                **w_kwargs
+            )
 
-        f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
-        b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
-        w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
-        mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
-    
-        # Parse events from raw data
-        events = mne.find_events(self.processed,
-                                    **f_kwargs)
+            # Write dataset_description.json
+            self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-        # Build mappings from eventfile
-        event_id, range_map = self.build_event_dict(eventsfile)
-        merged_events = self.merge_event_ranges(events, range_map)
-        merged_events = self.sanitize_events(merged_events, event_id)
-
-        # Create BIDS Path
-        bids_path = BIDSPath(
-            subject=subject,
-            session=session,
-            task=task,
-            run=run,
-            datatype="eeg",
-            root=bids_root,
-            **b_kwargs
-        )
-
-        write_raw_bids(
-            raw=self.processed, 
-            format='BrainVision', 
-            bids_path=bids_path, 
-            events=merged_events, 
-            event_id=event_id, 
-            allow_preload=True, 
-            overwrite=overwrite,
-            **w_kwargs
-        )
-
-        # Write dataset_description.json
-        self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
-
-        print("BIDS conversion completed.")
-
+            print("BIDS conversion completed.")
 
     @staticmethod
     def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
