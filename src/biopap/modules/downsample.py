@@ -1,10 +1,28 @@
-"""Class for downsampling"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class Downsample(BaseClass):
+    """
+    Class for downsampling EEG data to a lower sampling rate.
 
+    Applies MNE's built-in ``resample`` function to the input data.
+    
+    Parameters
+    ----------
+    raw : mne.Raw | mne.Epochs
+        Input data.
+    sfreq : int
+        Target sampling rate in Hz.
+    resample_events : bool, default True
+        Whether to resample event onsets along with the data.
+    **kwargs
+        Additional keyword arguments passed to MNE's ``resample`` method.
+
+    Attributes
+    ----------
+    processed : mne.Raw | mne.Epochs
+        Output data after resampling.
+    """
     def __init__(self,
                  raw,
                  sfreq,

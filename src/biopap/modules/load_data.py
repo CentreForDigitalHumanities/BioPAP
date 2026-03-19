@@ -8,7 +8,32 @@ from biopap.modules.base_class import BaseClass
 from biopap.modules.helpers import Capturing
 
 
+<<<<<<< load_data_in_pipeline
 class LoadData(BaseClass):
+=======
+class LoadData():
+    """
+    Class for loading BDF data from file.
+
+    Parameters
+    ----------
+    file_path : str | Path
+        Path to the input BDF file.
+    preload : bool | str, default True
+        Preload data into memory for data manipulation and faster indexing. If True, the data will be 
+        preloaded into memory (fast, requires large amount of memory). If preload is a string, 
+        preload is the file name of a memory-mapped file which is used to store the data on the 
+        hard drive (slower, requires less memory).
+    **kwargs
+        Additional keyword arguments passed to the underlying
+        ``mne.io.read_raw_bdf()`` method.
+
+    Attributes
+    ----------
+    raw : mne.io.Raw
+        Loaded raw data.
+    """
+>>>>>>> develop
 
     loaded_file = None
 

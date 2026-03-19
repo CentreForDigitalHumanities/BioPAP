@@ -1,12 +1,26 @@
-"""Class for baseline correction"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class BaselineCorrection(BaseClass):
+    """
+    Class for applying baseline correction.
 
-    # *** Baseline Correction ***
-    # Begin: -200.00 ms End: 0.00 ms
+    Performs baseline correction on the input data using MNE's
+    built-in ``apply_baseline()`` method (for Raw or Epochs).
+
+    Parameters
+    ----------
+    raw : mne.Raw | mne.Epochs
+        Input data.
+    baseline: tuple of length 2 | None
+        The time interval (start, stop) in seconds to use for
+        baseline correction. Use None to skip baseline correction.
+
+    Attributes
+    ----------
+    processed : mne.Raw | mne.Epochs
+        Baseline corrected output data.
+    """
 
     def __init__(self,
                  raw,

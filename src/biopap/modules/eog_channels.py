@@ -1,9 +1,36 @@
-"""Class for adding vEOG and hEOG"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class EOGChannels(BaseClass):
+    """
+    Class for adding vertical and horizontal EOG channels.
+
+    Creates new bipolar channels from specified reference, anode, and
+    cathode channels using MNE's ``set_bipolar_reference()`` function.
+    
+    Parameters
+    ----------
+    raw : mne.Raw | mne.Epochs
+        Input data.
+    ref_channels : list of str
+        Reference channels used for the bipolar derivation.
+    anode_channels : list of str
+        Channels to use as the anode in the bipolar derivation.
+    cathode_channels : list of str
+        Channels to use as the cathode in the bipolar derivation.
+    copy : bool, default False
+        If True, returns a copy of the data; otherwise, modifies in place.
+    drop_refs : bool, default False
+        If True, drop the original reference channels after creating the bipolar channels.
+    **kwargs
+        Additional keyword arguments passed to MNE's
+        ``set_bipolar_reference()`` function.
+
+    Attributes
+    ----------
+    processed : mne.Raw | mne.Epochs
+        Output data with EOG channels.
+    """
 
     # https://mne.tools/stable/auto_tutorials/preprocessing/10_preprocessing_overview.html#ocular-artifacts-eog
 
@@ -40,7 +67,7 @@ class EOGChannels(BaseClass):
                 raise ValueError(f"Non-existant channels: {'; '.join(missing_channels)}")
 
             # self.processed = mne.add_reference_channels(self.processed, ref_channels=ref_channels, copy=False)
-            mne.set_bipolar_reference(
+            self.processed = mne.set_bipolar_reference(
                 self.processed,
                 anode=anode_channels,
                 cathode=cathode_channels,

@@ -5,8 +5,6 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "BioPAP"
 authors = [
-    {name = "Shiva Nadi", email = "s.nadi@uu.nl"},
-    {name = "Raoul Schram ", email = "r.d.schram@uu.nl"},
     {name = "Maarten Schermer", email = "m.d.schermer@uu.nl"},
     {name = "Matty Vermet", email = "m.s.vermet@uu.nl"},
 ]
@@ -31,11 +29,11 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-	"pytest", "ruff", "mypy", "nbval", "pytest-cov", 
+    "pytest", "ruff", "mypy", "nbval", "pytest-cov",
 ]
 docs = [
-    "sphinx<9.0.0", "sphinx-rtd-theme", "sphinxcontrib-napoleon",
-    "sphinx-autodoc-typehints", "sphinx_inline_tabs", "sphinx_copybutton",
+    "mkdocs-material",
+    "mkdocstrings[python]",
 ]
 
 [tool.setuptools_scm]

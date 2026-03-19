@@ -1,28 +1,37 @@
-"""Class for EEG artifact rejection: bad channels per epoch"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 import numpy as np
 
 class ArtifactReject(BaseClass):
-            
-    # *** Artifact Rejection - Automatic Inspection ***
-    # Used Channels: all
+    """
+    Class for rejecting or correcting bad channels in EEG epochs.
 
-    # Check Gradient:
-    # Maximal allowed voltage step: 50 µV/ms
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
+    Identifies bad channels per epoch and either interpolates them
+    using MNE's built-in functionality, or replaces them with NaNs.
 
-    # Check Amplitude:
-    # Minimal allowed amplitude: -75 µV
-    # Maximal allowed amplitude: 75 µV
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
+    Parameters
+    ----------
+    raw : mne.Epochs
+        Input data.
+    mode : {'interpolation', 'nan_replacement'}
+        Method for dealing with bad channels.
+    max_gradient_uv : int
+        Maximal allowed voltage step in µV/ms.
+    max_amplitude_uv : int
+        Maximal allowed amplitude in µV.
+    min_activity_uv : int
+        Lowest allowed activity in intervals in µV.
+    interval_ms: int
+        Interval length in milliseconds for checking activity.
+    **kwargs
+        Additional keyword arguments passed to the underlying
+        ``Epochs.pick_types()`` and ``Epochs.interpolate_bads()`` methods.
 
-    # Check Low Activity:
-    # Lowest allowed activity in intervals: 0.5 µV
-    # Interval Length: 100 ms
-    # Mark as Bad: Before Event: 200 ms After Event: 200 ms
-
+    Attributes
+    ----------
+    processed : mne.Epochs
+        Output data.
+    """
     def __init__(self,
                 raw,
                 logger,
