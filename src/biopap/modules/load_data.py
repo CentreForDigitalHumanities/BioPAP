@@ -8,9 +8,6 @@ from biopap.modules.base_class import BaseClass
 from biopap.modules.helpers import Capturing
 
 
-<<<<<<< load_data_in_pipeline
-class LoadData(BaseClass):
-=======
 class LoadData():
     """
     Class for loading BDF data from file.
@@ -33,7 +30,6 @@ class LoadData():
     raw : mne.io.Raw
         Loaded raw data.
     """
->>>>>>> develop
 
     loaded_file = None
 
