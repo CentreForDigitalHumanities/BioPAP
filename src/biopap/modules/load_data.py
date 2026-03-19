@@ -8,6 +8,9 @@ from biopap.modules.base_class import BaseClass
 from biopap.modules.helpers import Capturing
 
 
+<<<<<<< load_data_in_pipeline
+class LoadData(BaseClass):
+=======
 class LoadData():
     """
     Class for loading BDF data from file.
@@ -30,20 +33,23 @@ class LoadData():
     raw : mne.io.Raw
         Loaded raw data.
     """
+>>>>>>> develop
 
     loaded_file = None
-    exit_code = 0
 
     def __init__(self, 
                  file_path: str | Path,
                  logger,
                  preload: bool=True,
                  mne_silent: bool=False,
-                 verbose: Optional[Union[bool, str, int]]=None
+                 verbose: Optional[Union[bool, str, int]]=None,
+                 **kwargs
                  ) -> None:
 
         p_log_level = mne.set_log_level(verbose=verbose, return_old_level=True)
         self.logger = logger
+        self.mne_silent = mne_silent
+        self.preload = preload
 
         try:
             file_path = Path(file_path)
@@ -52,7 +58,7 @@ class LoadData():
                 raise ValueError(f"File '{file_path}' does not exist")
 
             if file_path.suffix.lower()=='.bdf':
-                self.raw = self.read_bdf(file_path, preload, mne_silent)
+                self.raw = self.read_bdf(file_path, **kwargs)
             else:
                 raise ValueError(f"'{file_path}' is not a supported file")
 
@@ -64,18 +70,14 @@ class LoadData():
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
-    def read_bdf(self, file_path, preload, mne_silent):
-        if mne_silent:
+    def read_bdf(self, file_path, **kwargs):
+        if self.mne_silent:
             with Capturing() as capture:
-                raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
+                raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
 
             if len(capture)>0:
                 self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
-
         else:
-            raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload)
+            raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
 
         return raw_bdf
-
-    def run(self):
-        pass
