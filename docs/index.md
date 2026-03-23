@@ -1,6 +1,7 @@
 # EEG Preprocessing Pipeline
 
-Some explanation about the project here?
+Some explanation about the project here? 
+
 
 ## Documentation
 
