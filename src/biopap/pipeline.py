@@ -16,7 +16,7 @@ from biopap.modules.bids import BIDSConversion
 from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.ica import ApplyICA
+from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot
@@ -43,15 +43,17 @@ class PipelineStep:
     Module: Any
     Cfg: dict
     Order: int
+    Save: Optional[Union[str, Path]] = None
 
     def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
+        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg} | save={self.Save}"
 
     def as_dict(self):
         return  {
             'module': self.Module.__name__,
             'cfg': self.Cfg,
             'order': self.Order,
+            'save': self.Save
             }
 
 
@@ -111,7 +113,7 @@ class Pipeline:
 
         return load.raw
 
-    def add_step(self, module, cfg=None, cfg_label=None):
+    def add_step(self, module, cfg=None, cfg_label=None, save=None):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
@@ -122,12 +124,20 @@ class Pipeline:
             p_cfg = self.config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
 
+        if cfg and 'save' in cfg:
+            if save:
+                _save = cfg.pop('save')
+                logger.warning(f"'save' defined in config file and in add_step. Using value from add_step: '{save}'")
+            else:
+                save = cfg.pop('save')
+
         order = max([x.Order+1 for x in self._steps], default=0)
         self._steps.append(
             PipelineStep(
                 Module=module,
                 Cfg=cfg,
-                Order=order
+                Order=order,
+                Save=Path(save) if save else None
             ))
 
     def reset(self):
@@ -155,6 +165,12 @@ class Pipeline:
                 logger.error(str(e))
             
             self._processed_data = inst.processed
+
+            if step.Save:
+                step.Save.parent.mkdir(parents=True, exist_ok=True)
+                inst.processed.save(step.Save, overwrite=True)
+                logger.info(f"saved output of step {step.Order} to '{step.Save}'")
+
             del inst
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
@@ -195,7 +211,8 @@ class Pipeline:
                 PipelineStep(
                     Module=getattr(sys.modules[__name__], step['module']),
                     Cfg=step['cfg'],
-                    Order=step['order']
+                    Order=step['order'],
+                    Save=Path(step['save']) if step.get('save') else None
                 ))
 
         return pipeline
