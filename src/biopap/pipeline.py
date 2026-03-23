@@ -46,8 +46,11 @@ class PipelineStep:
     Save: Optional[Union[str, Path]] = None
 
     def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg} | save={self.Save}"
-
+        if self.Save:
+            return f"{self.Order}: {self.Module.__name__} ← {self.Cfg} | save={self.Save}"
+        else:
+            return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
+        
     def as_dict(self):
         return  {
             'module': self.Module.__name__,
@@ -168,7 +171,7 @@ class Pipeline:
 
             if step.Save:
                 step.Save.parent.mkdir(parents=True, exist_ok=True)
-                inst.processed.save(step.Save, overwrite=True)
+                inst.processed.save(step.Save, overwrite=False)
                 logger.info(f"saved output of step {step.Order} to '{step.Save}'")
 
             del inst
