@@ -171,6 +171,13 @@ class Pipeline:
 
             if step.Save:
                 step.Save.parent.mkdir(parents=True, exist_ok=True)
+
+                original_stem = step.Save.stem
+                i = 1
+                while step.Save.exists():
+                    step.Save = step.Save.with_name(f'{original_stem}_({i}){step.Save.suffix}')
+                    i += 1
+
                 inst.processed.save(step.Save, overwrite=False)
                 logger.info(f"saved output of step {step.Order} to '{step.Save}'")
 
