@@ -2,8 +2,6 @@ import mne
 from random import randint
 from typing import Union
 from biopap.modules.base_class import BaseClass
-# from datetime import datetime
-# from datetime import timezone
 
 class Anonymize(BaseClass):
     """
@@ -59,8 +57,9 @@ class Anonymize(BaseClass):
                 verbose=self.verbose,
                 **kwargs)
 
-            # self.processed.set_meas_date(datetime.now(tz=timezone.utc))
-            
+            # not implemented
+            # self.processed.set_meas_date(measure_datee)
+
             if experimenter is not None:
                 self.processed.info['experimenter'] = str(experimenter)
 
