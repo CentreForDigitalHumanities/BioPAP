@@ -144,7 +144,7 @@ class Pipeline:
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            logger.info(f"Running step {step.Order}, {step.Module.__name__} < {cfg}")
+            logger.info(f"Running step {step.Order}, {step.Module.__name__}{f' < {cfg}' if cfg else ''}")
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
