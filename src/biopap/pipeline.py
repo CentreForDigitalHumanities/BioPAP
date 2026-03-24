@@ -144,6 +144,7 @@ class Pipeline:
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
+            
             logger.info(f"Running step {step.Order}, {step.Module.__name__} < {cfg}")
 
             try:
