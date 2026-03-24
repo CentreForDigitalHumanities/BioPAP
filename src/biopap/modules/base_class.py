@@ -8,6 +8,7 @@ class BaseClass(ABC):
     processed = None
     verbose = None
     stdout = []
+    log_config = True
 
     def __init__(self,
                  silent: bool=False):
