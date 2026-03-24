@@ -34,17 +34,19 @@ class ArtifactReject(BaseClass):
     """
     def __init__(self,
                 raw,
-                logger,
                 mode='interpolation',
                 max_gradient_uv=50,
                 max_amplitude_uv=75,
                 min_activity_uv=0.5,
                 interval_ms=100,
+                silent: bool=False,
                 **kwargs):
-          
-        self.processed = raw
 
-        try:
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
 
             if not isinstance(self.processed, mne.Epochs):
                 raise TypeError(
@@ -81,10 +83,7 @@ class ArtifactReject(BaseClass):
                     f"Unknown mode '{mode}'. "
                     "Use 'nan_replacement' or 'interpolation'."
                 )
-            
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
+
 
 def find_bad_channels(
     epochs,

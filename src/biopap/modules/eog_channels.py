@@ -44,17 +44,19 @@ class EOGChannels(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  ref_channels=['hEOG', 'vEOG'],
                  anode_channels=['EXG3','EXG5'], 
                  cathode_channels=['EXG4','EXG6'],
                  copy=False,
                  drop_refs=False,
+                 silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
             # drop existing channels with same name as new ref channels
             exist_channels = [x for x in ref_channels if x in self.processed.ch_names]
             self.processed.drop_channels(exist_channels)
@@ -79,7 +81,3 @@ class EOGChannels(BaseClass):
             
             # Set channel type 'eog' for reference channels
             self.processed.set_channel_types({eog_ch: 'eog' for eog_ch in ref_channels})
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1

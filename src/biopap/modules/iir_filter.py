@@ -36,16 +36,18 @@ class IIRFilter(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  l_freq,
                  h_freq,
                  order=4, 
                  ftype='butter',
+                 silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
 
             # Zero phase shift Butterworth filters.
             # Global filter settings:
@@ -58,12 +60,8 @@ class IIRFilter(BaseClass):
             iir_params = dict(order=order, ftype=ftype)
 
             self.processed = self.processed.filter(l_freq=l_freq,
-               h_freq=h_freq,
-               method='iir',
-               iir_params=iir_params, 
-               verbose=self.verbose,
-               **kwargs)
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
+                h_freq=h_freq,
+                method='iir',
+                iir_params=iir_params, 
+                verbose=self.verbose,
+                **kwargs)

@@ -3,6 +3,7 @@ import json
 import logging
 import mne
 import sys
+import warnings
 import yaml
 from dataclasses import dataclass
 from math import ceil
@@ -10,13 +11,14 @@ from pathlib import Path
 from typing import Any, Union, Optional
 
 from biopap.modules.anonymize import Anonymize
+from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
 from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.ica import ApplyICA
+from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot
@@ -24,9 +26,10 @@ from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
-
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
+logging.captureWarnings(True)
+warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
 
 def add_logfile_handler(log_file=None):
@@ -100,14 +103,13 @@ class Pipeline:
     def load_data(self, input_file, **kwargs):
         load = LoadData(
             file_path=input_file,
-            logger=logger,
             preload=True,
-            mne_silent=True,
+            silent=True,
             verbose=self.verbose,
             **kwargs)
 
-        if load.exit_code == 1:
-            raise ValueError(f"could not load '{input_file}'")
+        if len(load.stdout)>0:
+            [logger.info(f"LoadData:{x}") for x in load.stdout]
 
         return load.raw
 
@@ -140,19 +142,17 @@ class Pipeline:
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
 
-        dgts = int(len(str(max([x.Order for x in self.steps]))))
-
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
-            logger.info(f"step{step.Order:> {dgts}}; {step.Module.__name__}; {cfg}")
+            logger.info(f"Running step {step.Order}, {step.Module.__name__} < {cfg}")
 
             try:
-                inst = step.Module(** {'raw' : self._processed_data, 'logger' : logger } | cfg )
-                if inst.exit_code != 0:
-                    logger.critical(f"step {step.Order}. {step.Module.__name__} failed; exiting pipeline")
-                    break
+                inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
+                if len(inst.stdout)>0:
+                    [logger.info(f"{step.Module.__name__}:{x}") for x in inst.stdout]
             except Exception as e:
-                logger.error(str(e))
+                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)}")
+                break
             
             self._processed_data = inst.processed
             del inst
@@ -242,9 +242,17 @@ if __name__=="__main__":
 
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
+        pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
+        pipe.add_step(BlinkDetection)
+        pipe.add_step(Segmentation)
+        pipe.add_step(ArtifactReject)
+        pipe.add_step(BaselineCorrection)
+        pipe.add_step(ApplyICA)
+        # pipe.add_step(BIDSConversion)
+        pipe.add_step(Plot)
 
         if args.stored_pipeline:
             pipe.to_file(save_path=args.stored_pipeline)

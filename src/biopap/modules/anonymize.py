@@ -36,14 +36,17 @@ class Anonymize(BaseClass):
     def __init__(self,
                  raw: mne.io.Raw,
                  daysback: int,
-                 logger,
                  experimenter: str=None,
                  participant_id: str=None,
+                 silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
+
             self.processed.anonymize(
                 daysback=daysback,
                 verbose=self.verbose,
@@ -53,9 +56,6 @@ class Anonymize(BaseClass):
             
             if experimenter is not None:
                 self.processed.info['experimenter'] = str(experimenter)
+
             if participant_id is not None:
                 self.processed.info['subject_info'] = {'his_id': str(participant_id)}
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1

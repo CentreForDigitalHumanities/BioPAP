@@ -48,22 +48,24 @@ class Segmentation(BaseClass):
                  stim_channel,
                  start,
                  end,
-                 logger,
                  baseline=None,
                  reference_markers=None,
+                 silent: bool=False,
                  **kwargs):
         
-        self.processed = raw
-                     
-        try:
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
             events = mne.find_events(self.processed,
-                                     stim_channel=stim_channel,
-                                     verbose=self.verbose,
-                                     **f_kwargs)
+                                        stim_channel=stim_channel,
+                                        verbose=self.verbose,
+                                        **f_kwargs)
 
             include = None
 
@@ -86,8 +88,3 @@ class Segmentation(BaseClass):
                                 baseline=baseline,
                                 preload=True,
                                 **e_kwargs)
-                                            
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
-
