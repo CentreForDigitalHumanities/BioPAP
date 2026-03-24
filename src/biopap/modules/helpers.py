@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from io import StringIO
 
 class CaptureStdout(list):
@@ -21,3 +22,7 @@ class CaptureStdout(list):
             self.extend(self._stringio.getvalue().splitlines())
             del self._stringio
             sys.stdout = self._stdout
+
+
+def custom_formatwarning(message, category, filename, *args, **kwargs):
+    return f"{str(Path(filename).stem)}:{str(message)}"
