@@ -31,7 +31,6 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
 warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
-logger.addFilter(AppFilter())
 
 def add_logfile_handler(log_file=None):
     global logger
