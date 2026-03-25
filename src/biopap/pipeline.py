@@ -245,16 +245,14 @@ class Pipeline:
                 return
 
             for key, val in data.items():
-                if isinstance(val, (float, int, bool)) or val is None:
-                    print(f"{' '*indent}{key}: {val}")
-                elif isinstance(val, str):
-                    print(f"{' '*indent}{key}: '{val}'")
+                if isinstance(val, (float, int, bool, str)) or val is None:
+                    print(f"{' '*indent}{key}: {lstfrmt(val)}")
                 elif isinstance(val, list):
                     print(f"{' '*indent}{key}: [{', '.join(map(lstfrmt, val))}]")
                 elif isinstance(val, dict):
                     print(f"{' '*indent}{key}:")
-                    for key2, val2 in val.items():
-                        print_cfg({key2: val2}, indent+2)
+                    for subkey, subval in val.items():
+                        print_cfg({subkey: subval}, indent+2)
                 else:
                     print(f"{' '*indent}{key}: {val}")
 
