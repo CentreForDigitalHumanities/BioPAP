@@ -237,7 +237,7 @@ class Pipeline:
         print(f"created: {pipe_cfg['created']}")
         print()
 
-        def lstfrmt(x):
+        def valfrmt(x):
             return f"'{x}'" if isinstance(x, str) else str(x)
 
         def print_cfg(data, indent=4):
@@ -246,9 +246,9 @@ class Pipeline:
 
             for key, val in data.items():
                 if isinstance(val, (float, int, bool, str)) or val is None:
-                    print(f"{' '*indent}{key}: {lstfrmt(val)}")
+                    print(f"{' '*indent}{key}: {valfrmt(val)}")
                 elif isinstance(val, list):
-                    print(f"{' '*indent}{key}: [{', '.join(map(lstfrmt, val))}]")
+                    print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
                 elif isinstance(val, dict):
                     print(f"{' '*indent}{key}:")
                     for subkey, subval in val.items():
