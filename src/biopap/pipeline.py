@@ -2,7 +2,6 @@ import argparse
 import json
 import logging
 import mne
-import pprint
 import sys
 import warnings
 import yaml
@@ -306,7 +305,7 @@ if __name__=="__main__":
 
     if args.stored_pipeline and args.inspect:
 
-        Pipeline.inspect(save_path=args.stored_pipeline, compact=True)
+        Pipeline.inspect(save_path=args.stored_pipeline, compact=False)
     
     elif args.stored_pipeline and not args.config_file:
 
