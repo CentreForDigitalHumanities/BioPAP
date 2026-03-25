@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
 warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
+logger.addFilter(AppFilter())
 
 def add_logfile_handler(log_file=None):
     global logger
@@ -63,12 +64,13 @@ class Pipeline:
     _steps = []
 
     def __init__(self, 
-                 config_file,
-                 input_file = None,
+                 config_file = Union[str, Path],
+                 input_file: Optional[Union[str, Path]] = None,
                  data = None,
+                 subject_id: str = None,
                  verbose: Optional[Union[bool, str, int]]='WARNING',
                  **kwargs): 
-        # **kwargs ultimately go into mne.io.read_raw_bdf via LoadData
+        # **kwargs go into mne.io.read_raw_bdf via LoadData
 
         # https://mne.tools/stable/generated/mne.set_log_level.html
         # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
@@ -87,7 +89,16 @@ class Pipeline:
             self._initial_data = data
         else:
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
-        
+
+        if subject_id is not None:
+            self._subject_id = subject_id
+        else:
+            # not using raw['subject_info']['his_id'], as this is before anonymizing
+            self._subject_id = Path(self._initial_data.filenames[0]).stem
+
+        if len(self._subject_id)==0:
+            raise ValueError("No subject_id set")
+
         self._processed_data = None
 
     @staticmethod
@@ -148,14 +159,15 @@ class Pipeline:
             msg = f"Running step {step.Order}: {step.Module.__name__}"
             if step.Module.log_config:
                 msg = f"{msg} < {cfg}"
+            msg = f"{msg} [{self.subject_id}]"
             logger.info(msg)
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
                 if len(inst.stdout)>0:
-                    [logger.info(f"{step.Module.__name__}:{x}") for x in inst.stdout]
+                    [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
             except Exception as e:
-                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)}")
+                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
                 break
             
             self._processed_data = inst.processed
@@ -204,6 +216,10 @@ class Pipeline:
 
         return pipeline
 
+    @property
+    def subject_id(self):
+        return self._subject_id
+        
     @property
     def steps(self):
         return self._steps
