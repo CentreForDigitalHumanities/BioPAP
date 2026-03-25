@@ -156,7 +156,7 @@ class Pipeline:
             cfg = step.Cfg if step.Cfg else {}
 
             msg = f"Running step {step.Order}: {step.Module.__name__}"
-            if step.Module.log_config:
+            if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
             msg = f"{msg} [{self.subject_id}]"
             logger.info(msg)
