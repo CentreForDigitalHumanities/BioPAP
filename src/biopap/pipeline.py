@@ -87,6 +87,7 @@ class Pipeline:
         elif data is not None:
             self._initial_data = data
         else:
+            logger.info(f"reading {input_file}")
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
 
         if subject_id is not None:
