@@ -6,6 +6,7 @@ import sys
 import warnings
 import yaml
 from dataclasses import dataclass
+from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
@@ -63,12 +64,13 @@ class Pipeline:
     _steps = []
 
     def __init__(self, 
-                 config_file,
-                 input_file = None,
+                 config_file = Union[str, Path],
+                 input_file: Optional[Union[str, Path]] = None,
                  data = None,
+                 subject_id: str = None,
                  verbose: Optional[Union[bool, str, int]]='WARNING',
                  **kwargs): 
-        # **kwargs ultimately go into mne.io.read_raw_bdf via LoadData
+        # **kwargs go into mne.io.read_raw_bdf via LoadData
 
         # https://mne.tools/stable/generated/mne.set_log_level.html
         # https://mne.tools/stable/generated/mne.verbose.html#mne.verbose
@@ -86,8 +88,18 @@ class Pipeline:
         elif data is not None:
             self._initial_data = data
         else:
+            logger.info(f"reading {input_file}")
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
-        
+
+        if subject_id is not None:
+            self._subject_id = subject_id
+        else:
+            # not using raw['subject_info']['his_id'], as this is before anonymizing
+            self._subject_id = Path(self._initial_data.filenames[0]).stem
+
+        if len(self._subject_id)==0:
+            raise ValueError("No subject_id set")
+
         self._processed_data = None
 
     @staticmethod
@@ -146,16 +158,17 @@ class Pipeline:
             cfg = step.Cfg if step.Cfg else {}
 
             msg = f"Running step {step.Order}: {step.Module.__name__}"
-            if step.Module.log_config:
+            if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
+            msg = f"{msg} [{self.subject_id}]"
             logger.info(msg)
 
             try:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
                 if len(inst.stdout)>0:
-                    [logger.info(f"{step.Module.__name__}:{x}") for x in inst.stdout]
+                    [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
             except Exception as e:
-                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)}")
+                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
                 break
             
             self._processed_data = inst.processed
@@ -163,7 +176,7 @@ class Pipeline:
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
-    def to_file(self, save_path, overwrite=False):
+    def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
             p_save_path = save_path
             n = 1
@@ -172,17 +185,21 @@ class Pipeline:
                 n += 1
             save_path = p_save_path
 
+        data = {
+            'biopap_pipeline': [x.as_dict() for x in self.steps],
+            'config_file': str(self.config_file),  # not really necessary
+            'label': label,
+            'author': author,
+            'created': datetime.now().strftime("%c"),
+        }
+
         with open(save_path, 'w+', encoding='utf-8') as file:
-            json.dump({
-                    'biopap_pipeline': [x.as_dict() for x in self.steps],
-                    'config_file': str(self.config_file)  # not really necessary
-                }, file, ensure_ascii=True
-            )
+            json.dump(data, file, ensure_ascii=True)
 
         logger.info(f"wrote pipeline to '{save_path}'")
 
-    @classmethod
-    def from_file(cls, save_path, input_file, **kwargs):
+    @staticmethod
+    def read_saved(save_path):
         if not Path(save_path).exists:
             raise FileNotFoundError(f"'{save_path}' does not exist")
 
@@ -192,6 +209,11 @@ class Pipeline:
         if not 'biopap_pipeline' in pipe_cfg:
             raise ValueError(f"'biopap_pipeline' section not found in '{save_path}'")
 
+        return pipe_cfg
+
+    @classmethod
+    def from_file(cls, save_path, input_file, **kwargs):
+        pipe_cfg = cls.read_saved(save_path)
         pipeline = cls(input_file=input_file, config_file=None, **kwargs)
 
         for step in pipe_cfg['biopap_pipeline']:
@@ -204,6 +226,48 @@ class Pipeline:
 
         return pipeline
 
+    @classmethod
+    def inspect(cls, save_path, compact=False):
+
+        pipe_cfg = cls.read_saved(save_path)
+
+        print(f"file: {save_path}")
+        print(f"label: {pipe_cfg['label']}")
+        print(f"author: {pipe_cfg['author']}")
+        print(f"created: {pipe_cfg['created']}")
+        print()
+
+        def valfrmt(x):
+            return f"'{x}'" if isinstance(x, str) else str(x)
+
+        def print_cfg(data, indent=4):
+            if not data:
+                return
+
+            for key, val in data.items():
+                if isinstance(val, (float, int, bool, str)) or val is None:
+                    print(f"{' '*indent}{key}: {valfrmt(val)}")
+                elif isinstance(val, list):
+                    print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
+                elif isinstance(val, dict):
+                    print(f"{' '*indent}{key}:")
+                    for subkey, subval in val.items():
+                        print_cfg({subkey: subval}, indent+2)
+                else:
+                    print(f"{' '*indent}{key}: {val}")
+
+        for step in pipe_cfg['biopap_pipeline']:
+            if compact:
+                print(f"{step['order']:>02}. {step['module']} < {step['cfg']}")
+            else:
+                print(f"{step['order']:>02}. {step['module']}")
+                print_cfg(step['cfg'])
+                print()
+
+    @property
+    def subject_id(self):
+        return self._subject_id
+        
     @property
     def steps(self):
         return self._steps
@@ -223,15 +287,25 @@ if __name__=="__main__":
     parser.add_argument('-i', '--input_file', type=Path, required=True)
     parser.add_argument('-c', '--config_file', type=Path)
     parser.add_argument('-s', '--stored_pipeline', type=Path)
+    parser.add_argument('--label', type=str)
+    parser.add_argument('--author', type=str)
+    parser.add_argument('--inspect', action='store_true')
     parser.add_argument('--log_file', type=Path)
     args = parser.parse_args()
 
     if (not args.config_file and not args.stored_pipeline):
         raise ValueError('need either --config_file and/or --stored_pipeline')
 
+    if (args.inspect and not args.stored_pipeline):
+        raise ValueError('--inspect requires --stored_pipeline')
+
     add_logfile_handler(args.log_file)
 
-    if args.stored_pipeline and not args.config_file:
+    if args.stored_pipeline and args.inspect:
+
+        Pipeline.inspect(save_path=args.stored_pipeline, compact=False)
+    
+    elif args.stored_pipeline and not args.config_file:
 
         Pipeline.from_file(
             save_path=args.stored_pipeline,
@@ -259,6 +333,11 @@ if __name__=="__main__":
         pipe.add_step(Plot)
 
         if args.stored_pipeline:
-            pipe.to_file(save_path=args.stored_pipeline)
+            pipe.to_file(
+                save_path=args.stored_pipeline,
+                label=args.label,
+                author=args.author,
+                overwrite=True
+            )
 
         pipe.run()
