@@ -49,3 +49,4 @@ class Rereference(BaseClass):
                 copy=copy,
                 verbose=self.verbose,
                 **kwargs)
+
