@@ -37,6 +37,7 @@ class Rereference(BaseClass):
                  copy=False,
                  **kwargs):
 
+        self.export_format, self.output_file, self.overwrite = kwargs.pop('export_format', None), kwargs.pop('output_file', None), kwargs.pop('overwrite', True)
         self.processed = raw
 
         try:
@@ -50,3 +51,5 @@ class Rereference(BaseClass):
         except Exception as e:
             logger.error(str(e))
             self.exit_code = 1
+
+        super().__init__(export_format=self.export_format, output_file=self.output_file, overwrite=self.overwrite)
