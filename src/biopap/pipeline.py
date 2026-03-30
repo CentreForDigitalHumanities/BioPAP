@@ -69,6 +69,7 @@ class Pipeline:
                  data = None,
                  subject_id: str = None,
                  verbose: Optional[Union[bool, str, int]]='WARNING',
+                 output_file: Optional[Union[str, Path]]='./output.fif',
                  **kwargs): 
         # **kwargs go into mne.io.read_raw_bdf via LoadData
 
@@ -82,6 +83,7 @@ class Pipeline:
         self.config = self.read_config(self.config_file)
 
         self.verbose = verbose
+        self.output_file = Path(output_file) if output_file else None
 
         if input_file is None and data is None:
             raise ValueError("need input_file or data")
@@ -99,6 +101,14 @@ class Pipeline:
 
         if len(self._subject_id)==0:
             raise ValueError("No subject_id set")
+        
+        if self.output_file is not None:
+            i = 1
+            file_output_stem = self.output_file.stem
+            while self.output_file.exists():
+                self.output_file = self.output_file.parent / f"{file_output_stem}_({i}){self.output_file.suffix}"
+                i += 1
+            logger.info(f"output will be saved to {self.output_file}")
 
         self._processed_data = None
 
@@ -173,6 +183,10 @@ class Pipeline:
             
             self._processed_data = inst.processed
             del inst
+        
+        if self.output_file is not None and self._processed_data is not None:
+            logger.info(f"saving output to {self.output_file}")
+            self._processed_data.save(self.output_file, overwrite=True)
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
