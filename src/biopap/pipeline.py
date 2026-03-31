@@ -62,6 +62,7 @@ class PipelineStep:
 class Pipeline:
 
     _steps = []
+    _last_module = None
 
     def __init__(self, 
                  config_file = Union[str, Path],
@@ -78,8 +79,8 @@ class Pipeline:
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
-        self.config_file = config_file
-        self.config = self.read_config(self.config_file)
+        self._config_file = config_file
+        self._config = self.read_config(self._config_file)
 
         self.verbose = verbose
 
@@ -132,8 +133,8 @@ class Pipeline:
         """
         lookup = cfg_label if cfg_label else module.__name__
 
-        if lookup in self.config:
-            p_cfg = self.config[lookup]
+        if lookup in self._config:
+            p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
 
         order = max([x.Order+1 for x in self._steps], default=0)
@@ -146,6 +147,7 @@ class Pipeline:
 
     def reset(self):
         self._steps = []
+        self._last_module = None
 
     def run(self):
 
@@ -172,9 +174,26 @@ class Pipeline:
                 break
             
             self._processed_data = inst.processed
+            self._last_module = inst
             del inst
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
+
+
+    def plot_sensors(self,
+                     save_folder=None,
+                     save_postfix=None,
+                     save_overwrite=False,
+                     **kwargs):
+        if self._last_module is not None:
+            self._last_module.plot_sensors(
+                    save_folder,
+                    save_postfix,
+                    save_overwrite,
+                    **kwargs)
+        else:
+            logger.warning('no modules have been run yet; unable to plot sensors')
+
 
     def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
@@ -187,7 +206,7 @@ class Pipeline:
 
         data = {
             'biopap_pipeline': [x.as_dict() for x in self.steps],
-            'config_file': str(self.config_file),  # not really necessary
+            'config_file': str(self._config_file),  # not really necessary
             'label': label,
             'author': author,
             'created': datetime.now().strftime("%c"),
@@ -263,6 +282,10 @@ class Pipeline:
                 print(f"{step['order']:>02}. {step['module']}")
                 print_cfg(step['cfg'])
                 print()
+
+    @property
+    def config(self):
+        return self._config
 
     @property
     def subject_id(self):

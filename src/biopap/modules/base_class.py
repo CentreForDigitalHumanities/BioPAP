@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Union, Optional
-from biopap.modules.helpers import CaptureStdout
+from biopap.modules.helpers import CaptureStdout, get_new_filename
 
 class BaseClass(ABC):
 
@@ -25,3 +25,19 @@ class BaseClass(ABC):
     @property
     def processed_data(self):
         return self.processed
+
+    def plot_sensors(self,
+                     save_folder=None,
+                     save_postfix=None,
+                     save_overwrite=False,
+                     **kwargs):
+        img = self.raw.plot_sensors(**kwargs)
+        if save_folder:
+            img.savefig(
+                get_new_filename('sensors.png',
+                    save_folder,
+                    save_postfix,
+                    save_overwrite)
+                )
+
+        
