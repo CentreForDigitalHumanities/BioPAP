@@ -74,6 +74,7 @@ class SaveOutput(BaseClass):
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
             
     def save_csv(self, filename, overwrite):
+        #TODO also export events/annotations?
         target_file = Path(filename).with_suffix('.csv')
         df = self.processed.to_data_frame()
         df.to_csv(target_file, index=False)
