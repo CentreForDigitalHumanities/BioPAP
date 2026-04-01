@@ -52,6 +52,8 @@ class SaveOutput(BaseClass):
 
             e_frmts = ExportFormats(export_formats)
 
+            #TODO implement overwrite
+
             # if self.export_format == 'fif':
             if e_frmts.is_selected(ExportFormats.FIF):
                 self.save_fif(output_file, overwrite)
