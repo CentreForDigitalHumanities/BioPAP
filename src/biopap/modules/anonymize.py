@@ -1,7 +1,7 @@
 import mne
+from random import randint
+from typing import Union
 from biopap.modules.base_class import BaseClass
-# from datetime import datetime
-# from datetime import timezone
 
 class Anonymize(BaseClass):
     """
@@ -30,32 +30,38 @@ class Anonymize(BaseClass):
         Anonymized output data.
     """
 
-    #TODO: what about filename? randomize?
-    #TODO: description
+    log_config = False
 
     def __init__(self,
                  raw: mne.io.Raw,
-                 daysback: int,
-                 logger,
+                 daysback: Union[int, str],
                  experimenter: str=None,
                  participant_id: str=None,
+                 silent: bool=False,
                  **kwargs):
 
-        self.processed = raw
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
+            if not isinstance(daysback, int) and daysback.lower() != 'random':
+                raise ValueError(f"daysback must be either int or 'random' (got '{daysback}')")
+
+            if not isinstance(daysback, int):
+                daysback = randint(1, 100)
+
+            self.processed = raw
+
             self.processed.anonymize(
                 daysback=daysback,
                 verbose=self.verbose,
                 **kwargs)
 
-            # self.processed.set_meas_date(datetime.now(tz=timezone.utc))
-            
+            # not implemented
+            # self.processed.set_meas_date(measure_datee)
+
             if experimenter is not None:
                 self.processed.info['experimenter'] = str(experimenter)
+
             if participant_id is not None:
                 self.processed.info['subject_info'] = {'his_id': str(participant_id)}
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1

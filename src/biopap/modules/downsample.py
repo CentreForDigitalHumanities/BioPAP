@@ -26,8 +26,8 @@ class Downsample(BaseClass):
     def __init__(self,
                  raw,
                  sfreq,
-                 logger,
                  resample_events=True,
+                 silent: bool=False,
                  **kwargs):
 
         # Downsampling
@@ -43,10 +43,12 @@ class Downsample(BaseClass):
         # In MNE-Python, the resampling methods (raw.resample(), epochs.resample() 
         # and evoked.resample()) apply a low-pass filter to the signal to avoid
         # aliasing, so you don’t need to explicitly filter it yourself first. 
+        super().__init__(silent)
 
-        self.processed = raw
+        with self.capture_stdout as self.stdout:
 
-        try:
+            self.processed = raw
+
             if resample_events and isinstance(self.raw, mne.io.BaseRaw):
                 events = mne.find_events(self.raw)
                 self.processed, self.events = self.raw.resample(** {
@@ -60,10 +62,7 @@ class Downsample(BaseClass):
                     'verbose': self.verbose
                     } | kwargs)
 
-            # RuntimeWarning: Resampling of the stim channels caused event information 
-            # to become unreliable. Consider finding events on the original data and 
-            # passing the event matrix as a parameter.
+        # RuntimeWarning: Resampling of the stim channels caused event information 
+        # to become unreliable. Consider finding events on the original data and 
+        # passing the event matrix as a parameter.
 
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1

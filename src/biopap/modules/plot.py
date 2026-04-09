@@ -34,17 +34,20 @@ class Plot(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  title=None,
                  save_folder=None,
                  save_postfix=None,
                  save_overwrite=False,
+                 silent: bool=False,
                  **kwargs):
 
-        self.raw = raw
-        self.processed = self.raw.copy()
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
+            self.raw = raw
+            self.processed = self.raw.copy()
+
             if save_folder:
                 d_out = Path(save_folder)
                 d_out.mkdir(parents=True, exist_ok=True)
@@ -85,8 +88,3 @@ class Plot(BaseClass):
 
             if p_out:
                 plot.grab().save(str(p_out))
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
-

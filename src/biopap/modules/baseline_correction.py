@@ -24,17 +24,12 @@ class BaselineCorrection(BaseClass):
 
     def __init__(self,
                  raw,
-                 logger,
                  baseline,
+                 silent: bool=False,
                  ):
-        
-        self.processed = raw
-                     
-        try:
-        
-            self.processed = self.processed.apply_baseline(baseline)
-                                            
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1
+        super().__init__(silent)
 
+        with self.capture_stdout as self.stdout:
+        
+            self.processed = raw
+            self.processed = self.processed.apply_baseline(baseline)

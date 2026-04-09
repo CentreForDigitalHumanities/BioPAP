@@ -24,25 +24,26 @@ class BIDSConversion(BaseClass):
                  session,
                  task,
                  run,
-                 logger,
                  overwrite=False,
                  dataset_description=None,
+                 silent: bool=False,
                  **kwargs):
+
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
                 
-        self.processed = raw
-        self.logger = logger
-        
-        bids_root = Path(bids_root)
+            self.processed = raw
+            
+            bids_root = Path(bids_root)
 
-        if subject is None:
-            subject = self.processed.info.get("subject_info", {}).get("his_id", None)
+            if subject is None:
+                subject = self.processed.info.get("subject_info", {}).get("his_id", None)
 
-        dataset_description = dataset_description or {}
+            dataset_description = dataset_description or {}
 
-        if not isinstance(self.raw, mne.io.BaseRaw):
-            raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
-
-        try:
+            if not isinstance(self.raw, mne.io.BaseRaw):
+                raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
@@ -51,7 +52,7 @@ class BIDSConversion(BaseClass):
         
             # Parse events from raw data
             events = mne.find_events(self.processed,
-                                     **f_kwargs)
+                                        **f_kwargs)
 
             # Build mappings from eventfile
             event_id, range_map = self.build_event_dict(eventsfile)
@@ -83,11 +84,7 @@ class BIDSConversion(BaseClass):
             # Write dataset_description.json
             self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-            self.logger.debug("BIDS conversion completed.")
-
-        except Exception as e:
-            self.logger.error(str(e))
-            self.exit_code = 1
+            print("BIDS conversion completed.")
 
     @staticmethod
     def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
@@ -164,6 +161,6 @@ class BIDSConversion(BaseClass):
                 raise ValueError(f"Event {set(events[:,-1]) - set(event_id.values())}"
                                 "has not been declared in eventsfile") 
 
-        logger.info(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
+        print(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
 
         return events

@@ -28,12 +28,14 @@ class BlinkDetection(BaseClass):
     """
     def __init__(self,
                  raw,
-                 logger,
+                 silent: bool=False,
                  **kwargs):
-        
-        self.processed = raw
 
-        try:
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
+        
+            self.processed = raw
 
             f_kwargs = kwargs['find_eog_events'] if 'find_eog_events' in kwargs else {}
             a_kwargs = kwargs['Annotations'] if 'Annotations' in kwargs else {}
@@ -50,7 +52,3 @@ class BlinkDetection(BaseClass):
                 **a_kwargs
             )
             self.processed.set_annotations(blink_annot)
-
-        except Exception as e:
-            logger.error(str(e))
-            self.exit_code = 1

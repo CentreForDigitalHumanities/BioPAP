@@ -5,10 +5,9 @@ import yaml
 from pathlib import Path
 from typing import Union, Optional
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import Capturing
 
 
-class LoadData():
+class LoadData(BaseClass):
     """
     Class for loading BDF data from file.
 
@@ -35,45 +34,43 @@ class LoadData():
 
     def __init__(self, 
                  file_path: str | Path,
-                 logger,
                  preload: bool=True,
-                 mne_silent: bool=False,
                  verbose: Optional[Union[bool, str, int]]=None,
+                 silent: bool=False,
                  **kwargs
                  ) -> None:
 
-        p_log_level = mne.set_log_level(verbose=verbose, return_old_level=True)
-        self.logger = logger
-        self.mne_silent = mne_silent
-        self.preload = preload
+        super().__init__(silent)
 
-        try:
+        with self.capture_stdout as self.stdout:
+
             file_path = Path(file_path)
 
             if not file_path.exists():
                 raise ValueError(f"File '{file_path}' does not exist")
 
             if file_path.suffix.lower()=='.bdf':
-                self.raw = self.read_bdf(file_path, **kwargs)
+                self.raw = self.read_bdf(file_path, preload, **kwargs)
+            elif file_path.suffix.lower()=='.fif':
+                self.raw = self.read_fif(file_path, preload, **kwargs)
             else:
                 raise ValueError(f"'{file_path}' is not a supported file")
 
             self.loaded_file = file_path
 
-        except Exception as e:
-            self.logger.error(str(e))
-            self.exit_code = 1
-
-        mne.set_log_level(verbose=p_log_level, return_old_level=False)
-
-    def read_bdf(self, file_path, **kwargs):
-        if self.mne_silent:
-            with Capturing() as capture:
-                raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
-
-            if len(capture)>0:
-                self.logger.info(f"MNE_stdout:{'; '.join(capture)}")
-        else:
-            raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
-
+    @staticmethod
+    def read_bdf(file_path, preload, **kwargs):
+        raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload, **kwargs)
         return raw_bdf
+
+    @staticmethod
+    def read_fif(file_path, preload, **kwargs):
+        try:
+            raw_fif = mne.read_epochs(file_path, preload=preload)
+        except ValueError as e:
+            if str(e).strip().lower() == "could not find event data":
+                raw_fif = mne.io.read_raw_fif(file_path, preload=preload)
+            else:
+                raise e
+
+        return raw_fif
