@@ -159,7 +159,7 @@ class Pipeline:
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
 
-            msg = f"Running step {step.Order}: {step.Module.__name__}"
+            msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
             msg = f"{msg} [{self.subject_id}]"
@@ -169,13 +169,15 @@ class Pipeline:
                 inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
                 if len(inst.stdout)>0:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
+
+                self._processed_data = inst.processed
+                self._last_module = inst
+                del inst
             except Exception as e:
-                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
-                break
-            
-            self._processed_data = inst.processed
-            self._last_module = inst
-            del inst
+                if step.Module.halt_on_exceptions:
+                    logger.critical(f"{step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
+                    break
+                logger.error(f"({step.Order}) {step.Module.__name__} failed: {str(e)} (non-blocking) [{self.subject_id}]")
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
@@ -329,6 +331,7 @@ if __name__=="__main__":
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
         pipe.add_step(SetChannelTypeAndMontage)
+        pipe.add_step(Plot, cfg={'plot_types': 'SENSORS'})
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)

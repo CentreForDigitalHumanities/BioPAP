@@ -1,6 +1,19 @@
 import mne
+import matplotlib.colors as mcolors
 from pathlib import Path
+from typing import Union
 from biopap.modules.base_class import BaseClass
+from biopap.modules.helpers import OptionsBaseClass, get_new_filename
+
+
+class PlotTypes(OptionsBaseClass):
+
+    PLOT = 1
+    SENSORS = 2
+
+    def __init__(self, sel_options=0):
+        super().__init__(sel_options)
+
 
 class Plot(BaseClass):
     """
@@ -15,6 +28,9 @@ class Plot(BaseClass):
         Input data.
     title : str | None
         Title of the plot window.
+    plot_types : PlotTypes | None
+        Types of plots to make; use | to specify multiple plot types
+        (eg. PlotTypes.PLOT|PlotTypes.SENSORS)
     save_folder : str | None
         Folder in which to save the plot. If None, the figure is not saved.
     save_postfix : str | None
@@ -32,14 +48,17 @@ class Plot(BaseClass):
 
     # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
 
+    halt_on_exceptions = False
+
     def __init__(self,
                  raw,
-                 title=None,
+                 plot_types: Union[str, int, list[str]]=PlotTypes.PLOT,
                  save_folder=None,
                  save_postfix=None,
                  save_overwrite=False,
                  silent: bool=False,
                  **kwargs):
+
 
         super().__init__(silent)
 
@@ -48,43 +67,47 @@ class Plot(BaseClass):
             self.raw = raw
             self.processed = self.raw.copy()
 
-            if save_folder:
-                d_out = Path(save_folder)
-                d_out.mkdir(parents=True, exist_ok=True)
-                f_src = Path(self.raw.info['subject_info']['his_id'])
+            p_kwargs = kwargs['plot'] if 'plot' in kwargs else {}
+            s_kwargs = kwargs['plot_sensors'] if 'plot_sensors' in kwargs else {}
 
-                if save_postfix:
-                    f_new = Path(f_src.with_name(f'{f_src}_{save_postfix}.png').name)
+            p_types = PlotTypes(plot_types)
+            stem = Path(self.raw.info['subject_info']['his_id']).stem
+
+            if p_types.is_selected(PlotTypes.PLOT):
+
+                if isinstance(self.processed, mne.io.BaseRaw):
+                    events = mne.find_events(self.processed)
                 else:
-                    f_new = Path(f_src.with_suffix('.png').name)
+                    events = self.processed.events
 
-                p_out = d_out / f_new
+                event_colors = dict(zip(events[:, 2], {k:v for k, v in \
+                    mcolors.CSS4_COLORS.items() if 'white' not in k and k != 'cyan'}))
+                event_colors[-1] = 'cyan'
 
-                if not save_overwrite:
-                    i = 1
-                    while p_out.exists():
-                        p_out = d_out / f_new.with_name(f'{f_new.stem}_({i}).png').name
-                        i += 1
-            else:
-                p_out = None
+                args = { 'block': False, 'show': False, 'events': events, 'event_color': event_colors }
 
-            if isinstance(self.processed, mne.io.BaseRaw):
-                events = mne.find_events(self.processed)
-            else:
-                events = self.processed.events
+                if save_folder:
+                    p_out = get_new_filename(Path(f"{stem}_plot").with_suffix('.png'),
+                                             save_folder,
+                                             save_postfix,
+                                             save_overwrite)                    
+                    plot = self.processed.plot(** args | p_kwargs)
+                    plot.grab().save(str(p_out))
+                    print(f"wrote plot to '{p_out}'")
+                else:
+                    _ = self.processed.plot(** args | { 'block': True, 'show': True } | p_kwargs)
 
-            args = {
-                    'events': events,
-                    'title': title,
-                    'block': True,
-                    'show': True,
-                }
+            if p_types.is_selected(PlotTypes.SENSORS):
 
-            if p_out:
-                args['block'] = False
-                args['show'] = False
+                if save_folder:
+                    p_out = get_new_filename(Path(f"{stem}_sensors").with_suffix('.png'),
+                                            save_folder,
+                                            save_postfix,
+                                            save_overwrite)
 
-            plot = self.processed.plot(** args | kwargs)
+                    plot = self.raw.plot_sensors(** { 'block': False, 'show': False } | s_kwargs)
+                    plot.savefig(p_out)
+                    print(f"wrote sensor plot to '{p_out}'")
+                else:
+                    _ = self.raw.plot_sensors(** { 'block': True, 'show': True } | s_kwargs)
 
-            if p_out:
-                plot.grab().save(str(p_out))

@@ -9,6 +9,7 @@ class BaseClass(ABC):
     verbose = None
     stdout = []
     log_config = True
+    halt_on_exceptions = True
 
     def __init__(self,
                  silent: bool=False):
@@ -25,19 +26,3 @@ class BaseClass(ABC):
     @property
     def processed_data(self):
         return self.processed
-
-    def plot_sensors(self,
-                     save_folder=None,
-                     save_postfix=None,
-                     save_overwrite=False,
-                     **kwargs):
-        img = self.raw.plot_sensors(**kwargs)
-        if save_folder:
-            img.savefig(
-                get_new_filename('sensors.png',
-                    save_folder,
-                    save_postfix,
-                    save_overwrite)
-                )
-
-        
