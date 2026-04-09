@@ -62,7 +62,6 @@ class PipelineStep:
 class Pipeline:
 
     _steps = []
-    _last_module = None
 
     def __init__(self, 
                  config_file = Union[str, Path],
@@ -147,7 +146,6 @@ class Pipeline:
 
     def reset(self):
         self._steps = []
-        self._last_module = None
 
     def run(self):
 
@@ -171,7 +169,6 @@ class Pipeline:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
 
                 self._processed_data = inst.processed
-                self._last_module = inst
                 del inst
             except Exception as e:
                 if step.Module.halt_on_exceptions:
