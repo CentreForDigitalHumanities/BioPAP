@@ -1,6 +1,6 @@
 # ApplyICA
 
-::: biopap.modules.ica.ApplyICA
+::: biopap.modules.apply_ica.ApplyICA
 
 ## Example settings for config file
 

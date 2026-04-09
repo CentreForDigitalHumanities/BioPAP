@@ -24,6 +24,8 @@ nav:
   - SetChannelTypeAndMontage: api/set_channel_type_and_montage.md
 theme:
   name: material
+  features:
+    - content.code.copy
 plugins:
 - search
 - mkdocstrings:
