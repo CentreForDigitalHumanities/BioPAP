@@ -22,7 +22,7 @@ from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
-from biopap.modules.plot import Plot
+from biopap.modules.plot import Plot, PlotTypes
 from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
@@ -328,16 +328,21 @@ if __name__=="__main__":
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
         pipe.add_step(SetChannelTypeAndMontage)
-        pipe.add_step(Plot, cfg={'plot_types': 'SENSORS'})
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
         pipe.add_step(BlinkDetection)
+        pipe.add_step(Plot, cfg={
+            'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
+            'save_folder': './'})
         pipe.add_step(Segmentation)
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
+        pipe.add_step(Plot, cfg={
+            'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
+            'save_folder': './'})
         pipe.add_step(Plot)
 
         if args.stored_pipeline:

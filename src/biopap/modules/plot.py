@@ -10,6 +10,9 @@ class PlotTypes(OptionsBaseClass):
 
     PLOT = 1
     SENSORS = 2
+    SPECTRUM_PLOT = 4
+    SPECTRUM_TOPO = 8
+    SPECTRUM_TOPO_MAP = 16
 
     def __init__(self, sel_options=0):
         super().__init__(sel_options)
@@ -30,7 +33,7 @@ class Plot(BaseClass):
         Title of the plot window.
     plot_types : PlotTypes | None
         Types of plots to make; use | to specify multiple plot types
-        (eg. PlotTypes.PLOT|PlotTypes.SENSORS)
+        (eg. PlotTypes.PLOT|PlotTypes.SPECTRUM_TOPO)
     save_folder : str | None
         Folder in which to save the plot. If None, the figure is not saved.
     save_postfix : str | None
@@ -59,55 +62,135 @@ class Plot(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-
         super().__init__(silent)
 
         with self.capture_stdout as self.stdout:
 
             self.raw = raw
-            self.processed = self.raw.copy()
+            self.processed = self.raw
+
+            self.save_folder = save_folder
+            self.save_postfix = save_postfix
+            self.save_overwrite = save_overwrite
 
             p_kwargs = kwargs['plot'] if 'plot' in kwargs else {}
             s_kwargs = kwargs['plot_sensors'] if 'plot_sensors' in kwargs else {}
+            sp_kwargs = kwargs['spectrum_plot'] if 'spectrum_plot' in kwargs else {}
+            st_kwargs = kwargs['spectrum_topo'] if 'spectrum_topo' in kwargs else {}
+            sm_kwargs = kwargs['spectrum_topo_map'] if 'spectrum_topo_map' in kwargs else {}
 
             p_types = PlotTypes(plot_types)
-            stem = Path(self.raw.info['subject_info']['his_id']).stem
+
+            if p_types.is_selected(PlotTypes.SPECTRUM_PLOT) or \
+               p_types.is_selected(PlotTypes.SPECTRUM_TOPO) or \
+               p_types.is_selected(PlotTypes.SPECTRUM_TOPO_MAP):
+                self._spectrum = raw.compute_psd()
+
+            self._stem = Path(self.raw.info['subject_info']['his_id']).stem
+
+            errors = []
 
             if p_types.is_selected(PlotTypes.PLOT):
-
-                if isinstance(self.processed, mne.io.BaseRaw):
-                    events = mne.find_events(self.processed)
-                else:
-                    events = self.processed.events
-
-                event_colors = dict(zip(events[:, 2], {k:v for k, v in \
-                    mcolors.CSS4_COLORS.items() if 'white' not in k and k != 'cyan'}))
-                event_colors[-1] = 'cyan'
-
-                args = { 'block': False, 'show': False, 'events': events, 'event_color': event_colors }
-
-                if save_folder:
-                    p_out = get_new_filename(Path(f"{stem}_plot").with_suffix('.png'),
-                                             save_folder,
-                                             save_postfix,
-                                             save_overwrite)                    
-                    plot = self.processed.plot(** args | p_kwargs)
-                    plot.grab().save(str(p_out))
-                    print(f"wrote plot to '{p_out}'")
-                else:
-                    _ = self.processed.plot(** args | { 'block': True, 'show': True } | p_kwargs)
+                try:
+                    self.plot(**p_kwargs)
+                except Exception as e:
+                    errors.append(f"PLOT: {str(e)}")
 
             if p_types.is_selected(PlotTypes.SENSORS):
+                try:
+                    self.plot_sensors(**s_kwargs)
+                except Exception as e:
+                    errors.append(f"SENSORS: {str(e)}")
 
-                if save_folder:
-                    p_out = get_new_filename(Path(f"{stem}_sensors").with_suffix('.png'),
-                                            save_folder,
-                                            save_postfix,
-                                            save_overwrite)
+            if p_types.is_selected(PlotTypes.SPECTRUM_PLOT):
+                try:
+                    self.spectrum_plot(**sp_kwargs)
+                except Exception as e:
+                    errors.append(f"SPECTRUM_PLOT: {str(e)}")
 
-                    plot = self.raw.plot_sensors(** { 'block': False, 'show': False } | s_kwargs)
-                    plot.savefig(p_out)
-                    print(f"wrote sensor plot to '{p_out}'")
-                else:
-                    _ = self.raw.plot_sensors(** { 'block': True, 'show': True } | s_kwargs)
+            if p_types.is_selected(PlotTypes.SPECTRUM_TOPO):
+                try:
+                    self.spectrum_topo(**st_kwargs)
+                except Exception as e:
+                    errors.append(f"SPECTRUM_TOPO: {str(e)}")
 
+            if p_types.is_selected(PlotTypes.SPECTRUM_TOPO_MAP):
+                try:
+                    self.spectrum_topo_map(**sm_kwargs)
+                except Exception as e:
+                    errors.append(f"SPECTRUM_TOPO_MAP: {str(e)}")
+
+            if len(errors)>0:
+                raise ValueError("; ".join(errors))
+
+    def plot_sensors(self, **kwargs):
+        if self.save_folder:
+            p_out = get_new_filename(Path(f"{self._stem}_sensors").with_suffix('.png'),
+                                     self.save_folder,
+                                     self.save_postfix,
+                                     self.save_overwrite)
+ 
+            plot = self.raw.plot_sensors(** { 'block': False, 'show': False } | kwargs)
+            plot.savefig(p_out)
+            print(f"wrote sensor plot to '{p_out}'")
+        else:
+            _ = self.raw.plot_sensors(** { 'block': True, 'show': True } | kwargs)
+
+    def plot(self, **kwargs):
+        if isinstance(self.processed, mne.io.BaseRaw):
+            events = mne.find_events(self.processed)
+        else:
+            events = self.processed.events
+
+        event_colors = dict(zip(events[:, 2], {k:v for k, v in \
+            mcolors.CSS4_COLORS.items() if 'white' not in k and k != 'cyan'}))
+        event_colors[-1] = 'cyan'
+
+        args = { 'block': False, 'show': False, 'events': events, 'event_color': event_colors }
+
+        if self.save_folder:
+            p_out = get_new_filename(Path(f"{self._stem}_plot").with_suffix('.png'),
+                                          self.save_folder,
+                                          self.save_postfix,
+                                          self.save_overwrite)
+            plot = self.processed.plot(** args | kwargs)
+            plot.grab().save(str(p_out))
+            print(f"wrote plot to '{p_out}'")
+        else:
+            _ = self.processed.plot(** args | { 'block': True, 'show': True } | kwargs)
+
+    def spectrum_plot(self, **kwargs):
+        if self.save_folder:
+            p_out = get_new_filename(Path(f"{self._stem}_spectrum_plot").with_suffix('.png'),
+                                     self.save_folder,
+                                     self.save_postfix,
+                                     self.save_overwrite)
+            plot = self._spectrum.plot(show=False, **kwargs)
+            plot.savefig(p_out)
+            print(f"wrote plot to '{p_out}'")
+        else:
+            _ = self._spectrum.plot(show=true, **kwargs)
+
+    def spectrum_topo(self, **kwargs):
+        if self.save_folder:
+            p_out = get_new_filename(Path(f"{self._stem}_spectrum_topo").with_suffix('.png'),
+                                     self.save_folder,
+                                     self.save_postfix,
+                                     self.save_overwrite)
+            plot = self._spectrum.plot_topo(show=False, **kwargs)
+            plot.savefig(p_out)
+            print(f"wrote plot to '{p_out}'")
+        else:
+            _ = self._spectrum.plot_topo(show=true, **kwargs)
+
+    def spectrum_topo_map(self, **kwargs):
+        if self.save_folder:
+            p_out = get_new_filename(Path(f"{self._stem}_spectrum_topomap").with_suffix('.png'),
+                                     self.save_folder,
+                                     self.save_postfix,
+                                     self.save_overwrite)
+            plot = self._spectrum.plot_topomap(show=False, **kwargs)
+            plot.savefig(p_out)
+            print(f"wrote plot to '{p_out}'")
+        else:
+            _ = self._spectrum.plot_topomap(show=true, **kwargs)
