@@ -44,21 +44,33 @@ class LoadData(BaseClass):
 
         with self.capture_stdout as self.stdout:
 
-            self.preload = preload
-
             file_path = Path(file_path)
 
             if not file_path.exists():
                 raise ValueError(f"File '{file_path}' does not exist")
 
             if file_path.suffix.lower()=='.bdf':
-                self.raw = self.read_bdf(file_path, **kwargs)
+                self.raw = self.read_bdf(file_path, preload, **kwargs)
+            elif file_path.suffix.lower()=='.fif':
+                self.raw = self.read_fif(file_path, preload, **kwargs)
             else:
                 raise ValueError(f"'{file_path}' is not a supported file")
 
             self.loaded_file = file_path
 
-
-    def read_bdf(self, file_path, **kwargs):
-        raw_bdf = mne.io.read_raw_bdf(file_path, preload=self.preload, **kwargs)
+    @staticmethod
+    def read_bdf(file_path, preload, **kwargs):
+        raw_bdf = mne.io.read_raw_bdf(file_path, preload=preload, **kwargs)
         return raw_bdf
+
+    @staticmethod
+    def read_fif(file_path, preload, **kwargs):
+        try:
+            raw_fif = mne.read_epochs(file_path, preload=preload)
+        except ValueError as e:
+            if str(e).strip().lower() == "could not find event data":
+                raw_fif = mne.io.read_raw_fif(file_path, preload=preload)
+            else:
+                raise e
+
+        return raw_fif
