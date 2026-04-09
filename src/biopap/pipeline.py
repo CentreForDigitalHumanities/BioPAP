@@ -180,21 +180,6 @@ class Pipeline:
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
 
-    def plot_sensors(self,
-                     save_folder=None,
-                     save_postfix=None,
-                     save_overwrite=False,
-                     **kwargs):
-        if self._last_module is not None:
-            self._last_module.plot_sensors(
-                    save_folder,
-                    save_postfix,
-                    save_overwrite,
-                    **kwargs)
-        else:
-            logger.warning('no modules have been run yet; unable to plot sensors')
-
-
     def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
             p_save_path = save_path
