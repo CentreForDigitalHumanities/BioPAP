@@ -5,6 +5,7 @@ import pandas as pd
 from pathlib import Path
 from mne_bids import BIDSPath, write_raw_bids, make_dataset_description
 from biopap.modules.base_class import BaseClass
+from biopap.modules.helpers import build_event_dict, merge_event_ranges
 
 # TODO: Check what the sanitize_events function does and check if we need it. It was in Gabriel's code.
 # TODO: subject, session, task, run, can we extract from raw?
@@ -57,7 +58,7 @@ class BIDSConversion(BaseClass):
             # Build mappings from eventfile
             event_id, range_map = self.build_event_dict(eventsfile)
             merged_events = self.merge_event_ranges(events, range_map)
-            merged_events = self.sanitize_events(merged_events, event_id)
+            # merged_events = self.sanitize_events(merged_events, event_id)
 
             # Create BIDS Path
             bids_path = BIDSPath(
@@ -106,40 +107,6 @@ class BIDSConversion(BaseClass):
             **dd,
             **mdd_kwargs
         )
-
-    @staticmethod
-    def build_event_dict(eventsfile):
-        event_id = {}
-        range_map = {}
-
-        df = pd.read_csv(eventsfile)
-
-        for _, row in df.iterrows():
-            label = str(row["label"]).strip()
-            id_value = str(row["ID"]).strip()
-
-            if label in event_id:
-                raise ValueError(f"Duplicate event label: {label}")
-
-            if "-" in id_value:
-                start, end = map(int, id_value.split("-"))
-                ids = list(range(start, end + 1))
-                event_id[label] = ids[0]
-                range_map[label] = ids
-            else:
-                try: 
-                    event_id[label] = int(id_value) 
-                except ValueError: 
-                    event_id[label] = id_value # keep id as string
-
-        return event_id, range_map
-    
-    @staticmethod
-    def merge_event_ranges(events, range_map):
-        merged = events.copy()
-        for label, ids in range_map.items():
-            merged = mne.merge_events(merged, ids, ids[0])
-        return merged
     
     # ---------------------------------- 
     # Gabriel's code; not sure what non-zero trigger channel and acquisition system means
