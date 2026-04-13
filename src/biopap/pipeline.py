@@ -91,25 +91,18 @@ class Pipeline:
         elif data is not None:
             self._initial_data = data
         else:
-            logger.info(f"reading {input_file}")
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
+            logger.info(f"loaded '{input_file}'")
 
+        # not using raw['subject_info']['his_id'], as this is before anonymizing
         if subject_id is not None:
             self._subject_id = subject_id
-        else:
-            # not using raw['subject_info']['his_id'], as this is before anonymizing
+        elif hasattr(self._initial_data, 'filenames'):
             self._subject_id = Path(self._initial_data.filenames[0]).stem
-
-        if len(self._subject_id)==0:
-            raise ValueError("No subject_id set")
-        
-        # if self.output_file is not None:
-        #     i = 1
-        #     file_output_stem = self.output_file.stem
-        #     while self.output_file.exists():
-        #         self.output_file = self.output_file.parent / f"{file_output_stem}_({i}){self.output_file.suffix}"
-        #         i += 1
-        #     logger.info(f"output will be saved to {self.output_file}")
+        elif hasattr(self._initial_data, 'filename'):
+            self._subject_id = Path(self._initial_data.filename).stem
+        else:
+            raise ValueError("no subject_id set")
 
         self._processed_data = None
 

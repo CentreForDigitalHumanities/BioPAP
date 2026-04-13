@@ -48,7 +48,7 @@ class ArtifactReject(BaseClass):
 
             self.processed = raw
 
-            if not isinstance(self.processed, mne.Epochs):
+            if not isinstance(self.processed, (mne.Epochs, mne.epochs.EpochsFIF)):
                 raise TypeError(
                     "the input must be an mne.Epochs instance, "
                     f"got {type(self.processed)} instead."
