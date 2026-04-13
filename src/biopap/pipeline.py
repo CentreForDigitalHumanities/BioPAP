@@ -25,6 +25,7 @@ from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot
 from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
+from biopap.modules.save_output import SaveOutput
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
@@ -69,6 +70,7 @@ class Pipeline:
                  data = None,
                  subject_id: str = None,
                  verbose: Optional[Union[bool, str, int]]='WARNING',
+                #  output_file: Optional[Union[str, Path]]='./output.fif',
                  **kwargs): 
         # **kwargs go into mne.io.read_raw_bdf via LoadData
 
@@ -82,6 +84,7 @@ class Pipeline:
         self.config = self.read_config(self.config_file)
 
         self.verbose = verbose
+        # self.output_file = Path(output_file) if output_file else None
 
         if input_file is None and data is None:
             raise ValueError("need input_file or data")
@@ -131,11 +134,32 @@ class Pipeline:
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
         """
+
+        def parse_template(s):
+            reps = [('{subject_id}', self._subject_id)]
+
+            if not isinstance(s, str):
+                return s
+
+            for rep in reps:
+                s = s.replace(rep[0], rep[1])
+
+            return s
+
         lookup = cfg_label if cfg_label else module.__name__
 
         if lookup in self.config:
             p_cfg = self.config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
+            cfg = {k: parse_template(v) for k, v in cfg.items()}
+
+        try:
+            check_config = getattr(module, "check_config", None)
+            if callable(check_config):
+                check_config(cfg=cfg)
+        except Exception as e:
+            logger.critical(f"add {module.__name__} failed: {str(e)} [{self.subject_id}]")
+            exit()
 
         order = max([x.Order+1 for x in self._steps], default=0)
         self._steps.append(
@@ -148,7 +172,15 @@ class Pipeline:
     def reset(self):
         self._steps = []
 
+    def check_steps(self):
+        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+            raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
+        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
+            warnings.warn("pipeline contains steps after SaveOutput")
+
     def run(self):
+
+        self.check_steps()
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
@@ -174,6 +206,10 @@ class Pipeline:
             
             self._processed_data = inst.processed
             del inst
+        
+        # if self.output_file is not None and self._processed_data is not None:
+        #     logger.info(f"saving output to {self.output_file}")
+        #     self._processed_data.save(self.output_file, overwrite=True)
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
@@ -332,6 +368,7 @@ if __name__=="__main__":
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
         pipe.add_step(Plot)
+        pipe.add_step(SaveOutput)
 
         if args.stored_pipeline:
             pipe.to_file(
