@@ -51,10 +51,7 @@ def build_event_dict(events, eventsfile):
                 range_map[label] = ids
                 
         else:
-            try:
-                event_id[label] = int(id_value)
-            except ValueError:
-                event_id[label] = id_value  # keep id as string
+            event_id[label] = int(id_value) if id_value.isnumeric() else id_value
 
     return event_id, range_map
 
