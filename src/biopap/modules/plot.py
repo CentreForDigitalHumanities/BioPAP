@@ -142,11 +142,12 @@ class Plot(BaseClass):
         else:
             events = self.processed.events
 
-        event_colors = dict(zip(events[:, 2], {k:v for k, v in \
-            mcolors.CSS4_COLORS.items() if 'white' not in k and k != 'cyan'}))
-        event_colors[-1] = 'cyan'
+        # event_colors = dict(zip(events[:, 2], {k:v for k, v in \
+        #     mcolors.CSS4_COLORS.items() if 'white' not in k and k != 'cyan'}))
+        # event_colors[-1] = 'cyan'
+        # args = { 'block': False, 'show': False, 'events': events, 'event_color': event_colors }
 
-        args = { 'block': False, 'show': False, 'events': events, 'event_color': event_colors }
+        args = { 'block': False, 'show': False, 'events': events }
 
         if self.save_folder:
             p_out = get_new_filename(Path(f"{self._stem}_plot").with_suffix('.png'),
