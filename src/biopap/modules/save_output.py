@@ -63,7 +63,7 @@ class SaveOutput(BaseClass):
 
     @classmethod
     def check_config(cls, cfg):
-        if 'export_formats' in cfg:
+        if cfg and 'export_formats' in cfg:
             # will generate error when unknown format
             _ = ExportFormats(cfg['export_formats'])
 

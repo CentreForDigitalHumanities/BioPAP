@@ -63,6 +63,7 @@ class PipelineStep:
 class Pipeline:
 
     _steps = []
+    _subject_id = None
 
     def __init__(self, 
                  config_file = Union[str, Path],
@@ -86,13 +87,15 @@ class Pipeline:
         self.verbose = verbose
         # self.output_file = Path(output_file) if output_file else None
 
-        if input_file is None and data is None:
-            raise ValueError("need input_file or data")
-        elif data is not None:
+        if data is not None:
             self._initial_data = data
-        else:
+        elif input_file is not None:
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
             logger.info(f"loaded '{input_file}'")
+        else:
+            # allow omission of data to check validity of pipeline from file
+            # with check_steps() without loading data (and running the pipeline)
+            return
 
         # not using raw['subject_info']['his_id'], as this is before anonymizing
         if subject_id is not None:
@@ -153,6 +156,7 @@ class Pipeline:
             cfg = p_cfg if cfg is None else p_cfg | cfg
             cfg = {k: parse_template(v) for k, v in cfg.items()}
 
+
         try:
             check_config = getattr(module, "check_config", None)
             if callable(check_config):
@@ -180,12 +184,16 @@ class Pipeline:
 
     def run(self):
 
+        if self._initial_data is None:
+            raise ValueError("no data to work with (specify input_file or data)")
+
         self.check_steps()
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
         self._processed_data = self._initial_data.copy()
+
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
@@ -249,7 +257,7 @@ class Pipeline:
         return pipe_cfg
 
     @classmethod
-    def from_file(cls, save_path, input_file, **kwargs):
+    def from_file(cls, save_path, input_file=None, **kwargs):
         pipe_cfg = cls.read_saved(save_path)
         pipeline = cls(input_file=input_file, config_file=None, **kwargs)
 
