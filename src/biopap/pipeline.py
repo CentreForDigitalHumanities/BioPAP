@@ -25,6 +25,7 @@ from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot, PlotTypes
 from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
+from biopap.modules.save_output import SaveOutput
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
@@ -69,6 +70,7 @@ class Pipeline:
                  data = None,
                  subject_id: str = None,
                  verbose: Optional[Union[bool, str, int]]='WARNING',
+                #  output_file: Optional[Union[str, Path]]='./output.fif',
                  **kwargs): 
         # **kwargs go into mne.io.read_raw_bdf via LoadData
 
@@ -82,23 +84,25 @@ class Pipeline:
         self._config = self.read_config(self._config_file)
 
         self.verbose = verbose
+        # self.output_file = Path(output_file) if output_file else None
 
         if input_file is None and data is None:
             raise ValueError("need input_file or data")
         elif data is not None:
             self._initial_data = data
         else:
-            logger.info(f"reading {input_file}")
             self._initial_data = self.load_data(input_file=input_file, **kwargs)
+            logger.info(f"loaded '{input_file}'")
 
+        # not using raw['subject_info']['his_id'], as this is before anonymizing
         if subject_id is not None:
             self._subject_id = subject_id
-        else:
-            # not using raw['subject_info']['his_id'], as this is before anonymizing
+        elif hasattr(self._initial_data, 'filenames'):
             self._subject_id = Path(self._initial_data.filenames[0]).stem
-
-        if len(self._subject_id)==0:
-            raise ValueError("No subject_id set")
+        elif hasattr(self._initial_data, 'filename'):
+            self._subject_id = Path(self._initial_data.filename).stem
+        else:
+            raise ValueError("no subject_id set")
 
         self._processed_data = None
 
@@ -130,11 +134,32 @@ class Pipeline:
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
         """
+
+        def parse_template(s):
+            reps = [('{subject_id}', self._subject_id)]
+
+            if not isinstance(s, str):
+                return s
+
+            for rep in reps:
+                s = s.replace(rep[0], rep[1])
+
+            return s
+
         lookup = cfg_label if cfg_label else module.__name__
 
         if lookup in self._config:
             p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
+            cfg = {k: parse_template(v) for k, v in cfg.items()}
+
+        try:
+            check_config = getattr(module, "check_config", None)
+            if callable(check_config):
+                check_config(cfg=cfg)
+        except Exception as e:
+            logger.critical(f"add {module.__name__} failed: {str(e)} [{self.subject_id}]")
+            exit()
 
         order = max([x.Order+1 for x in self._steps], default=0)
         self._steps.append(
@@ -147,7 +172,15 @@ class Pipeline:
     def reset(self):
         self._steps = []
 
+    def check_steps(self):
+        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+            raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
+        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
+            warnings.warn("pipeline contains steps after SaveOutput")
+
     def run(self):
+
+        self.check_steps()
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
@@ -344,6 +377,7 @@ if __name__=="__main__":
             'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
             'save_folder': './'})
         pipe.add_step(Plot)
+        pipe.add_step(SaveOutput)
 
         if args.stored_pipeline:
             pipe.to_file(

@@ -9,7 +9,7 @@ class ApplyICA(BaseClass):
     ----------
     raw : mne.Raw | mne.Epochs
         Input data.
-    n_components : int, optional
+    n_components : int, optional, default 'None'
         Number of components to extract. If None, all components are extracted.
     method : 'fastica' | 'infomax' | 'picard', default 'fastica'
         ICA method to use.

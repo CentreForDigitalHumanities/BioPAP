@@ -1,6 +1,7 @@
 import mne
 from biopap.modules.base_class import BaseClass
 import re
+from biopap.modules.helpers import build_event_dict, merge_event_ranges
 
 class Segmentation(BaseClass):
     """
@@ -33,6 +34,9 @@ class Segmentation(BaseClass):
 
         If both keys are provided, their union is used.
         If None or empty, all detected events are used.
+    eventsfile : str | None
+        Path to a CSV file defining event labels and their corresponding IDs or ID ranges separated with '-'.
+        The CSV file should have two columns: "label" and "ID".
     **kwargs
         Additional keyword arguments passed to MNE's
         ``find_events`` and ``Epochs`` functions.
@@ -50,6 +54,7 @@ class Segmentation(BaseClass):
                  end,
                  baseline=None,
                  reference_markers=None,
+                 eventsfile=None,
                  silent: bool=False,
                  **kwargs):
         
@@ -80,11 +85,20 @@ class Segmentation(BaseClass):
                 events = mne.pick_events(events, include=include)
             else:
                 print("No reference markers provided; epochs are created with all events")
-            
+
+            # Build mappings from eventfile
+            event_dict = None
+            if eventsfile:
+                event_dict, range_map = build_event_dict(events, eventsfile)
+                merged_events = merge_event_ranges(events, range_map)
+                events = merged_events
+           
             self.processed = mne.Epochs(self.processed, 
                                 events, 
+                                event_id=event_dict,
                                 tmin=start, 
                                 tmax=end, 
                                 baseline=baseline,
                                 preload=True,
                                 **e_kwargs)
+

@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 from io import StringIO
+import pandas as pd
+import mne
 
 class CaptureStdout(list):
 
@@ -86,3 +88,34 @@ def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
 
     return p_out
 
+def build_event_dict(events, eventsfile):
+    event_id = {}
+    range_map = {}
+
+    df = pd.read_csv(eventsfile)
+
+    for _, row in df.iterrows():
+        label = str(row["label"]).strip()
+        id_value = str(row["ID"]).strip()
+        
+        if label in event_id:
+            raise ValueError(f"Duplicate event label: {label}")
+
+        if "-" in id_value:
+            start, end = map(int, id_value.split("-"))
+            ids = list(range(start, end + 1))
+
+            if int(ids[0]) in events:
+                event_id[label] = int(ids[0])
+                range_map[label] = ids
+                
+        else:
+            event_id[label] = int(id_value) if id_value.isnumeric() else id_value
+
+    return event_id, range_map
+
+def merge_event_ranges(events, range_map):
+    merged = events.copy()
+    for label, ids in range_map.items():
+        merged = mne.merge_events(merged, ids, ids[0])
+    return merged
