@@ -23,7 +23,7 @@ from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
-from biopap.modules.plot import Plot
+from biopap.modules.plot import Plot, PlotTypes
 from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
@@ -82,8 +82,8 @@ class Pipeline:
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
-        self.config_file = config_file
-        self.config = self.read_config(self.config_file)
+        self._config_file = config_file
+        self._config = self.read_config(self._config_file)
 
         self.verbose = verbose
         # self.output_file = Path(output_file) if output_file else None
@@ -152,8 +152,8 @@ class Pipeline:
 
         lookup = cfg_label if cfg_label else module.__name__
 
-        if lookup in self.config:
-            p_cfg = self.config[lookup]
+        if lookup in self._config:
+            p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
             cfg = {k: parse_template(v) for k, v in cfg.items()}
 
@@ -198,7 +198,7 @@ class Pipeline:
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
 
-            msg = f"Running step {step.Order}: {step.Module.__name__}"
+            msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
             msg = f"{msg} [{self.subject_id}]"
@@ -213,14 +213,17 @@ class Pipeline:
                 inst = step.Module(** args | cfg)
                 if len(inst.stdout)>0:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
+
+                self._processed_data = inst.processed
+                del inst
             except Exception as e:
-                logger.critical(f"step {step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
-                break
-            
-            self._processed_data = inst.processed
-            del inst
-        
+                if step.Module.halt_on_exceptions:
+                    logger.critical(f"{step.Order}. {step.Module.__name__} failed: {str(e)} [{self.subject_id}]")
+                    break
+                logger.error(f"({step.Order}) {step.Module.__name__} failed: {str(e)} (non-blocking) [{self.subject_id}]")
+
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
+
 
     def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
@@ -233,7 +236,7 @@ class Pipeline:
 
         data = {
             'biopap_pipeline': [x.as_dict() for x in self.steps],
-            'config_file': str(self.config_file),  # not really necessary
+            'config_file': str(self._config_file),  # not really necessary
             'label': label,
             'author': author,
             'created': datetime.now().strftime("%c"),
@@ -311,6 +314,10 @@ class Pipeline:
                 print()
 
     @property
+    def config(self):
+        return self._config
+
+    @property
     def subject_id(self):
         return self._subject_id
         
@@ -371,11 +378,17 @@ if __name__=="__main__":
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
         pipe.add_step(BlinkDetection)
+        pipe.add_step(Plot, cfg={
+            'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
+            'save_folder': './'})
         pipe.add_step(Segmentation)
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
+        pipe.add_step(Plot, cfg={
+            'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
+            'save_folder': './'})
         pipe.add_step(Plot)
         pipe.add_step(SaveOutput)
 
