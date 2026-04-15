@@ -7,6 +7,7 @@ import warnings
 import yaml
 from dataclasses import dataclass
 from datetime import datetime
+from inspect import signature
 from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
@@ -156,7 +157,6 @@ class Pipeline:
             cfg = p_cfg if cfg is None else p_cfg | cfg
             cfg = {k: parse_template(v) for k, v in cfg.items()}
 
-
         try:
             check_config = getattr(module, "check_config", None)
             if callable(check_config):
@@ -205,7 +205,12 @@ class Pipeline:
             logger.info(msg)
 
             try:
-                inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
+                args = { 'raw' : self._processed_data, 'silent' : True }
+
+                if 'subject_id' in signature(step.Module.__init__).parameters:
+                    args['subject_id'] = self.subject_id
+
+                inst = step.Module(** args | cfg)
                 if len(inst.stdout)>0:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
             except Exception as e:
@@ -215,10 +220,6 @@ class Pipeline:
             self._processed_data = inst.processed
             del inst
         
-        # if self.output_file is not None and self._processed_data is not None:
-        #     logger.info(f"saving output to {self.output_file}")
-        #     self._processed_data.save(self.output_file, overwrite=True)
-
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
     def to_file(self, save_path, label=None, author=None, overwrite=False):
@@ -329,7 +330,7 @@ class Pipeline:
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input_file', type=Path, required=True)
+    parser.add_argument('-i', '--input_file', type=Path)
     parser.add_argument('-c', '--config_file', type=Path)
     parser.add_argument('-s', '--stored_pipeline', type=Path)
     parser.add_argument('--label', type=str)
