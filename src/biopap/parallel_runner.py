@@ -111,24 +111,13 @@ if __name__ == "__main__":
         default="spawn",
         help="multiprocessing start method",
     )
-    # argp.add_argument("--debug", action="store_true")
+
     args = argp.parse_args()
-
-
-    p = Pipeline.from_file(
-        save_path=args.stored_pipeline
-    )
-
-    from biopap.modules.save_output import SaveOutput
-    print(p.steps)
-    p.add_step(SaveOutput)
-
 
     Pipeline.from_file(
         save_path=args.stored_pipeline
     ).check_steps()
 
-    exit()
     ParallelRunner(
         input_files=[x for x in glob.glob(f"{args.input_dir}/*.*") if Path(x).suffix in [".bdf", ".fif"]],
         # input_files=[x for x in glob.glob(f"{args.input_dir}/*.*")],
