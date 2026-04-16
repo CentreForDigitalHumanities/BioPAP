@@ -53,12 +53,12 @@ class SaveOutput(BaseClass):
 
             if e_frmts.is_selected(ExportFormats.FIF):
                 self.save_fif(
-                    output_file=output_file.format(subject_id=subject_id),
+                    filename=output_file.format(subject_id=subject_id),
                     overwrite=overwrite)
 
             if e_frmts.is_selected(ExportFormats.CSV):
                 self.save_csv(
-                    output_file=output_file.format(subject_id=subject_id),
+                    filename=output_file.format(subject_id=subject_id),
                     overwrite=overwrite)
 
     @classmethod
