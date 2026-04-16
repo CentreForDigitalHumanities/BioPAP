@@ -55,6 +55,7 @@ class Plot(BaseClass):
 
     def __init__(self,
                  raw,
+                 subject_id: str,
                  plot_types: Union[str, int, list[str]]=PlotTypes.PLOT,
                  save_folder=None,
                  save_postfix=None,
@@ -92,40 +93,40 @@ class Plot(BaseClass):
 
             if p_types.is_selected(PlotTypes.PLOT):
                 try:
-                    self.plot(**p_kwargs)
+                    self.plot(subject_id=subject_id, **p_kwargs)
                 except Exception as e:
                     errors.append(f"PLOT: {str(e)}")
 
             if p_types.is_selected(PlotTypes.SENSORS):
                 try:
-                    self.plot_sensors(**s_kwargs)
+                    self.plot_sensors(subject_id=subject_id, **s_kwargs)
                 except Exception as e:
                     errors.append(f"SENSORS: {str(e)}")
 
             if p_types.is_selected(PlotTypes.SPECTRUM_PLOT):
                 try:
-                    self.spectrum_plot(**sp_kwargs)
+                    self.spectrum_plot(subject_id=subject_id, **sp_kwargs)
                 except Exception as e:
                     errors.append(f"SPECTRUM_PLOT: {str(e)}")
 
             if p_types.is_selected(PlotTypes.SPECTRUM_TOPO):
                 try:
-                    self.spectrum_topo(**st_kwargs)
+                    self.spectrum_topo(subject_id=subject_id, **st_kwargs)
                 except Exception as e:
                     errors.append(f"SPECTRUM_TOPO: {str(e)}")
 
             if p_types.is_selected(PlotTypes.SPECTRUM_TOPO_MAP):
                 try:
-                    self.spectrum_topo_map(**sm_kwargs)
+                    self.spectrum_topo_map(subject_id=subject_id, **sm_kwargs)
                 except Exception as e:
                     errors.append(f"SPECTRUM_TOPO_MAP: {str(e)}")
 
             if len(errors)>0:
                 raise ValueError("; ".join(errors))
 
-    def plot_sensors(self, **kwargs):
+    def plot_sensors(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_sensors").with_suffix('.png'),
+            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_sensors").with_suffix('.png'),
                                      self.save_folder,
                                      self.save_postfix,
                                      self.save_overwrite)
@@ -136,7 +137,7 @@ class Plot(BaseClass):
         else:
             _ = self.raw.plot_sensors(** { 'block': True, 'show': True } | kwargs)
 
-    def plot(self, **kwargs):
+    def plot(self, subject_id, **kwargs):
         if isinstance(self.processed, mne.io.BaseRaw):
             events = mne.find_events(self.processed)
         else:
@@ -150,7 +151,7 @@ class Plot(BaseClass):
         args = { 'block': False, 'show': False, 'events': events }
 
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_plot").with_suffix('.png'),
+            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_plot").with_suffix('.png'),
                                           self.save_folder,
                                           self.save_postfix,
                                           self.save_overwrite)
@@ -160,9 +161,9 @@ class Plot(BaseClass):
         else:
             _ = self.processed.plot(** args | { 'block': True, 'show': True } | kwargs)
 
-    def spectrum_plot(self, **kwargs):
+    def spectrum_plot(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_spectrum_plot").with_suffix('.png'),
+            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_plot").with_suffix('.png'),
                                      self.save_folder,
                                      self.save_postfix,
                                      self.save_overwrite)
@@ -172,9 +173,9 @@ class Plot(BaseClass):
         else:
             _ = self._spectrum.plot(show=true, **kwargs)
 
-    def spectrum_topo(self, **kwargs):
+    def spectrum_topo(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_spectrum_topo").with_suffix('.png'),
+            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_topo").with_suffix('.png'),
                                      self.save_folder,
                                      self.save_postfix,
                                      self.save_overwrite)
@@ -184,9 +185,9 @@ class Plot(BaseClass):
         else:
             _ = self._spectrum.plot_topo(show=true, **kwargs)
 
-    def spectrum_topo_map(self, **kwargs):
+    def spectrum_topo_map(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_spectrum_topomap").with_suffix('.png'),
+            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_topomap").with_suffix('.png'),
                                      self.save_folder,
                                      self.save_postfix,
                                      self.save_overwrite)
