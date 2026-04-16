@@ -27,7 +27,7 @@ class ParallelRunner:
         mp_spawn_or_fork="spawn",
     ):
 
-        logger.info(f"Processing {len(input_files):,} houses")
+        logger.info(f"Processing {len(input_files):,} files")
 
         if max_workers:
             max_workers = min(max_workers, len(os.sched_getaffinity(0)))
