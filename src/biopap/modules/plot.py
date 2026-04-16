@@ -126,10 +126,11 @@ class Plot(BaseClass):
 
     def plot_sensors(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_sensors").with_suffix('.png'),
-                                     self.save_folder,
-                                     self.save_postfix,
-                                     self.save_overwrite)
+            p_out = get_new_filename(
+                Path(f"{self._stem}_{subject_id}_sensors").with_suffix('.png'),
+                     self.save_folder,
+                     self.save_postfix,
+                     self.save_overwrite)
  
             plot = self.raw.plot_sensors(** { 'block': False, 'show': False } | kwargs)
             plot.savefig(p_out)
@@ -151,10 +152,12 @@ class Plot(BaseClass):
         args = { 'block': False, 'show': False, 'events': events }
 
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_plot").with_suffix('.png'),
-                                          self.save_folder,
-                                          self.save_postfix,
-                                          self.save_overwrite)
+            p_out = get_new_filename(
+                Path(f"{self._stem}_{subject_id}_plot").with_suffix('.png'),
+                     self.save_folder,
+                     self.save_postfix,
+                     self.save_overwrite)
+
             plot = self.processed.plot(** args | kwargs)
             plot.grab().save(str(p_out))
             print(f"wrote plot to '{p_out}'")
@@ -163,10 +166,12 @@ class Plot(BaseClass):
 
     def spectrum_plot(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_plot").with_suffix('.png'),
-                                     self.save_folder,
-                                     self.save_postfix,
-                                     self.save_overwrite)
+            p_out = get_new_filename(
+                Path(f"{self._stem}_{subject_id}_spectrum_plot").with_suffix('.png'),
+                     self.save_folder,
+                     self.save_postfix,
+                     self.save_overwrite)
+
             plot = self._spectrum.plot(show=False, **kwargs)
             plot.savefig(p_out)
             print(f"wrote plot to '{p_out}'")
@@ -175,10 +180,12 @@ class Plot(BaseClass):
 
     def spectrum_topo(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_topo").with_suffix('.png'),
-                                     self.save_folder,
-                                     self.save_postfix,
-                                     self.save_overwrite)
+            p_out = get_new_filename(
+                Path(f"{self._stem}_{subject_id}_spectrum_topo").with_suffix('.png'),
+                     self.save_folder,
+                     self.save_postfix,
+                     self.save_overwrite)
+
             plot = self._spectrum.plot_topo(show=False, **kwargs)
             plot.savefig(p_out)
             print(f"wrote plot to '{p_out}'")
@@ -187,10 +194,12 @@ class Plot(BaseClass):
 
     def spectrum_topo_map(self, subject_id, **kwargs):
         if self.save_folder:
-            p_out = get_new_filename(Path(f"{self._stem}_{subject_id}_spectrum_topomap").with_suffix('.png'),
-                                     self.save_folder,
-                                     self.save_postfix,
-                                     self.save_overwrite)
+            p_out = get_new_filename(
+                Path(f"{self._stem}_{subject_id}_spectrum_topomap").with_suffix('.png'),
+                     self.save_folder,
+                     self.save_postfix,
+                     self.save_overwrite)
+
             plot = self._spectrum.plot_topomap(show=False, **kwargs)
             plot.savefig(p_out)
             print(f"wrote plot to '{p_out}'")
