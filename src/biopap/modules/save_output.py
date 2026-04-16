@@ -77,13 +77,13 @@ class SaveOutput(BaseClass):
         #TODO: address:
         #   This filename (/data/BioPAP/out/test_save_CBN1BD071212-Cropped.fif) does not conform to MNE naming conventions.
         #   All raw files should end with raw.fif, raw_sss.fif, raw_tsss.fif, _meg.fif, _eeg.fif, _ieeg.fif, raw.fif.gz, raw_sss.fif.gz, raw_tsss.fif.gz, _meg.fif.gz, _eeg.fif.gz or _ieeg.fif.gz
-        target_file = filename.with_suffix('.fif')
+        target_file = Path(filename).with_suffix('.fif')
         self.processed.save(target_file, overwrite=overwrite)
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
             
     def save_csv(self, filename, overwrite):
         #TODO also export events/annotations?
-        target_file = filename.with_suffix('.csv')
+        target_file = Path(filename).with_suffix('.csv')
         df = self.processed.to_data_frame()
         df.to_csv(target_file, index=False)
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
