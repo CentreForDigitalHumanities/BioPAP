@@ -27,7 +27,7 @@ class ParallelRunner:
         mp_spawn_or_fork="spawn",
     ):
 
-        logger.info(f"Processing {len(input_files):,} files")
+        logger.info(f"Processing {len(input_files):,} file(s)")
 
         if max_workers:
             max_workers = min(max_workers, len(os.sched_getaffinity(0)))
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         "-i", "--input_dir", 
         type=Path,
         required=True,
-        help="folder with files to process",
+        help="folder with .bdf and/or .fif files to process",
     )
     argp.add_argument(
         "-o", "--output_dir",
@@ -113,6 +113,9 @@ if __name__ == "__main__":
     )
 
     args = argp.parse_args()
+
+    if not args.input_dir.exists() or not args.input_dir.is_dir():
+        raise ValueError(f"'{args.input_dir}' doesn\'t exist or is not a directory")
 
     Pipeline.from_file(
         save_path=args.stored_pipeline

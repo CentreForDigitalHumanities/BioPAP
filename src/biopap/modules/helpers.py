@@ -68,7 +68,7 @@ def custom_formatwarning(message, category, filename, *args, **kwargs):
     return f"{str(Path(filename).stem)}:{str(message)}"
 
 
-def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
+def get_new_filename(filename, save_folder, save_postfix=None, save_overwrite=False):
     d_out = Path(save_folder)
     d_out.mkdir(parents=True, exist_ok=True)
     f_src = Path(filename)

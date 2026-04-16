@@ -378,18 +378,13 @@ if __name__=="__main__":
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
         pipe.add_step(BlinkDetection)
-        pipe.add_step(Plot, cfg={
-            'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
-            'save_folder': './'})
+        pipe.add_step(Plot, cfg_label='Plot_1')
         pipe.add_step(Segmentation)
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
-        pipe.add_step(Plot, cfg={
-            'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
-            'save_folder': './'})
-        pipe.add_step(Plot)
+        pipe.add_step(Plot, cfg_label='Plot_2')
         pipe.add_step(SaveOutput)
 
         if args.stored_pipeline:

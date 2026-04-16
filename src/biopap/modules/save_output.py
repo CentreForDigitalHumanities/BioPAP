@@ -2,7 +2,7 @@ import mne
 from pathlib import Path
 from typing import Union
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import OptionsBaseClass
+from biopap.modules.helpers import OptionsBaseClass, get_new_filename
 
 class ExportFormats(OptionsBaseClass):
 
@@ -74,16 +74,20 @@ class SaveOutput(BaseClass):
 
 
     def save_fif(self, filename, overwrite):
-        #TODO: address:
-        #   This filename (/data/BioPAP/out/test_save_CBN1BD071212-Cropped.fif) does not conform to MNE naming conventions.
-        #   All raw files should end with raw.fif, raw_sss.fif, raw_tsss.fif, _meg.fif, _eeg.fif, _ieeg.fif, raw.fif.gz, raw_sss.fif.gz, raw_tsss.fif.gz, _meg.fif.gz, _eeg.fif.gz or _ieeg.fif.gz
-        target_file = Path(filename).with_suffix('.fif')
+        target_file = get_new_filename(
+            filename=Path(filename).with_suffix('.fif').name,
+            save_folder=Path(filename).parent,
+            save_overwrite=overwrite)
+
         self.processed.save(target_file, overwrite=overwrite)
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
             
     def save_csv(self, filename, overwrite):
-        #TODO also export events/annotations?
-        target_file = Path(filename).with_suffix('.csv')
+        target_file = get_new_filename(
+            filename=Path(filename).with_suffix('.csv').name,
+            save_folder=Path(filename).parent,
+            save_overwrite=overwrite)
+
         df = self.processed.to_data_frame()
         df.to_csv(target_file, index=False)
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
