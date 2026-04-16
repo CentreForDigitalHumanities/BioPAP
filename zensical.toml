@@ -1,0 +1,48 @@
+[project]
+repo_url = "https://github.com/CentreForDigitalHumanities/BioPAP/tree/develop"
+edit_uri = "docs"
+site_name = "BioPAP"
+nav = [
+  { Home = "index.md" },
+  { Installation = "installation.md" },
+  { "User guide" = "guide.md" },
+  { Tutorials = [
+    { "Building pipeline" = "tutorials/building_pipeline.md" },
+    { Configuration = "tutorials/configuration.md" },
+    { "Batch Running" = "tutorials/run_batch.md" },
+  ] },
+  { Modules = [
+    { ApplyICA = "api/ica.md" },
+    { ArtifactReject = "api/artifact_reject.md" },
+    { Anonymize = "api/anonymize.md" },
+    { BaselineCorrection = "api/baseline_correction.md" },
+    { BIDSConversion = "api/bids.md" },
+    { BlinkDetection = "api/blink_detection.md" },
+    { Downsample = "api/downsample.md" },
+    { EOGChannels = "api/eog_channels.md" },
+    { IIRFilter = "api/iir_filter.md" },
+    { LoadData = "api/load_data.md" },
+    { Plot = "api/plot.md" },
+    { Rereference = "api/rereference.md" },
+    { Segmentation = "api/segmentation.md" },
+    { SetChannelTypeAndMontage = "api/set_channel_type_and_montage.md" },
+  ] },
+]
+
+[project.theme]
+features = [
+    "content.code.copy",
+    "search.highlight",
+    "content.action.edit", 
+    "content.action.view"
+]
+
+[project.plugins.mkdocstrings.handlers.python]
+inventories = ["https://docs.python.org/3/objects.inv"]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "numpy"
+show_root_heading = false
+show_root_full_path = false
+show_source = false
