@@ -66,6 +66,11 @@ IIRFilter:
 
 Downsample:
     sfreq: 250
+
+SaveOutput:
+    export_formats: ['fif', 'csv']
+    output_file: './output/preprocessed_data'
+    overwrite: True
 ```
 
 ## Overriding Configuration Parameters

@@ -1,6 +1,6 @@
 # Building the Pipeline
 
-This tutorial explains how to set up and run a preprocessing pipeline for bioelectrical data. It guides you through loading data, configuring modules, and executing a complete pipeline. For details on configuration files, see the [configuration tutorial](configuration.md).
+This tutorial explains how to set up and run a preprocessing pipeline for biosignal data. It guides you through loading data, configuring modules, and executing a complete pipeline. For details on configuration files, see the [configuration tutorial](configuration.md).
 
 ## Overview
 
@@ -14,7 +14,7 @@ A BioPAP pipeline typically follows these steps:
 
 ## Load the Data
 
-The first step is to load your bioelectrical data into memory. Use the [LoadData()](../api/load_data.md) module, which currently supports BDF (BioSemi Data Format) files.
+The first step is to load your biosignal data into memory. Use the [LoadData()](../api/load_data.md) module, which currently supports BDF (BioSemi Data Format) files.
 
 ```python
 # Read the data file and load it into memory
@@ -109,7 +109,8 @@ pipe.add_step(Anonymize)
 pipe.add_step(Downsample)
 pipe.add_step(IIRFilter)
 pipe.add_step(Rereference)
-pipe.add_step(ICA)
+pipe.add_step(ApplyICA)
+pipe.add_step(SaveOutput)
 ```
 
 View all steps and their configurations:

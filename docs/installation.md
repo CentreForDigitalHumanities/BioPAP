@@ -44,7 +44,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
     Clone the repository and install BioPAP in development mode:
 
     ```bash
-    git clone https://github.com/your-repo/BioPAP.git
+    git clone https://github.com/CentreForDigitalHumanities/BioPAP.git
     cd BioPAP
     pip3 install -e .
     ```
@@ -86,7 +86,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
     Clone the repository and install BioPAP in development mode:
 
     ```bash
-    git clone https://github.com/your-repo/BioPAP.git
+    git clone https://github.com/CentreForDigitalHumanities/BioPAP.git
     cd BioPAP
     pip3 install -e .
     ```
