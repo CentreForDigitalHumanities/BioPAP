@@ -7,6 +7,9 @@ class BlinkDetection(BaseClass):
 
     Detects blinks using MNE's ``find_eog_events()`` function and
     generates annotations for the input data.
+
+    https://mne.tools/stable/generated/mne.preprocessing.find_eog_events.html
+    https://mne.tools/stable/generated/mne.Annotations.html
     
     Parameters
     ----------
@@ -15,6 +18,10 @@ class BlinkDetection(BaseClass):
     **kwargs
         Additional keyword arguments passed to the underlying
         ``find_eog_events()`` and ``Annotations()`` methods.
+        Pass arguments for the different functions by using a dictionary with
+        `find_eog_events`, and `Annotations` as keys. Example:
+        {'find_eog_events' : {'filter_length': '5s'}, 'Annotations': {'duration': 1.5}}
+
 
     Attributes
     ----------

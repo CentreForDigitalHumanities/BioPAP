@@ -11,6 +11,10 @@ class Segmentation(BaseClass):
     epochs around selected markers using MNE's ``find_events()`` and
     ``Epochs`` functions.
 
+    https://mne.tools/stable/generated/mne.find_events.html
+    https://mne.tools/stable/generated/mne.pick_events.html
+    https://mne.tools/stable/generated/mne.pick_events.html
+
     Parameters
     ----------
     raw : mne.io.Raw
@@ -38,8 +42,10 @@ class Segmentation(BaseClass):
         Path to a CSV file defining event labels and their corresponding IDs or ID ranges separated with '-'.
         The CSV file should have two columns: "label" and "ID".
     **kwargs
-        Additional keyword arguments passed to MNE's
-        ``find_events`` and ``Epochs`` functions.
+        Additional keyword arguments passed to MNE's ``find_events()`` 
+        and ``Epochs()`` functions. Pass arguments for the different
+        functions by using a dictionary with ``find_events`` and
+        ``Epochs`` as keys.
 
     Attributes
     ----------

@@ -25,6 +25,13 @@ class Plot(BaseClass):
     Displays the data using MNE's ``plot()`` method. If save options are
     provided, a screenshot of the figure is saved to disk.
 
+    mne-functions used:
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
+    https://mne.tools/stable/generated/mne.viz.plot_sensors.html
+    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot
+    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topo
+    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topomap
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
@@ -41,7 +48,11 @@ class Plot(BaseClass):
     save_overwrite : bool, default False
         Whether to overwrite files with the same name.
     **kwargs
-        Additional keyword arguments passed to MNE's ``plot()`` method.
+        Additional keyword arguments passed to MNE's ``plot()``, ``plot_sensors()``,
+        and `time_frequency.Spectrum.plot()`, `plot_topo()`, and `plot_topomap()`
+        methods. Pass arguments for the different functions by using a dictionary with
+        ``plot``, ``plot_sensors``, ``spectrum_plot``, ``spectrum_topo``, and 
+        ``spectrum_topo_map`` as keys.
 
     Attributes
     ----------

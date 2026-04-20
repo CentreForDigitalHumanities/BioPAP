@@ -5,6 +5,10 @@ class ApplyICA(BaseClass):
     """
     Class for applying Independent Component Analysis (ICA).
 
+    https://mne.tools/stable/generated/mne.preprocessing.ICA.html#mne.preprocessing.ICA
+    https://mne.tools/stable/generated/mne.preprocessing.ICA.html#mne.preprocessing.ICA.fit
+    https://mne.tools/stable/generated/mne.preprocessing.ICA.html#mne.preprocessing.ICA.apply
+
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs
@@ -15,7 +19,9 @@ class ApplyICA(BaseClass):
         ICA method to use.
     **kwargs
         Additional keyword arguments passed to MNE's ``ICA``,
-        ``fit``, and ``apply`` methods.
+        ``fit``, and ``apply`` methods. Pass arguments for the different functions
+        by using a dictionary with `fit`, `apply`, and `ICA` as keys. Example:
+        {'ICA' : {'random_state': 23, 'max_iter': 500}, 'apply': {'on_baseline': 'ignore'} } 
 
     Attributes
     ----------
