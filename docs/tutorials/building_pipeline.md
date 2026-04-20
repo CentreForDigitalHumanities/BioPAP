@@ -12,6 +12,10 @@ A BioPAP pipeline typically follows these steps:
 4. Create a pipeline and add processing steps
 5. Run the pipeline and access results
 
+!!! info "See also"
+
+    For complete, working examples of all the code shown in this tutorial, refer to the [pipeline.ipynb](https://github.com/CentreForDigitalHumanities/BioPAP/blob/develop/examples/pipeline.ipynb) notebook, which demonstrates both interactive module testing and structured pipeline execution.
+
 ## Load the Data
 
 The first step is to load your biosignal data into memory. Use the [LoadData()](../api/load_data.md) module, which currently supports BDF (BioSemi Data Format) files.
