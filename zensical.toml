@@ -24,6 +24,7 @@ nav = [
     { LoadData = "api/load_data.md" },
     { Plot = "api/plot.md" },
     { Rereference = "api/rereference.md" },
+    { SaveOutput = "api/save_output.md" },
     { Segmentation = "api/segmentation.md" },
     { SetChannelTypeAndMontage = "api/set_channel_type_and_montage.md" },
   ] },
