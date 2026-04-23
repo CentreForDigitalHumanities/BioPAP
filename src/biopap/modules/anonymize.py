@@ -1,41 +1,70 @@
-"""Class for anonymizing raw data"""
-
 import mne
+from random import randint
+from typing import Union
 from biopap.modules.base_class import BaseClass
-# from datetime import datetime
-# from datetime import timezone
 
 class Anonymize(BaseClass):
+    """
+    Class for anonymizing raw or epoched data.
 
-    #TODO: what about filename? randomize?
-    #TODO: description
+    Applies MNE's built-in anonymization (``Raw.anonymize()`` or
+    ``Epochs.anonymize()``) to the provided data object.
+
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
+
+    Parameters
+    ----------
+    raw : mne.io.Raw | mne.Epochs
+        Input data to anonymize.
+    daysback : int | None
+        Number of days to subtract from all dates.
+    experimenter : str
+        Name of the experimenter to store in the anonymized metadata.
+    participant_id : str
+        Participant identifier to store in the anonymized metadata.
+    **kwargs
+        Additional keyword arguments passed to the underlying MNE
+        ``Raw.anonymize()`` or ``Epochs.anonymize()`` method.
+
+    Attributes
+    ----------
+    processed : mne.io.Raw | mne.Epochs
+        Anonymized output data.
+    """
+
+    log_config = False
 
     def __init__(self,
                  raw: mne.io.Raw,
-                 daysback: int,
+                 daysback: Union[int, str],
                  experimenter: str=None,
                  participant_id: str=None,
-                 auto_run: bool=True):
+                 silent: bool=False,
+                 **kwargs):
 
-        self.raw = raw.copy()
-        self.daysback = daysback
-        self.experimenter = experimenter
-        self.participant_id = participant_id
-        if auto_run:
-            self.run()
+        super().__init__(silent)
 
-    def run(self):
-        try:
-            self.raw.anonymize(
-                daysback=self.daysback,
-                verbose=self.verbose)
-            # self.raw.set_meas_date(datetime.now(tz=timezone.utc))
-            
-            if self.experimenter is not None:
-                self.raw.info['experimenter'] = str(self.experimenter)
-            if self.participant_id is not None:
-                self.raw.info['subject_info'] = {'his_id': str(self.participant_id)}
+        with self.capture_stdout as self.stdout:
 
-            self.processed = self.raw
-        except Exception as e:
-            print(f"Error: {e}")
+            if not isinstance(daysback, int) and daysback.lower() != 'random':
+                raise ValueError(f"daysback must be either int or 'random' (got '{daysback}')")
+
+            if not isinstance(daysback, int):
+                daysback = randint(1, 100)
+
+            self.processed = raw
+
+            self.processed.anonymize(
+                daysback=daysback,
+                verbose=self.verbose,
+                **kwargs)
+
+            # not implemented
+            # self.processed.set_meas_date(measure_datee)
+
+            if experimenter is not None:
+                self.processed.info['experimenter'] = str(experimenter)
+
+            if participant_id is not None:
+                self.processed.info['subject_info'] = {'his_id': str(participant_id)}

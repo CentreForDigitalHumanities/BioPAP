@@ -1,15 +1,37 @@
-"""Class for downsampling"""
-
 import mne
 from biopap.modules.base_class import BaseClass
 
 class Downsample(BaseClass):
+    """
+    Class for downsampling EEG data to a lower sampling rate.
 
+    Applies MNE's built-in ``resample`` function to the input data.
+
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.resample
+    
+    Parameters
+    ----------
+    raw : mne.Raw | mne.Epochs
+        Input data.
+    sfreq : int
+        Target sampling rate in Hz.
+    resample_events : bool, default True
+        Whether to resample event onsets along with the data.
+    **kwargs
+        Additional keyword arguments passed to MNE's ``resample`` method. Example:
+        {'n_jobs': 'cuda'}
+
+    Attributes
+    ----------
+    processed : mne.Raw | mne.Epochs
+        Output data after resampling.
+    """
     def __init__(self,
                  raw,
                  sfreq,
                  resample_events=True,
-                 auto_run: bool=True):
+                 silent: bool=False,
+                 **kwargs):
 
         # Downsampling
         # *** Change Sampling Rate / Resolution ***
@@ -24,28 +46,26 @@ class Downsample(BaseClass):
         # In MNE-Python, the resampling methods (raw.resample(), epochs.resample() 
         # and evoked.resample()) apply a low-pass filter to the signal to avoid
         # aliasing, so you don’t need to explicitly filter it yourself first. 
-        self.raw = raw
-        self.sfreq = sfreq
-        self.resample_events = resample_events
-        if auto_run:
-            self.run()
+        super().__init__(silent)
 
-    def run(self):
-        try:
-            if self.resample_events:
+        with self.capture_stdout as self.stdout:
+
+            self.processed = raw
+
+            if resample_events and isinstance(self.raw, mne.io.BaseRaw):
                 events = mne.find_events(self.raw)
-                self.processed, self.events = self.raw.resample(
-                    sfreq=self.sfreq, 
-                    events=events,
-                    verbose=self.verbose)
+                self.processed, self.events = self.raw.resample(** {
+                    'sfreq': sfreq, 
+                    'events': events,
+                    'verbose': self.verbose
+                    } | kwargs)
             else:
-                self.processed = self.raw.resample(
-                    sfreq=self.sfreq, 
-                    verbose=self.verbose)
+                self.processed.resample(** {
+                    'sfreq': sfreq, 
+                    'verbose': self.verbose
+                    } | kwargs)
 
-            # RuntimeWarning: Resampling of the stim channels caused event information 
-            # to become unreliable. Consider finding events on the original data and 
-            # passing the event matrix as a parameter.
+        # RuntimeWarning: Resampling of the stim channels caused event information 
+        # to become unreliable. Consider finding events on the original data and 
+        # passing the event matrix as a parameter.
 
-        except Exception as e:
-            print(f"Error: {e}")

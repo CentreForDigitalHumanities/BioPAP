@@ -5,6 +5,7 @@ import pandas as pd
 from pathlib import Path
 from mne_bids import BIDSPath, write_raw_bids, make_dataset_description
 from biopap.modules.base_class import BaseClass
+from biopap.modules.helpers import build_event_dict, merge_event_ranges
 
 # TODO: Check what the sanitize_events function does and check if we need it. It was in Gabriel's code.
 # TODO: subject, session, task, run, can we extract from raw?
@@ -26,116 +27,86 @@ class BIDSConversion(BaseClass):
                  run,
                  overwrite=False,
                  dataset_description=None,
-                 auto_run: bool=True):
+                 silent: bool=False,
+                 **kwargs):
+
+        super().__init__(silent)
+
+        with self.capture_stdout as self.stdout:
                 
-                self.raw = raw
-                self.eventsfile = eventsfile
-                self.bids_root = Path(bids_root)
+            self.processed = raw
+            
+            bids_root = Path(bids_root)
 
-                if subject is None:
-                    self.subject = raw.info.get("subject_info", {}).get("his_id", None)
-                else:
-                    self.subject = subject
+            if subject is None:
+                subject = self.processed.info.get("subject_info", {}).get("his_id", None)
 
-                self.session = session
-                self.task = task
-                self.run_id = run
-                self.overwrite = overwrite
-                self.dataset_description = dataset_description or {}
-                if auto_run:
-                    self.run()
+            dataset_description = dataset_description or {}
 
-    def run(self):
-        try:
+            if not isinstance(self.raw, mne.io.BaseRaw):
+                raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
+
+            f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
+            b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
+            w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
+            mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
+        
             # Parse events from raw data
-            events = mne.find_events(self.raw)
+            events = mne.find_events(self.processed,
+                                        **f_kwargs)
 
             # Build mappings from eventfile
-            event_id, range_map = self.build_event_dict(self.eventsfile)
+            event_id, range_map = self.build_event_dict(eventsfile)
             merged_events = self.merge_event_ranges(events, range_map)
-            merged_events = self.sanitize_events(merged_events, event_id)
+            # merged_events = self.sanitize_events(merged_events, event_id)
 
             # Create BIDS Path
             bids_path = BIDSPath(
-                subject=self.subject,
-                session=self.session,
-                task=self.task,
-                run=self.run_id,
+                subject=subject,
+                session=session,
+                task=task,
+                run=run,
                 datatype="eeg",
-                root=self.bids_root
+                root=bids_root,
+                **b_kwargs
             )
 
             write_raw_bids(
-                raw=self.raw, 
+                raw=self.processed, 
                 format='BrainVision', 
                 bids_path=bids_path, 
                 events=merged_events, 
                 event_id=event_id, 
                 allow_preload=True, 
-                overwrite=self.overwrite
+                overwrite=overwrite,
+                **w_kwargs
             )
 
             # Write dataset_description.json
-            self.write_dataset_description()
+            self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
 
-            self.processed = self.raw
             print("BIDS conversion completed.")
 
-        except Exception as e:
-            print(f"[BIDSConversion ERROR] {e}")
-
-    def write_dataset_description(self):
+    @staticmethod
+    def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
         dd = {
-            "name": self.dataset_description.get("name", "Untitled EEG Dataset"),
-            "data_license": self.dataset_description.get("data_license", "CC0"),
-            "authors": self.dataset_description.get("authors", ["Unknown"]),
-            "acknowledgements": self.dataset_description.get("acknowledgements", []),
-            "how_to_acknowledge": self.dataset_description.get("how_to_acknowledge", []),
-            "funding": self.dataset_description.get("funding", []),
-            "references_and_links": self.dataset_description.get("references", []),
-            "doi": self.dataset_description.get("doi", []),
-            "dataset_type": self.dataset_description.get("dataset_type", "raw")
+            "name": dataset_description.get("name", "Untitled EEG Dataset"),
+            "data_license": dataset_description.get("data_license", "CC0"),
+            "authors": dataset_description.get("authors", ["Unknown"]),
+            "acknowledgements": dataset_description.get("acknowledgements", []),
+            "how_to_acknowledge": dataset_description.get("how_to_acknowledge", []),
+            "funding": dataset_description.get("funding", []),
+            "references_and_links": dataset_description.get("references", []),
+            "doi": dataset_description.get("doi", []),
+            "dataset_type": dataset_description.get("dataset_type", "raw")
         }
 
         make_dataset_description(
-            path=self.bids_root,
+            path=bids_root,
             overwrite=True,
-            **dd
+            **dd,
+            **mdd_kwargs
         )
-
-    @staticmethod
-    def build_event_dict(eventsfile):
-        event_id = {}
-        range_map = {}
-
-        df = pd.read_csv(eventsfile)
-
-        for _, row in df.iterrows():
-            label = str(row["label"]).strip()
-            id_value = str(row["ID"]).strip()
-
-            if label in event_id:
-                raise ValueError(f"Duplicate event label: {label}")
-
-            if "-" in id_value:
-                start, end = map(int, id_value.split("-"))
-                ids = list(range(start, end + 1))
-                event_id[label] = ids[0]
-                range_map[label] = ids
-            else:
-                try: 
-                    event_id[label] = int(id_value) 
-                except ValueError: 
-                    event_id[label] = id_value # keep id as string
-
-        return event_id, range_map
-    
-    @staticmethod
-    def merge_event_ranges(events, range_map):
-        merged = events.copy()
-        for label, ids in range_map.items():
-            merged = mne.merge_events(merged, ids, ids[0])
-        return merged
     
     # ---------------------------------- 
     # Gabriel's code; not sure what non-zero trigger channel and acquisition system means
@@ -156,6 +127,7 @@ class BIDSConversion(BaseClass):
             if len(set(events[:,-1]) - set(event_id.values())) > 0:
                 raise ValueError(f"Event {set(events[:,-1]) - set(event_id.values())}"
                                 "has not been declared in eventsfile") 
+
         print(f"Found triggers: {[int(x) for x in set(events[:,-1])]}")
-        
+
         return events

@@ -5,8 +5,6 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "BioPAP"
 authors = [
-    {name = "Shiva Nadi", email = "s.nadi@uu.nl"},
-    {name = "Raoul Schram ", email = "r.d.schram@uu.nl"},
     {name = "Maarten Schermer", email = "m.d.schermer@uu.nl"},
     {name = "Matty Vermet", email = "m.s.vermet@uu.nl"},
 ]
@@ -17,7 +15,6 @@ keywords = []
 license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -27,15 +24,15 @@ classifiers = [
 ]
 dependencies = [
 ]
-dynamic = ["version"]
+version = "0.0.1"
 
 [project.optional-dependencies]
 test = [
-	"pytest", "ruff", "mypy", "nbval", "pytest-cov", 
+    "pytest", "ruff", "mypy", "nbval", "pytest-cov",
 ]
 docs = [
-    "sphinx<9.0.0", "sphinx-rtd-theme", "sphinxcontrib-napoleon",
-    "sphinx-autodoc-typehints", "sphinx_inline_tabs", "sphinx_copybutton",
+    "mkdocs-material",
+    "mkdocstrings[python]",
 ]
 
 [tool.setuptools_scm]
