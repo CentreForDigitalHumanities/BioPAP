@@ -7,6 +7,8 @@ class IIRFilter(BaseClass):
 
     Filters the input data using an IIR filter with MNE's ``filter()`` method.
 
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.filter
+
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs
@@ -27,6 +29,7 @@ class IIRFilter(BaseClass):
         - ``'bessel'`` (Bessel/Thomson)
     **kwargs
         Additional keyword arguments passed to MNE's ``filter()`` method.
+        Example: {'fir_window': 'hann'}
 
     Attributes
     ----------

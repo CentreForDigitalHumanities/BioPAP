@@ -6,6 +6,8 @@ class Downsample(BaseClass):
     Class for downsampling EEG data to a lower sampling rate.
 
     Applies MNE's built-in ``resample`` function to the input data.
+
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.resample
     
     Parameters
     ----------
@@ -16,7 +18,8 @@ class Downsample(BaseClass):
     resample_events : bool, default True
         Whether to resample event onsets along with the data.
     **kwargs
-        Additional keyword arguments passed to MNE's ``resample`` method.
+        Additional keyword arguments passed to MNE's ``resample`` method. Example:
+        {'n_jobs': 'cuda'}
 
     Attributes
     ----------

@@ -11,6 +11,11 @@ class LoadData(BaseClass):
     """
     Class for loading BDF data from file.
 
+    mne-functions used:
+    https://mne.tools/stable/generated/mne.io.read_raw_bdf.html
+    https://mne.tools/stable/generated/mne.read_epochs.html
+    https://mne.tools/stable/generated/mne.io.read_raw_fif.html
+
     Parameters
     ----------
     file_path : str | Path
@@ -22,7 +27,7 @@ class LoadData(BaseClass):
         hard drive (slower, requires less memory).
     **kwargs
         Additional keyword arguments passed to the underlying
-        ``mne.io.read_raw_bdf()`` method.
+        ``mne.io.read_raw_bdf()``  or ``mne.io.read_raw_fif()`` method.
 
     Attributes
     ----------
@@ -69,7 +74,7 @@ class LoadData(BaseClass):
             raw_fif = mne.read_epochs(file_path, preload=preload)
         except ValueError as e:
             if str(e).strip().lower() == "could not find event data":
-                raw_fif = mne.io.read_raw_fif(file_path, preload=preload)
+                raw_fif = mne.io.read_raw_fif(file_path, preload=preload, **kwargs)
             else:
                 raise e
 

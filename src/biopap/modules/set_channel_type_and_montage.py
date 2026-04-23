@@ -9,6 +9,11 @@ class SetChannelTypeAndMontage(BaseClass):
     using ``set_channel_types()``, ``make_standard_montage()``, and
     ``set_montage()``.
 
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.set_channel_types
+    https://mne.tools/stable/generated/mne.channels.make_standard_montage.html
+    https://mne.tools/stable/generated/mne.channels.make_standard_montage.html
+
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
@@ -31,8 +36,10 @@ class SetChannelTypeAndMontage(BaseClass):
         ``mne.channels.get_builtin_montages()`` to list available options.
     **kwargs
         Additional keyword arguments passed to MNE's
-        ``set_channel_types``, ``make_standard_montage``, and
-        ``set_montage`` functions.
+        ``set_channel_types()``, ``make_standard_montage()``, and
+        ``set_montage()`` functions. Pass arguments for the different
+        functions by using a dictionary with ``set_channel_types``,
+        ``make_standard_montage``, and ``set_montage`` as keys.
 
     Attributes
     ----------
