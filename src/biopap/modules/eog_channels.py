@@ -7,6 +7,8 @@ class EOGChannels(BaseClass):
 
     Creates new bipolar channels from specified reference, anode, and
     cathode channels using MNE's ``set_bipolar_reference()`` function.
+
+    https://mne.tools/stable/generated/mne.set_bipolar_reference.html
     
     Parameters
     ----------
@@ -25,6 +27,7 @@ class EOGChannels(BaseClass):
     **kwargs
         Additional keyword arguments passed to MNE's
         ``set_bipolar_reference()`` function.
+        Example: {'on_bad': 'ignore'}
 
     Attributes
     ----------

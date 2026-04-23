@@ -6,11 +6,13 @@ class BaselineCorrection(BaseClass):
     Class for applying baseline correction.
 
     Performs baseline correction on the input data using MNE's
-    built-in ``apply_baseline()`` method (for Raw or Epochs).
+    built-in ``apply_baseline()`` method (for Epochs).
+
+    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.apply_baseline
 
     Parameters
     ----------
-    raw : mne.Raw | mne.Epochs
+    raw : mne.Epochs
         Input data.
     baseline: tuple of length 2 | None
         The time interval (start, stop) in seconds to use for
@@ -18,7 +20,7 @@ class BaselineCorrection(BaseClass):
 
     Attributes
     ----------
-    processed : mne.Raw | mne.Epochs
+    processed : mne.Epochs
         Baseline corrected output data.
     """
 
@@ -30,6 +32,10 @@ class BaselineCorrection(BaseClass):
         super().__init__(silent)
 
         with self.capture_stdout as self.stdout:
-        
+                  
             self.processed = raw
-            self.processed = self.processed.apply_baseline(baseline)
+
+            if isinstance(self.processed, mne.Epochs):
+                self.processed = self.processed.apply_baseline(baseline)
+            else:
+                raise TypeError(f"Baseline correction is only applicable to mne.Epochs objects (got {type(self.processed)})")

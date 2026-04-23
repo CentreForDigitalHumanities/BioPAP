@@ -16,6 +16,11 @@ class SaveOutput(BaseClass):
     """
     Class for saving the output data.
 
+    mne-functions used:
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.save
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.to_data_frame
+    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.to_data_frame
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs

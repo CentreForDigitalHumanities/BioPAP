@@ -7,6 +7,8 @@ class Rereference(BaseClass):
 
     Applies MNE's ``set_eeg_reference()`` function to the input data.
 
+    https://mne.tools/stable/generated/mne.set_eeg_reference.html#mne.set_eeg_reference
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
