@@ -27,11 +27,6 @@ class Rereference(BaseClass):
         Output data after rereferencing.
     """
 
-    # https://mne.tools/stable/generated/mne.set_eeg_reference.html#mne.set_eeg_reference
-    # raw: Array of reference data subtracted from EEG channels.
-    # ref_data: Array of reference data subtracted from EEG channels.
-    #TODO: 'Channels to which the new reference applies to: ': cannot set explicitly (but it's all of them, right?)
-
     def __init__(self,
                  raw,
                  ref_channels=['EXG1', 'EXG2'],

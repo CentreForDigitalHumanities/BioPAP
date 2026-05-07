@@ -60,9 +60,6 @@ class Anonymize(BaseClass):
                 verbose=self.verbose,
                 **kwargs)
 
-            # not implemented
-            # self.processed.set_meas_date(measure_datee)
-
             if experimenter is not None:
                 self.processed.info['experimenter'] = str(experimenter)
 
