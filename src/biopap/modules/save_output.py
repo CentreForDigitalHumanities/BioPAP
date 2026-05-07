@@ -51,18 +51,10 @@ class SaveOutput(BaseClass):
         with self.capture_stdout as self.stdout:
 
             self.processed = raw
-            # self.export_format = export_format
-            # self.output_file = output_file
-            # self.overwrite = overwrite
-
             e_frmts = ExportFormats(export_formats)
 
-            #TODO implement overwrite
-
-            # if self.export_format == 'fif':
             if e_frmts.is_selected(ExportFormats.FIF):
                 self.save_fif(output_file, overwrite)
-            # elif self.export_format == 'csv':
             if e_frmts.is_selected(ExportFormats.CSV):
                 self.save_csv(output_file, overwrite)
 
@@ -73,15 +65,13 @@ class SaveOutput(BaseClass):
             _ = ExportFormats(cfg['export_formats'])
 
     def save_fif(self, filename, overwrite):
-        #TODO: address:
-        #   This filename (/data/BioPAP/out/test_save_CBN1BD071212-Cropped.fif) does not conform to MNE naming conventions.
-        #   All raw files should end with raw.fif, raw_sss.fif, raw_tsss.fif, _meg.fif, _eeg.fif, _ieeg.fif, raw.fif.gz, raw_sss.fif.gz, raw_tsss.fif.gz, _meg.fif.gz, _eeg.fif.gz or _ieeg.fif.gz
+        #TODO implement overwrite
         target_file = Path(filename).with_suffix('.fif')
         self.processed.save(target_file, overwrite=overwrite)
         print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
             
     def save_csv(self, filename, overwrite):
-        #TODO also export events/annotations?
+        #TODO implement overwrite
         target_file = Path(filename).with_suffix('.csv')
         df = self.processed.to_data_frame()
         df.to_csv(target_file, index=False)

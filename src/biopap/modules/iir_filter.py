@@ -52,14 +52,6 @@ class IIRFilter(BaseClass):
 
             self.processed = raw
 
-            # Zero phase shift Butterworth filters.
-            # Global filter settings:
-            # Low cutoff: 0.1 Hz, time constant 1.5915494309189535, order 4
-            # High cutoff: 35 Hz, order 4 
-            # Notch filter: ---
-
-            # https://mne.tools/stable/generated/mne.filter.construct_iir_filter.html#mne.filter.construct_iir_filter
-
             iir_params = dict(order=order, ftype=ftype)
 
             self.processed = self.processed.filter(l_freq=l_freq,

@@ -33,19 +33,6 @@ class Downsample(BaseClass):
                  silent: bool=False,
                  **kwargs):
 
-        # Downsampling
-        # *** Change Sampling Rate / Resolution ***
-        # Conversion is based on spline interpolation.
-        # New Sampling Rate [Hz]: 500
-        # New Sampling Interval [µS]: 2000
-        # Data was filtered before downsampling with 225Hz, 24dB/oct.
-
-        # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.resample
-        # https://mne.tools/stable/auto_tutorials/preprocessing/30_filtering_resampling.html#resampling
-
-        # In MNE-Python, the resampling methods (raw.resample(), epochs.resample() 
-        # and evoked.resample()) apply a low-pass filter to the signal to avoid
-        # aliasing, so you don’t need to explicitly filter it yourself first. 
         super().__init__(silent)
 
         with self.capture_stdout as self.stdout:
@@ -65,7 +52,4 @@ class Downsample(BaseClass):
                     'verbose': self.verbose
                     } | kwargs)
 
-        # RuntimeWarning: Resampling of the stim channels caused event information 
-        # to become unreliable. Consider finding events on the original data and 
-        # passing the event matrix as a parameter.
 

@@ -75,7 +75,6 @@ class ArtifactReject(BaseClass):
 
             counts = bad_mask.sum(axis=0)
 
-            # TODO (EXTRA): create a plot out of this
             for ch, n in zip(self.processed.ch_names, counts):
                 print(f"{ch}: bad in {n} epochs")
 
