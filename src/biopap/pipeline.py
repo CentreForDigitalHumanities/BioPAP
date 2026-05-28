@@ -175,8 +175,8 @@ class Pipeline:
     def check_steps(self):
         if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
             raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
-        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
-            warnings.warn("pipeline contains steps after SaveOutput")
+        # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
+        #     warnings.warn("pipeline contains steps after SaveOutput")
 
     def run(self):
 
