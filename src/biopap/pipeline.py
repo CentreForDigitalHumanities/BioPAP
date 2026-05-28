@@ -185,10 +185,15 @@ class Pipeline:
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
+        final_step = max([x.Order for x in self.steps])
+
         self._processed_data = self._initial_data.copy()
 
-        for step in self.steps:
+        for step in (self.steps):
             cfg = step.Cfg if step.Cfg else {}
+
+            if step.Module.__name__ == SaveOutput.__name__ and step.Order == final_step:
+                cfg['intermediate'] = False
 
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
@@ -369,8 +374,10 @@ if __name__=="__main__":
             'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
             'save_folder': './'})
         pipe.add_step(Segmentation)
+        pipe.add_step(SaveOutput, cfg_label='SaveOutput_1')
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
+        pipe.add_step(SaveOutput, cfg_label='SaveOutput_2', cfg={'intermediate':'_before_ICA'})
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
         pipe.add_step(Plot, cfg={
