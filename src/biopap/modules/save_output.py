@@ -134,8 +134,8 @@ class SaveOutput(BaseClass):
         with open(f_new, 'w', encoding='utf-8') as f:
             f.write("# Steps completed:\n")
             for step in steps_completed:
-                f.write(str(step) + '\n')
+                f.write(f"{str(step)}\n")
             f.write("\n")
             f.write(f"# Output ({datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')}):\n")
             for saved_file in saved_files:
-                f.write(str(saved_file) + '\n')
+                f.write(f"{str(saved_file)}\n")
