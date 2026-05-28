@@ -5,12 +5,11 @@ import mne
 import sys
 import warnings
 import yaml
-from dataclasses import dataclass
 from datetime import datetime
 from math import ceil
 from pathlib import Path
-from typing import Any, Union, Optional
-
+from typing import Union, Optional
+from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
@@ -28,6 +27,7 @@ from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
+
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
@@ -41,23 +41,6 @@ def add_logfile_handler(log_file=None):
     fh = logging.FileHandler(log_file)
     fh.setFormatter(logging.Formatter(log_format))
     logger.addHandler(fh)
-
-
-@dataclass
-class PipelineStep:
-    Module: Any
-    Cfg: dict
-    Order: int
-
-    def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
-
-    def as_dict(self):
-        return  {
-            'module': self.Module.__name__,
-            'cfg': self.Cfg,
-            'order': self.Order,
-            }
 
 
 class Pipeline:
@@ -189,11 +172,12 @@ class Pipeline:
 
         self._processed_data = self._initial_data.copy()
 
-        for step in (self.steps):
+        for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
 
-            if step.Module.__name__ == SaveOutput.__name__ and step.Order == final_step:
-                cfg['intermediate'] = False
+            if step.Module.__name__ == SaveOutput.__name__:
+                cfg['steps_completed'] = [x for x in self.steps if x.Order < step.Order]
+                cfg['intermediate'] = step.Order != final_step
 
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
