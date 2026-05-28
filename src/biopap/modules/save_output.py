@@ -2,7 +2,7 @@ import mne
 from pathlib import Path
 from typing import Union
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import OptionsBaseClass
+from biopap.modules.helpers import (OptionsBaseClass, get_new_filename)
 
 class ExportFormats(OptionsBaseClass):
 
@@ -65,14 +65,22 @@ class SaveOutput(BaseClass):
             _ = ExportFormats(cfg['export_formats'])
 
     def save_fif(self, filename, overwrite):
-        #TODO implement overwrite
-        target_file = Path(filename).with_suffix('.fif')
-        self.processed.save(target_file, overwrite=overwrite)
-        print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
+        f_new = Path(filename).with_suffix('.fif')
+        f_new = get_new_filename(
+            filename=f_new.name,
+            save_folder=f_new.parent,
+            save_overwrite=overwrite)
+
+        self.processed.save(f_new, overwrite=overwrite)
+        print(f"wrote '{f_new}' ({f_new.stat().st_size:,})")
             
     def save_csv(self, filename, overwrite):
-        #TODO implement overwrite
-        target_file = Path(filename).with_suffix('.csv')
+        f_new = Path(filename).with_suffix('.csv')
+        f_new = get_new_filename(
+            filename=f_new.name,
+            save_folder=f_new.parent,
+            save_overwrite=overwrite)
+
         df = self.processed.to_data_frame()
-        df.to_csv(target_file, index=False)
-        print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
+        df.to_csv(f_new, index=False)
+        print(f"wrote '{f_new}' ({f_new.stat().st_size:,})")
