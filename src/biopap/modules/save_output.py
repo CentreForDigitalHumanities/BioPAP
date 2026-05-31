@@ -47,7 +47,7 @@ class SaveOutput(BaseClass):
 
     def __init__(self,
                  raw,
-                 export_formats: Union[str, int, list[str]]=None,
+                 export_formats: Union[str, int, list[str]],
                  output_file: str=None,
                  overwrite: bool=True,
                  steps_completed: list[PipelineStep]=[],
