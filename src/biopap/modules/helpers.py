@@ -47,6 +47,9 @@ class OptionsBaseClass:
             self._selected_options = sel_options
 
     def is_selected(self, lookup):
+        if self.selected_options is None:
+            return False
+
         tmp = self.selected_options
         for opt, val in self.valid_options:
             if tmp >= val:
