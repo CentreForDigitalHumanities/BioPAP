@@ -195,8 +195,6 @@ class Pipeline:
 
         self.steps.sort(key=lambda x: x.Order)
         self.check_steps()
-        exit()
-
         self._processed_data = self._initial_data.copy()
 
         for step in self.steps:
