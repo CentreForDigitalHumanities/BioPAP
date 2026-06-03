@@ -178,13 +178,25 @@ class Pipeline:
         elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
             warnings.warn("pipeline contains steps after SaveOutput")
 
-    def run(self):
+        bids = [x for x in self.steps if x.Module.__name__ == BIDSConversion.__name__ ]
+        if len(bids) > 0:
+            if bids[0].Order > 0:
+                warnings.warn("The BIDS format is intended to save original raw data only. " \
+                              "Make sure the BIDS module in your pipeline does not save any processed data, " \
+                              "for instance by making it the first step in your pipeline.")
+            elif len(bids) > 1:
+                warnings.warn("The BIDS format is intended to save original raw data only. " \
+                              "There is no reason to add additional BIDS modules.")
 
-        self.check_steps()
+
+    def run(self):
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
+        self.check_steps()
+        exit()
+
         self._processed_data = self._initial_data.copy()
 
         for step in self.steps:
@@ -359,6 +371,7 @@ if __name__=="__main__":
             input_file=args.input_file)
 
         pipe.add_step(Anonymize)
+        pipe.add_step(Rereference)
         pipe.add_step(Rereference)
         pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
