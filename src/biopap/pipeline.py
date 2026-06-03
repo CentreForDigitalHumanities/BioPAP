@@ -370,7 +370,6 @@ if __name__=="__main__":
 
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
-        pipe.add_step(Rereference)
         pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
