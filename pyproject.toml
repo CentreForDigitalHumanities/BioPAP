@@ -15,7 +15,6 @@ keywords = []
 license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -25,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
 ]
-dynamic = ["version"]
+version = "0.0.1"
 
 [project.optional-dependencies]
 test = [

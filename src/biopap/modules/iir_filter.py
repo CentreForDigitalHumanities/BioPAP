@@ -7,6 +7,8 @@ class IIRFilter(BaseClass):
 
     Filters the input data using an IIR filter with MNE's ``filter()`` method.
 
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.filter
+
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs
@@ -27,6 +29,7 @@ class IIRFilter(BaseClass):
         - ``'bessel'`` (Bessel/Thomson)
     **kwargs
         Additional keyword arguments passed to MNE's ``filter()`` method.
+        Example: {'fir_window': 'hann'}
 
     Attributes
     ----------
@@ -48,14 +51,6 @@ class IIRFilter(BaseClass):
         with self.capture_stdout as self.stdout:
 
             self.processed = raw
-
-            # Zero phase shift Butterworth filters.
-            # Global filter settings:
-            # Low cutoff: 0.1 Hz, time constant 1.5915494309189535, order 4
-            # High cutoff: 35 Hz, order 4 
-            # Notch filter: ---
-
-            # https://mne.tools/stable/generated/mne.filter.construct_iir_filter.html#mne.filter.construct_iir_filter
 
             iir_params = dict(order=order, ftype=ftype)
 

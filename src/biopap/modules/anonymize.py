@@ -10,6 +10,9 @@ class Anonymize(BaseClass):
     Applies MNE's built-in anonymization (``Raw.anonymize()`` or
     ``Epochs.anonymize()``) to the provided data object.
 
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
+    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
@@ -56,9 +59,6 @@ class Anonymize(BaseClass):
                 daysback=daysback,
                 verbose=self.verbose,
                 **kwargs)
-
-            # not implemented
-            # self.processed.set_meas_date(measure_datee)
 
             if experimenter is not None:
                 self.processed.info['experimenter'] = str(experimenter)

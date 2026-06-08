@@ -1,6 +1,6 @@
 # Installation
 
-BioPAP is a Python-based preprocessing pipeline that requires **Python 3.9 or higher** and **Jupyter Notebook/Lab**. 
+BioPAP is a Python-based preprocessing pipeline that requires **Python 3.10 or higher** and **Jupyter Notebook/Lab**. 
 
 !!! info "Choose One Installation Method"
 
@@ -19,7 +19,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
 
     **Step 1: Check Python and pip**
 
-    Verify that Python 3.9+ and pip are installed:
+    Verify that Python 3.10+ and pip are installed:
 
     ```bash
     python3 --version
@@ -44,7 +44,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
     Clone the repository and install BioPAP in development mode:
 
     ```bash
-    git clone https://github.com/your-repo/BioPAP.git
+    git clone https://github.com/CentreForDigitalHumanities/BioPAP.git
     cd BioPAP
     pip3 install -e .
     ```
@@ -61,7 +61,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
 
     **Step 1: Check Python and pip**
 
-    Check if Python 3.9+ and pip are installed:
+    Check if Python 3.10+ and pip are installed:
 
     ```bash
     python3 --version
@@ -86,7 +86,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
     Clone the repository and install BioPAP in development mode:
 
     ```bash
-    git clone https://github.com/your-repo/BioPAP.git
+    git clone https://github.com/CentreForDigitalHumanities/BioPAP.git
     cd BioPAP
     pip3 install -e .
     ```
@@ -103,7 +103,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
 
     **Step 1: Check Python and pip**
 
-    Open **Command Prompt** and verify Python 3.9+ and pip are installed:
+    Open **Command Prompt** and verify Python 3.10+ and pip are installed:
 
     ```bash
     python --version

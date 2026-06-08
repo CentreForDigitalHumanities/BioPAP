@@ -9,6 +9,10 @@ class ArtifactReject(BaseClass):
     Identifies bad channels per epoch and either interpolates them
     using MNE's built-in functionality, or replaces them with NaNs.
 
+    https://mne.tools/stable/generated/mne.pick_types.html
+    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.interpolate_bads
+
+
     Parameters
     ----------
     raw : mne.Epochs
@@ -26,6 +30,9 @@ class ArtifactReject(BaseClass):
     **kwargs
         Additional keyword arguments passed to the underlying
         ``Epochs.pick_types()`` and ``Epochs.interpolate_bads()`` methods.
+        Pass arguments for the different functions by using a dictionary with
+        `pick_types`, and `interpolate_bads` as keys. Example:
+        {'pick_types' : {'stim': False, 'eog': True}, 'interpolate_bads': {'mode': 'fast'}}
 
     Attributes
     ----------
@@ -68,7 +75,6 @@ class ArtifactReject(BaseClass):
 
             counts = bad_mask.sum(axis=0)
 
-            # TODO (EXTRA): create a plot out of this
             for ch, n in zip(self.processed.ch_names, counts):
                 print(f"{ch}: bad in {n} epochs")
 

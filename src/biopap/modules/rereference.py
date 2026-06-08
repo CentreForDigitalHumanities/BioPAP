@@ -7,6 +7,8 @@ class Rereference(BaseClass):
 
     Applies MNE's ``set_eeg_reference()`` function to the input data.
 
+    https://mne.tools/stable/generated/mne.set_eeg_reference.html#mne.set_eeg_reference
+
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
@@ -24,11 +26,6 @@ class Rereference(BaseClass):
     processed : mne.io.Raw | mne.Epochs
         Output data after rereferencing.
     """
-
-    # https://mne.tools/stable/generated/mne.set_eeg_reference.html#mne.set_eeg_reference
-    # raw: Array of reference data subtracted from EEG channels.
-    # ref_data: Array of reference data subtracted from EEG channels.
-    #TODO: 'Channels to which the new reference applies to: ': cannot set explicitly (but it's all of them, right?)
 
     def __init__(self,
                  raw,

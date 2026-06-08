@@ -7,6 +7,8 @@ class EOGChannels(BaseClass):
 
     Creates new bipolar channels from specified reference, anode, and
     cathode channels using MNE's ``set_bipolar_reference()`` function.
+
+    https://mne.tools/stable/generated/mne.set_bipolar_reference.html
     
     Parameters
     ----------
@@ -25,22 +27,13 @@ class EOGChannels(BaseClass):
     **kwargs
         Additional keyword arguments passed to MNE's
         ``set_bipolar_reference()`` function.
+        Example: {'on_bad': 'ignore'}
 
     Attributes
     ----------
     processed : mne.Raw | mne.Epochs
         Output data with EOG channels.
     """
-
-    # https://mne.tools/stable/auto_tutorials/preprocessing/10_preprocessing_overview.html#ocular-artifacts-eog
-
-    # *** Linear Derivation ***
-    # Keep old channels.
-    # The new channels are appended.
-    # Coefficient Matrix:
-    #         EXG3     EXG4   EXG5  EXG6      
-    # hEOG      1         -1        0         0         
-    # vEOG      0         0         1         -1     
 
     def __init__(self,
                  raw,
@@ -68,7 +61,6 @@ class EOGChannels(BaseClass):
             if len(missing_channels)>0:
                 raise ValueError(f"Non-existant channels: {'; '.join(missing_channels)}")
 
-            # self.processed = mne.add_reference_channels(self.processed, ref_channels=ref_channels, copy=False)
             self.processed = mne.set_bipolar_reference(
                 self.processed,
                 anode=anode_channels,
