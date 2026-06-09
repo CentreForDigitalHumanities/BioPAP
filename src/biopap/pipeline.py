@@ -174,20 +174,22 @@ class Pipeline:
 
     def check_steps(self):
         if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
-            raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
-        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
-            warnings.warn("pipeline contains steps after SaveOutput")
+            raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
+        
+        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__]) < \
+             max([x.Order for x in self.steps if x.Module.alters_data == True]):
+            warnings.warn("Pipeline contains data processing steps after SaveOutput")
 
         bids = [x for x in self.steps if x.Module.__name__ == BIDSConversion.__name__ ]
         if len(bids) > 0:
-            if bids[0].Order > 0:
-                warnings.warn("The BIDS format is intended to save original raw data only. " \
-                              "Make sure the BIDS module in your pipeline does not save any processed data, " \
-                              "for instance by making it the first step in your pipeline.")
-            elif len(bids) > 1:
-                warnings.warn("The BIDS format is intended to save original raw data only. " \
-                              "There is no reason to add additional BIDS modules.")
-
+            first_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True])
+            if bids[0].Order > first_data_alter:
+                warnings.warn("The BIDS format is intended to save raw data only. " \
+                              "Currently, there are steps in your pipeline preceding the BIDS " \
+                              "module that alter data.")
+            if len(bids) > 1:
+                warnings.warn("The BIDS format is intended to save raw data only. " \
+                              f"There is no reason to add additional BIDS modules (found {len(bids)}).")
 
     def run(self):
 
@@ -220,7 +222,6 @@ class Pipeline:
                 logger.error(f"({step.Order}) {step.Module.__name__} failed: {str(e)} (non-blocking) [{self.subject_id}]")
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
-
 
     def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
@@ -370,6 +371,7 @@ if __name__=="__main__":
 
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
+        pipe.add_step(BIDSConversion)
         pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
@@ -382,7 +384,6 @@ if __name__=="__main__":
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
         pipe.add_step(ApplyICA)
-        # pipe.add_step(BIDSConversion)
         pipe.add_step(Plot, cfg={
             'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
             'save_folder': './'})
@@ -397,4 +398,6 @@ if __name__=="__main__":
                 overwrite=True
             )
 
-        pipe.run()
+        pipe.check_steps()
+        pipe.inspect()
+        # pipe.run()
