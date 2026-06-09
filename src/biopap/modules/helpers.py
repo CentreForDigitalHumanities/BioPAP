@@ -119,3 +119,20 @@ def merge_event_ranges(events, range_map):
     for label, ids in range_map.items():
         merged = mne.merge_events(merged, ids, ids[0])
     return merged
+
+
+
+def inspect_saved_pipeline(save_path):
+    pipe_cfg = cls.read_saved(save_path)
+    print(f"   file: {save_path}")
+    print(f"  label: {pipe_cfg['label']}")
+    print(f" author: {pipe_cfg['author']}")
+    print(f"created: {pipe_cfg['created']}")
+
+    tmp = cls.from_file(
+        save_path=save_path,
+        input_file=None,
+        subject_id=0)
+
+    tmp.inspect()
+

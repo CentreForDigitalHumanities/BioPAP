@@ -10,6 +10,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
+from helpers import inspect_saved
 
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
@@ -86,12 +87,13 @@ class Pipeline:
         self.verbose = verbose
         # self.output_file = Path(output_file) if output_file else None
 
-        if input_file is None and data is None:
-            raise ValueError("need input_file or data")
-        elif data is not None:
+        self._initial_data = None
+        # if input_file is None and data is None:
+        #     raise ValueError("need input_file or data")
+        if data is not None:
             self._initial_data = data
-        else:
-            self._initial_data = self.load_data(input_file=input_file, **kwargs)
+        elif input_file is not None:
+            self.load_data(input_file=input_file, **kwargs)
             logger.info(f"loaded '{input_file}'")
 
         # not using raw['subject_info']['his_id'], as this is before anonymizing
@@ -127,7 +129,7 @@ class Pipeline:
         if len(load.stdout)>0:
             [logger.info(f"LoadData:{x}") for x in load.stdout]
 
-        return load.raw
+        self._initial_data = load.raw
 
     def add_step(self, module, cfg=None, cfg_label=None):
         """
@@ -192,6 +194,9 @@ class Pipeline:
                               f"There is no reason to add additional BIDS modules (found {len(bids)}).")
 
     def run(self):
+
+        if self._initial_data is None:
+            raise ValueError("need input_file or data")
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
@@ -259,9 +264,13 @@ class Pipeline:
         return pipe_cfg
 
     @classmethod
-    def from_file(cls, save_path, input_file, **kwargs):
+    def from_file(cls, save_path, input_file, subject_id, **kwargs):
         pipe_cfg = cls.read_saved(save_path)
-        pipeline = cls(input_file=input_file, config_file=None, **kwargs)
+        pipeline = cls(
+            input_file=input_file,
+            config_file=None,
+            subject_id=subject_id,
+            **kwargs)
 
         for step in pipe_cfg['biopap_pipeline']:
             pipeline._steps.append(
@@ -273,43 +282,33 @@ class Pipeline:
 
         return pipeline
 
-    @classmethod
-    def inspect(cls, save_path, compact=False):
-
-        pipe_cfg = cls.read_saved(save_path)
-
-        print(f"file: {save_path}")
-        print(f"label: {pipe_cfg['label']}")
-        print(f"author: {pipe_cfg['author']}")
-        print(f"created: {pipe_cfg['created']}")
-        print()
+    def print_cfg(self, data, indent=4):
 
         def valfrmt(x):
             return f"'{x}'" if isinstance(x, str) else str(x)
 
-        def print_cfg(data, indent=4):
-            if not data:
-                return
+        if not data:
+            return
 
-            for key, val in data.items():
-                if isinstance(val, (float, int, bool, str)) or val is None:
-                    print(f"{' '*indent}{key}: {valfrmt(val)}")
-                elif isinstance(val, list):
-                    print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
-                elif isinstance(val, dict):
-                    print(f"{' '*indent}{key}:")
-                    for subkey, subval in val.items():
-                        print_cfg({subkey: subval}, indent+2)
-                else:
-                    print(f"{' '*indent}{key}: {val}")
-
-        for step in pipe_cfg['biopap_pipeline']:
-            if compact:
-                print(f"{step['order']:>02}. {step['module']} < {step['cfg']}")
+        for key, val in data.items():
+            if isinstance(val, (float, int, bool, str)) or val is None:
+                print(f"{' '*indent}{key}: {valfrmt(val)}")
+            elif isinstance(val, list):
+                print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
+            elif isinstance(val, dict):
+                print(f"{' '*indent}{key}:")
+                for subkey, subval in val.items():
+                    self.print_cfg({subkey: subval}, indent+2)
             else:
-                print(f"{step['order']:>02}. {step['module']}")
-                print_cfg(step['cfg'])
-                print()
+                print(f"{' '*indent}{key}: {val}")
+
+    def inspect(self):
+        for step in self.steps:
+            print(f"{step.Order:>02}. {step.Module.__name__}{' *' if step.Module.alters_data else ''}")
+            self.print_cfg(step.Cfg)
+            print()
+
+        print("(modules marked * alter their input data)")
 
     @property
     def config(self):
@@ -365,6 +364,10 @@ if __name__=="__main__":
     
     else:
 
+        inspect_saved('/data/BioPAP/test_pipeline_bids.json')
+        exit()
+
+
         pipe = Pipeline(
             config_file=args.config_file,
             input_file=args.input_file)
@@ -398,6 +401,5 @@ if __name__=="__main__":
                 overwrite=True
             )
 
-        pipe.check_steps()
         pipe.inspect()
         # pipe.run()
