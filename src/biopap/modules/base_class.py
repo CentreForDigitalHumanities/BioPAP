@@ -1,3 +1,4 @@
+import yaml
 from abc import ABC, abstractmethod
 from typing import Union, Optional
 from biopap.modules.helpers import CaptureStdout, get_new_filename
@@ -21,10 +22,11 @@ class BaseClass(ABC):
         self.capture_stdout = CaptureStdout(do_capture=silent)
 
     def set_config(self, cfg):
-        self.mne_config = [{k:v} for k,v in cfg.items() if k not in [
-                           'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']]
+        mod_name = cfg['__class__'].__name__       
+        self.mne_config = {mod_name: [{k:v} for k,v in cfg.items() \
+            if k not in [ 'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']] }
         if 'kwargs' in cfg:
-            self.mne_config.extend([{k:v} for k,v in cfg['kwargs'].items()])
+            self.mne_config[mod_name].extend([{k:v} for k,v in cfg['kwargs'].items()])
 
     @property
     def raw_data(self):
