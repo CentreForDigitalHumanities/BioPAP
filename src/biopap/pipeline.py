@@ -10,7 +10,6 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Any, Union, Optional
-from helpers import inspect_saved
 
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
@@ -310,6 +309,22 @@ class Pipeline:
 
         print("(modules marked * alter their input data)")
 
+    @classmethod
+    def inspect_saved(cls, save_path):
+        pipe_cfg = cls.read_saved(save_path)
+        print(f"   file: {save_path}")
+        print(f"  label: {pipe_cfg['label']}")
+        print(f" author: {pipe_cfg['author']}")
+        print(f"created: {pipe_cfg['created']}")
+        print()
+
+        tmp = cls.from_file(
+            save_path=save_path,
+            input_file=None,
+            subject_id=0)
+
+        tmp.inspect()
+
     @property
     def config(self):
         return self._config
@@ -364,17 +379,13 @@ if __name__=="__main__":
     
     else:
 
-        inspect_saved('/data/BioPAP/test_pipeline_bids.json')
-        exit()
-
-
         pipe = Pipeline(
             config_file=args.config_file,
             input_file=args.input_file)
 
         pipe.add_step(Anonymize)
+        # pipe.add_step(BIDSConversion)
         pipe.add_step(Rereference)
-        pipe.add_step(BIDSConversion)
         pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
         pipe.add_step(IIRFilter)
@@ -401,5 +412,5 @@ if __name__=="__main__":
                 overwrite=True
             )
 
-        pipe.inspect()
-        # pipe.run()
+        # pipe.inspect()
+        pipe.run()
