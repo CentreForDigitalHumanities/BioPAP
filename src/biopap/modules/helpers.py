@@ -47,6 +47,9 @@ class OptionsBaseClass:
             self._selected_options = sel_options
 
     def is_selected(self, lookup):
+        if self.selected_options is None:
+            return False
+
         tmp = self.selected_options
         for opt, val in self.valid_options:
             if tmp >= val:
@@ -68,7 +71,7 @@ def custom_formatwarning(message, category, filename, *args, **kwargs):
     return f"{str(Path(filename).stem)}:{str(message)}"
 
 
-def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
+def get_new_filename(filename, save_folder, save_postfix=None, save_overwrite=False):
     d_out = Path(save_folder)
     d_out.mkdir(parents=True, exist_ok=True)
     f_src = Path(filename)
@@ -76,7 +79,7 @@ def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
     if save_postfix:
         f_new = Path(f_src.with_name(f'{f_src.stem}_{save_postfix}{f_src.suffix}').name)
     else:
-        f_new = f_src.name
+        f_new = Path(f_src.name)
 
     p_out = d_out / f_new
 

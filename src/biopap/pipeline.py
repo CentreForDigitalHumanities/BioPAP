@@ -5,12 +5,11 @@ import mne
 import sys
 import warnings
 import yaml
-from dataclasses import dataclass
 from datetime import datetime
 from math import ceil
 from pathlib import Path
-from typing import Any, Union, Optional
-
+from typing import Union, Optional
+from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
@@ -28,6 +27,7 @@ from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
+
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
@@ -41,23 +41,6 @@ def add_logfile_handler(log_file=None):
     fh = logging.FileHandler(log_file)
     fh.setFormatter(logging.Formatter(log_format))
     logger.addHandler(fh)
-
-
-@dataclass
-class PipelineStep:
-    Module: Any
-    Cfg: dict
-    Order: int
-
-    def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
-
-    def as_dict(self):
-        return  {
-            'module': self.Module.__name__,
-            'cfg': self.Cfg,
-            'order': self.Order,
-            }
 
 
 class Pipeline:
@@ -175,8 +158,8 @@ class Pipeline:
     def check_steps(self):
         if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
             raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
-        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
-            warnings.warn("pipeline contains steps after SaveOutput")
+        # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
+        #     warnings.warn("pipeline contains steps after SaveOutput")
 
     def run(self):
 
@@ -185,10 +168,16 @@ class Pipeline:
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
+        final_step = max([x.Order for x in self.steps])
+
         self._processed_data = self._initial_data.copy()
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
+
+            if step.Module.__name__ == SaveOutput.__name__:
+                cfg['steps_completed'] = [x for x in self.steps if x.Order < step.Order]
+                cfg['intermediate'] = step.Order != final_step
 
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
@@ -369,8 +358,10 @@ if __name__=="__main__":
             'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
             'save_folder': './'})
         pipe.add_step(Segmentation)
+        pipe.add_step(SaveOutput, cfg_label='SaveOutput_1')
         pipe.add_step(ArtifactReject)
         pipe.add_step(BaselineCorrection)
+        pipe.add_step(SaveOutput, cfg_label='SaveOutput_2', cfg={'intermediate':'_before_ICA'})
         pipe.add_step(ApplyICA)
         # pipe.add_step(BIDSConversion)
         pipe.add_step(Plot, cfg={
