@@ -17,6 +17,8 @@ from biopap.modules.helpers import build_event_dict, merge_event_ranges
 
 class BIDSConversion(BaseClass):
 
+    alters_data = False
+
     def __init__(self,
                  raw,
                  eventsfile,

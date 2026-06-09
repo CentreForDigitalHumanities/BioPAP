@@ -36,6 +36,7 @@ class LoadData(BaseClass):
     """
 
     loaded_file = None
+    alters_data = False
 
     def __init__(self, 
                  file_path: str | Path,

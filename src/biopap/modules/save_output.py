@@ -39,6 +39,9 @@ class SaveOutput(BaseClass):
     processed : mne.io.Raw | mne.Epochs
         Output data (same as input data; this class is for saving, not processing).
     """
+
+    alters_data = False
+
     def __init__(self,
                  raw,
                  export_formats: Union[str, int, list[str]]=None,

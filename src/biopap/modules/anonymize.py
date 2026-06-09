@@ -34,6 +34,7 @@ class Anonymize(BaseClass):
     """
 
     log_config = False
+    alters_data = False
 
     def __init__(self,
                  raw: mne.io.Raw,
