@@ -36,8 +36,6 @@ def add_logfile_handler(log_file=None):
     fh.setFormatter(logging.Formatter(log_format))
     logger.addHandler(fh)
 
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input_file', type=Path, required=True)
 parser.add_argument('-c', '--config_file', type=Path)
@@ -77,22 +75,22 @@ else:
     # pipe.add_step(BIDSConversion)
     pipe.add_step(Rereference)
     pipe.add_step(SetChannelTypeAndMontage)
-    pipe.add_step(EOGChannels)
-    pipe.add_step(IIRFilter)
+    # pipe.add_step(EOGChannels)
+    # pipe.add_step(IIRFilter)
     pipe.add_step(Downsample)
-    pipe.add_step(BlinkDetection)
-    pipe.add_step(Plot, cfg={
-        'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
-        'save_folder': './'})
-    pipe.add_step(Segmentation)
-    pipe.add_step(ArtifactReject)
-    pipe.add_step(BaselineCorrection)
-    pipe.add_step(ApplyICA)
-    pipe.add_step(Plot, cfg={
-        'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
-        'save_folder': './'})
+    # pipe.add_step(BlinkDetection)
+    # pipe.add_step(Plot, cfg={
+    #     'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
+    #     'save_folder': './'})
+    # pipe.add_step(Segmentation)
+    # pipe.add_step(ArtifactReject)
+    # pipe.add_step(BaselineCorrection)
+    # pipe.add_step(ApplyICA)
+    # pipe.add_step(Plot, cfg={
+    #     'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
+    #     'save_folder': './'})
     pipe.add_step(SaveOutput)
-    pipe.add_step(Plot)
+    # pipe.add_step(Plot)
 
     if args.stored_pipeline:
         pipe.to_file(

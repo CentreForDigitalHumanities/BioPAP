@@ -15,28 +15,11 @@ from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.load_data import LoadData
 from biopap.modules.save_output import SaveOutput
 
-
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
 warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
-
-@dataclass
-class PipelineStep:
-    Module: Any
-    Cfg: dict
-    Order: int
-
-    def __repr__(self):
-        return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
-
-    def as_dict(self):
-        return  {
-            'module': self.Module.__name__,
-            'cfg': self.Cfg,
-            'order': self.Order,
-            }
 
 class Pipeline:
 
