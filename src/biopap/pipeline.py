@@ -186,6 +186,7 @@ class Pipeline:
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
+        final_step = max([x.Order for x in self.steps])
         self.check_steps()
         self._processed_data = self._initial_data.copy()
 
