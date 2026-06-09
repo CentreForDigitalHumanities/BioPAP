@@ -32,7 +32,7 @@ class BIDSConversion(BaseClass):
 
         super().__init__(silent)
 
-        self.set_mne_config({**locals()})
+        self.set_config({**locals()})
 
         with self.capture_stdout as self.stdout:
                 

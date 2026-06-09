@@ -4,7 +4,7 @@ from biopap.modules.helpers import CaptureStdout, get_new_filename
 
 class BaseClass(ABC):
 
-    config = None
+    mne_config = None
     raw = None
     processed = None
     verbose = None
@@ -20,11 +20,11 @@ class BaseClass(ABC):
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
         self.capture_stdout = CaptureStdout(do_capture=silent)
 
-    def set_mne_config(self, cfg):
-        self.config = [{k:v} for k,v in cfg.items() if k not in [
+    def set_config(self, cfg):
+        self.mne_config = [{k:v} for k,v in cfg.items() if k not in [
                            'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']]
         if 'kwargs' in cfg:
-            self.config.extend([{k:v} for k,v in cfg['kwargs'].items()])
+            self.mne_config.extend([{k:v} for k,v in cfg['kwargs'].items()])
 
     @property
     def raw_data(self):
@@ -35,5 +35,5 @@ class BaseClass(ABC):
         return self.processed
 
     @property
-    def mne_config(self):
-        return self.config
+    def config(self):
+        return self.mne_config
