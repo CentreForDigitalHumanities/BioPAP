@@ -4,17 +4,17 @@ import mne
 import sys
 import warnings
 import yaml
-from dataclasses import dataclass
 from datetime import datetime
 from math import ceil
 from pathlib import Path
-from typing import Any, Union, Optional
-
+from typing import Union, Optional
+from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.load_data import LoadData
 from biopap.modules.save_output import SaveOutput
+
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
@@ -191,6 +191,9 @@ class Pipeline:
             if len(anon) == 0 or \
                 min([x.Order for x in bids]) < min_anon:
                 warnings.warn("Consider adding Anonymize before exporting to BIDS.")
+            raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
+        # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
+        #     warnings.warn("pipeline contains steps after SaveOutput")
 
     def run(self):
 
@@ -205,6 +208,10 @@ class Pipeline:
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
+
+            if step.Module.__name__ == SaveOutput.__name__:
+                cfg['steps_completed'] = [x for x in self.steps if x.Order < step.Order]
+                cfg['intermediate'] = step.Order != final_step
 
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
