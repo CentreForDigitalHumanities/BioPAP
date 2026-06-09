@@ -174,23 +174,45 @@ class Pipeline:
         self._steps = []
 
     def check_steps(self):
-        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
-            raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
-        
-        elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__]) < \
-             max([x.Order for x in self.steps if x.Module.alters_data == True]):
-            warnings.warn("Pipeline contains data processing steps after SaveOutput")
 
+        if len(self.steps) == 0:
+            warnings.warn("Pipeline contains no steps.")
+            return
+
+        anon = [x for x in self.steps if x.Module.__name__ == Anonymize.__name__ ]
         bids = [x for x in self.steps if x.Module.__name__ == BIDSConversion.__name__ ]
+        save = [x for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]
+        min_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True], default=-1e6)
+        max_data_alter = max([x.Order for x in self.steps if x.Module.alters_data == True], default=1e6)
+        min_anon = min([x.Order for x in self.steps if x.Module.__name__ == Anonymize.__name__], default=1e6)
+
+        # check presence of SaveOutput
+        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+            raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save results.")
+
+        # check presence of data altering modules after SaveOutput
+        elif max([x.Order for x in save]) < max_data_alter:
+            warnings.warn("Pipeline contains data processing steps after SaveOutput.")
+
+        # check presence of Anonymize before SaveOutput
+        if len(anon) == 0 or (min([x.Order for x in save]) < min_anon):
+            warnings.warn("Consider adding Anonymize before SaveOutput.")
+
+        # BIDS checks
         if len(bids) > 0:
-            first_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True])
-            if bids[0].Order > first_data_alter:
-                warnings.warn("The BIDS format is intended to save raw data only. " \
-                              "Currently, there are steps in your pipeline preceding the BIDS " \
-                              "module that alter data.")
+            # check BIDS is in place before data is altered
+            if min([x.Order for x in bids]) > min_data_alter:
+                warnings.warn("There are steps in your pipeline preceding BIDSConversion " \
+                              "that alter data (BIDS is intended to save raw data).")
+
+            # check single BIDS instance
             if len(bids) > 1:
-                warnings.warn("The BIDS format is intended to save raw data only. " \
-                              f"There is no reason to add additional BIDS modules (found {len(bids)}).")
+                warnings.warn("The BIDS format is intended to save raw data only, there " \
+                              f"is no point to adding additional BIDS modules (found {len(bids)})")
+            
+            if len(anon) == 0 or \
+                min([x.Order for x in bids]) < min_anon:
+                warnings.warn("Consider adding Anonymize before exporting to BIDS.")
 
     def run(self):
 
@@ -401,8 +423,8 @@ if __name__=="__main__":
         pipe.add_step(Plot, cfg={
             'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
             'save_folder': './'})
-        pipe.add_step(Plot)
         pipe.add_step(SaveOutput)
+        pipe.add_step(Plot)
 
         if args.stored_pipeline:
             pipe.to_file(
@@ -413,4 +435,5 @@ if __name__=="__main__":
             )
 
         # pipe.inspect()
+        # pipe.check_steps()
         pipe.run()
