@@ -9,6 +9,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
+
 from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA

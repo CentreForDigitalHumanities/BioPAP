@@ -6,6 +6,7 @@ from biopap.modules.helpers import CaptureStdout, get_new_filename
 class BaseClass(ABC):
 
     mne_config = None
+    mod_name = None
     raw = None
     processed = None
     verbose = None
@@ -22,11 +23,34 @@ class BaseClass(ABC):
         self.capture_stdout = CaptureStdout(do_capture=silent)
 
     def set_config(self, cfg):
-        mod_name = cfg['__class__'].__name__       
-        self.mne_config = {mod_name: [{k:v} for k,v in cfg.items() \
+        self.mod_name = cfg['__class__'].__name__       
+        self.mne_config = {self.mod_name: [{k:v} for k,v in cfg.items() \
             if k not in [ 'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']] }
         if 'kwargs' in cfg:
-            self.mne_config[mod_name].extend([{k:v} for k,v in cfg['kwargs'].items()])
+            self.mne_config[self.mod_name].extend([{k:v} for k,v in cfg['kwargs'].items()])
+
+    def save_config(self, path, cfg_label=None):
+        mne_config = self.mne_config
+        mod_name = self.mod_name
+
+        if cfg_label:
+            mne_config[cfg_label] = mne_config.pop(self.mod_name)
+            mod_name = cfg_label
+
+        for key, val_pair in enumerate(mne_config[mod_name]):
+            # turn tuples into lists to avoid ' !!python/tuple' constructor tags
+            for var, val in [(var, val) for var, val in val_pair.items() if isinstance(val, tuple)]:
+                mne_config[mod_name][key][var] = list(val)
+            # remove None values
+            for var in [var for var, val in val_pair.items() if val is None]:
+                del mne_config[mod_name][key][var]
+            # remove empty vars
+            if not val_pair:
+                del mne_config[mod_name][key]
+
+        # append to yaml file
+        with open(path, 'a+') as outfile:
+            yaml.dump(mne_config, outfile, default_flow_style=False)
 
     @property
     def raw_data(self):
