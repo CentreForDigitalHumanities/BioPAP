@@ -28,14 +28,6 @@ logging.captureWarnings(True)
 warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
 
-def add_logfile_handler(log_file=None):
-    global logger
-    if not log_file:
-        return
-    fh = logging.FileHandler(log_file)
-    fh.setFormatter(logging.Formatter(log_format))
-    logger.addHandler(fh)
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input_file', type=Path, required=True)
 parser.add_argument('-c', '--config_file', type=Path)
@@ -51,8 +43,6 @@ if (not args.config_file and not args.stored_pipeline):
 
 if (args.inspect and not args.stored_pipeline):
     raise ValueError('--inspect requires --stored_pipeline')
-
-add_logfile_handler(args.log_file)
 
 if args.stored_pipeline and args.inspect:
 
@@ -72,25 +62,24 @@ else:
         input_file=args.input_file)
 
     pipe.add_step(Anonymize)
-    # pipe.add_step(BIDSConversion)
+    pipe.add_step(BIDSConversion)
     pipe.add_step(Rereference)
     pipe.add_step(SetChannelTypeAndMontage)
-    # pipe.add_step(EOGChannels)
-    # pipe.add_step(IIRFilter)
+    pipe.add_step(EOGChannels)
+    pipe.add_step(IIRFilter)
     pipe.add_step(Downsample)
-    # pipe.add_step(BlinkDetection)
-    # pipe.add_step(Plot, cfg={
-    #     'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
-    #     'save_folder': './'})
-    # pipe.add_step(Segmentation)
-    # pipe.add_step(ArtifactReject)
-    # pipe.add_step(BaselineCorrection)
-    # pipe.add_step(ApplyICA)
-    # pipe.add_step(Plot, cfg={
-    #     'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
-    #     'save_folder': './'})
+    pipe.add_step(BlinkDetection)
+    pipe.add_step(Plot, cfg={
+        'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
+        'save_folder': './'})
+    pipe.add_step(Segmentation)
+    pipe.add_step(ArtifactReject)
+    pipe.add_step(BaselineCorrection)
+    pipe.add_step(ApplyICA)
+    pipe.add_step(Plot, cfg={
+        'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
+        'save_folder': './'})
     pipe.add_step(SaveOutput)
-    # pipe.add_step(Plot)
 
     if args.stored_pipeline:
         pipe.to_file(
@@ -100,6 +89,5 @@ else:
             overwrite=True
         )
 
-    # pipe.inspect()
-    # pipe.check_steps()
+    pipe.inspect()
     pipe.run()

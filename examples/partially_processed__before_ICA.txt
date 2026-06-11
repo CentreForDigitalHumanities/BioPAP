@@ -1,4 +1,0 @@
-# Steps completed:
-
-# Output (2026-06-11 12:07:15):
-partially_processed__before_ICA.fif
