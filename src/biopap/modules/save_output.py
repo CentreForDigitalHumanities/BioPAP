@@ -43,6 +43,7 @@ class SaveOutput(BaseClass):
         Output data (same as input data; this class is for saving, not processing).
     """
 
+    alters_data = False
     intmd_postfix = '_partial'
 
     def __init__(self,

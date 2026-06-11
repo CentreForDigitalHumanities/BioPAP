@@ -10,6 +10,7 @@ class BaseClass(ABC):
     stdout = []
     log_config = True
     halt_on_exceptions = True
+    alters_data = True
 
     def __init__(self,
                  silent: bool=False):
