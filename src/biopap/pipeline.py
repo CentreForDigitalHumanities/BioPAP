@@ -1,19 +1,32 @@
 import json
 import logging
 import mne
+import re
 import sys
 import warnings
 import yaml
+from collections import ChainMap
 from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
+from biopap.modules.apply_ica import ApplyICA
+from biopap.modules.artifact_reject import ArtifactReject
+from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion
+from biopap.modules.blink_detection import BlinkDetection
+from biopap.modules.downsample import Downsample
+from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
+from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
+from biopap.modules.pipeline_step import PipelineStep
+from biopap.modules.plot import Plot, PlotTypes
+from biopap.modules.rereference import Rereference
+from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
+from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
@@ -178,6 +191,7 @@ class Pipeline:
         # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
         #     warnings.warn("pipeline contains steps after SaveOutput")
 
+
     def run(self):
 
         if self._initial_data is None:
@@ -269,6 +283,63 @@ class Pipeline:
                     Cfg=step['cfg'],
                     Order=step['order']
                 ))
+
+        return pipeline
+
+    @classmethod
+    def from_config(cls, config_file, input_file, subject_id, **kwargs):
+        
+        # make a list of loaded BioPAP modules
+        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
+                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
+                                         str(obj))]
+        # instantiate pipeline
+        pipeline = cls(
+            input_file=input_file,
+            config_file=None,
+            subject_id=subject_id,
+            **kwargs)
+
+        # read config file
+        mod_key = '_biopap_module'
+        with open(config_file) as stream:
+            try:
+                config = yaml.safe_load(stream)
+                order = 0
+                # go through all config sections
+                for step in config:
+                    # check if the BioPAP module class is listed
+                    biopap_module = [ v[mod_key] for v in config[step] if next(iter(v)) == mod_key]
+
+                    if len(biopap_module)==0:
+                        logger.warning("'%s' key missing from step %s" % (mod_key, step))
+                        continue
+
+                    if len(biopap_module)>1:
+                        logger.warning("Multiple '%s' keys in step %s" % (mod_key, step))
+                        continue
+
+                    # check if the listed module is in the available modules
+                    module_avail = [x for x in modules_avail if str(x['class']) == biopap_module[0]]
+                    if len(module_avail)==0:
+                        logger.warning("Module '%s' not in available modules" % biopap_module[0])
+                        continue
+
+                    if len(module_avail)>1:
+                        logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
+                        continue
+
+                    # add step to pipeline
+                    pipeline._steps.append(
+                        PipelineStep(
+                            Module=module_avail[0]['class'],
+                            Cfg={k:v for k,v in dict(ChainMap(*config[step])).items() if k != mod_key},
+                            Order=order
+                        ))
+                    order += 1
+                        
+            except yaml.YAMLError as e:
+                logger.erro("Error while reading YAML: %s" % str(e))
 
         return pipeline
 
