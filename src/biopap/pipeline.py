@@ -1,4 +1,3 @@
-import argparse
 import json
 import logging
 import mne
@@ -9,40 +8,18 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-
 from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
-from biopap.modules.apply_ica import ApplyICA
-from biopap.modules.artifact_reject import ArtifactReject
-from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion
-from biopap.modules.blink_detection import BlinkDetection
-from biopap.modules.downsample import Downsample
-from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
-from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
-from biopap.modules.plot import Plot, PlotTypes
-from biopap.modules.rereference import Rereference
-from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
-from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
-
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 logging.captureWarnings(True)
 warnings.formatwarning = custom_formatwarning
 logger = logging.getLogger(__name__)
-
-def add_logfile_handler(log_file=None):
-    global logger
-    if not log_file:
-        return
-    fh = logging.FileHandler(log_file)
-    fh.setFormatter(logging.Formatter(log_format))
-    logger.addHandler(fh)
-
 
 class Pipeline:
 
@@ -70,12 +47,13 @@ class Pipeline:
         self.verbose = verbose
         # self.output_file = Path(output_file) if output_file else None
 
-        if input_file is None and data is None:
-            raise ValueError("need input_file or data")
-        elif data is not None:
+        self._initial_data = None
+        # if input_file is None and data is None:
+        #     raise ValueError("need input_file or data")
+        if data is not None:
             self._initial_data = data
-        else:
-            self._initial_data = self.load_data(input_file=input_file, **kwargs)
+        elif input_file is not None:
+            self.load_data(input_file=input_file, **kwargs)
             logger.info(f"loaded '{input_file}'")
 
         # not using raw['subject_info']['his_id'], as this is before anonymizing
@@ -111,7 +89,7 @@ class Pipeline:
         if len(load.stdout)>0:
             [logger.info(f"LoadData:{x}") for x in load.stdout]
 
-        return load.raw
+        self._initial_data = load.raw
 
     def add_step(self, module, cfg=None, cfg_label=None):
         """
@@ -157,20 +135,59 @@ class Pipeline:
         self._steps = []
 
     def check_steps(self):
+
+        if len(self.steps) == 0:
+            warnings.warn("Pipeline contains no steps.")
+            return
+
+        anon = [x for x in self.steps if x.Module.__name__ == Anonymize.__name__ ]
+        bids = [x for x in self.steps if x.Module.__name__ == BIDSConversion.__name__ ]
+        save = [x for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]
+        min_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True], default=-1e6)
+        max_data_alter = max([x.Order for x in self.steps if x.Module.alters_data == True], default=1e6)
+        min_anon = min([x.Order for x in self.steps if x.Module.__name__ == Anonymize.__name__], default=1e6)
+
+        # check presence of SaveOutput
         if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+            raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save results.")
+
+        # check presence of data altering modules after SaveOutput
+        elif max([x.Order for x in save]) < max_data_alter:
+            warnings.warn("Pipeline contains data processing steps after SaveOutput.")
+
+        # check presence of Anonymize before SaveOutput
+        if len(anon) == 0 or (min([x.Order for x in save]) < min_anon):
+            warnings.warn("Consider adding Anonymize before SaveOutput.")
+
+        # BIDS checks
+        if len(bids) > 0:
+            # check BIDS is in place before data is altered
+            if min([x.Order for x in bids]) > min_data_alter:
+                warnings.warn("There are steps in your pipeline preceding BIDSConversion " \
+                              "that alter data (BIDS is intended to save raw data).")
+
+            # check single BIDS instance
+            if len(bids) > 1:
+                warnings.warn("The BIDS format is intended to save raw data only, there " \
+                              f"is no point to adding additional BIDS modules (found {len(bids)})")
+            
+            if len(anon) == 0 or \
+                min([x.Order for x in bids]) < min_anon:
+                warnings.warn("Consider adding Anonymize before exporting to BIDS.")
             raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
         # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
         #     warnings.warn("pipeline contains steps after SaveOutput")
 
     def run(self):
 
-        self.check_steps()
+        if self._initial_data is None:
+            raise ValueError("need input_file or data")
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
         self.steps.sort(key=lambda x: x.Order)
         final_step = max([x.Order for x in self.steps])
-
+        self.check_steps()
         self._processed_data = self._initial_data.copy()
 
         for step in self.steps:
@@ -200,7 +217,6 @@ class Pipeline:
                 logger.error(f"({step.Order}) {step.Module.__name__} failed: {str(e)} (non-blocking) [{self.subject_id}]")
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
-
 
     def to_file(self, save_path, label=None, author=None, overwrite=False):
         if not overwrite and save_path.exists():
@@ -238,9 +254,13 @@ class Pipeline:
         return pipe_cfg
 
     @classmethod
-    def from_file(cls, save_path, input_file, **kwargs):
+    def from_file(cls, save_path, input_file, subject_id, **kwargs):
         pipe_cfg = cls.read_saved(save_path)
-        pipeline = cls(input_file=input_file, config_file=None, **kwargs)
+        pipeline = cls(
+            input_file=input_file,
+            config_file=None,
+            subject_id=subject_id,
+            **kwargs)
 
         for step in pipe_cfg['biopap_pipeline']:
             pipeline._steps.append(
@@ -252,43 +272,49 @@ class Pipeline:
 
         return pipeline
 
-    @classmethod
-    def inspect(cls, save_path, compact=False):
-
-        pipe_cfg = cls.read_saved(save_path)
-
-        print(f"file: {save_path}")
-        print(f"label: {pipe_cfg['label']}")
-        print(f"author: {pipe_cfg['author']}")
-        print(f"created: {pipe_cfg['created']}")
-        print()
+    def print_cfg(self, data, indent=4):
 
         def valfrmt(x):
             return f"'{x}'" if isinstance(x, str) else str(x)
 
-        def print_cfg(data, indent=4):
-            if not data:
-                return
+        if not data:
+            return
 
-            for key, val in data.items():
-                if isinstance(val, (float, int, bool, str)) or val is None:
-                    print(f"{' '*indent}{key}: {valfrmt(val)}")
-                elif isinstance(val, list):
-                    print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
-                elif isinstance(val, dict):
-                    print(f"{' '*indent}{key}:")
-                    for subkey, subval in val.items():
-                        print_cfg({subkey: subval}, indent+2)
-                else:
-                    print(f"{' '*indent}{key}: {val}")
-
-        for step in pipe_cfg['biopap_pipeline']:
-            if compact:
-                print(f"{step['order']:>02}. {step['module']} < {step['cfg']}")
+        for key, val in data.items():
+            if isinstance(val, (float, int, bool, str)) or val is None:
+                print(f"{' '*indent}{key}: {valfrmt(val)}")
+            elif isinstance(val, list):
+                print(f"{' '*indent}{key}: [{', '.join(map(valfrmt, val))}]")
+            elif isinstance(val, dict):
+                print(f"{' '*indent}{key}:")
+                for subkey, subval in val.items():
+                    self.print_cfg({subkey: subval}, indent+2)
             else:
-                print(f"{step['order']:>02}. {step['module']}")
-                print_cfg(step['cfg'])
-                print()
+                print(f"{' '*indent}{key}: {val}")
+
+    def inspect(self):
+        for step in self.steps:
+            print(f"{step.Order:>02}. {step.Module.__name__}{' *' if step.Module.alters_data else ''}")
+            self.print_cfg(step.Cfg)
+            print()
+
+        print("(modules marked * alter their input data)")
+
+    @classmethod
+    def inspect_saved(cls, save_path):
+        pipe_cfg = cls.read_saved(save_path)
+        print(f"   file: {save_path}")
+        print(f"  label: {pipe_cfg['label']}")
+        print(f" author: {pipe_cfg['author']}")
+        print(f"created: {pipe_cfg['created']}")
+        print()
+
+        tmp = cls.from_file(
+            save_path=save_path,
+            input_file=None,
+            subject_id=0)
+
+        tmp.inspect()
 
     @property
     def config(self):
@@ -309,74 +335,3 @@ class Pipeline:
     @property
     def processed_data(self):
         return self._processed_data
-
-
-if __name__=="__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input_file', type=Path, required=True)
-    parser.add_argument('-c', '--config_file', type=Path)
-    parser.add_argument('-s', '--stored_pipeline', type=Path)
-    parser.add_argument('--label', type=str)
-    parser.add_argument('--author', type=str)
-    parser.add_argument('--inspect', action='store_true')
-    parser.add_argument('--log_file', type=Path)
-    args = parser.parse_args()
-
-    if (not args.config_file and not args.stored_pipeline):
-        raise ValueError('need either --config_file and/or --stored_pipeline')
-
-    if (args.inspect and not args.stored_pipeline):
-        raise ValueError('--inspect requires --stored_pipeline')
-
-    add_logfile_handler(args.log_file)
-
-    if args.stored_pipeline and args.inspect:
-
-        Pipeline.inspect(save_path=args.stored_pipeline, compact=False)
-    
-    elif args.stored_pipeline and not args.config_file:
-
-        Pipeline.from_file(
-            save_path=args.stored_pipeline,
-            input_file=args.input_file
-        ).run()
-    
-    else:
-
-        pipe = Pipeline(
-            config_file=args.config_file,
-            input_file=args.input_file)
-
-        pipe.add_step(Anonymize)
-        pipe.add_step(Rereference)
-        pipe.add_step(SetChannelTypeAndMontage)
-        pipe.add_step(EOGChannels)
-        pipe.add_step(IIRFilter)
-        pipe.add_step(Downsample)
-        pipe.add_step(BlinkDetection)
-        pipe.add_step(Plot, cfg={
-            'plot_types': PlotTypes.SPECTRUM_TOPO|PlotTypes.SPECTRUM_TOPO_MAP|PlotTypes.SPECTRUM_PLOT,
-            'save_folder': './'})
-        pipe.add_step(Segmentation)
-        pipe.add_step(SaveOutput, cfg_label='SaveOutput_1')
-        pipe.add_step(ArtifactReject)
-        pipe.add_step(BaselineCorrection)
-        pipe.add_step(SaveOutput, cfg_label='SaveOutput_2', cfg={'intermediate':'_before_ICA'})
-        pipe.add_step(ApplyICA)
-        # pipe.add_step(BIDSConversion)
-        pipe.add_step(Plot, cfg={
-            'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
-            'save_folder': './'})
-        pipe.add_step(Plot)
-        pipe.add_step(SaveOutput)
-
-        if args.stored_pipeline:
-            pipe.to_file(
-                save_path=args.stored_pipeline,
-                label=args.label,
-                author=args.author,
-                overwrite=True
-            )
-
-        pipe.run()
