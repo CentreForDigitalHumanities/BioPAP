@@ -122,3 +122,33 @@ def merge_event_ranges(events, range_map):
     for label, ids in range_map.items():
         merged = mne.merge_events(merged, ids, ids[0])
     return merged
+
+def save_modules_config(modules, config_path, append=False):
+    """
+    Saves ad hoc defined configuration settings of one or more
+    modules to a yaml configuration file which can be used in
+    subsequent BioPAP sessions.
+    Parameters
+    ----------
+    modules : list
+        List of BioPAP module instances
+    config_path : str or Path
+        Path to config yaml file
+    append : bool (default: False)
+        If True, appends to file or creates it if it doesn't
+        exist; if False, deletes pre-existing file if it
+        exists.
+    """
+    if not append:
+        Path(config_path).unlink(missing_ok=True)
+
+    mod_list = []
+    for module in modules:
+        mod_name = module.__class__.__name__
+        i = 2
+        while mod_name in mod_list:
+            mod_name = f"{module.__class__.__name__}_{str(i)}"
+            i += 1
+        module.save_config(path=config_path, cfg_label=mod_name)
+        mod_list.append(mod_name)
+        i = 2
