@@ -48,7 +48,7 @@ class BaseClass(ABC):
             if not val_pair:
                 del mne_config[mod_name][key]
 
-        mne_config[mod_name].append({'__biopap_module': str(self.mod)})
+        mne_config[mod_name].insert(0, {'_biopap_module': str(self.mod)})
 
         # append to yaml file
         with open(path, 'a+') as outfile:
