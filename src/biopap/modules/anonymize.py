@@ -46,6 +46,8 @@ class Anonymize(BaseClass):
 
         super().__init__(silent)
 
+        self.set_config({**locals()})
+
         with self.capture_stdout as self.stdout:
 
             if not isinstance(daysback, int) and daysback.lower() != 'random':

@@ -76,6 +76,8 @@ class Plot(BaseClass):
 
         super().__init__(silent)
 
+        self.set_config({**locals()})
+
         with self.capture_stdout as self.stdout:
 
             self.raw = raw
