@@ -5,8 +5,8 @@ from biopap.modules.helpers import CaptureStdout, get_new_filename
 
 class BaseClass(ABC):
 
+    mod = None
     mne_config = None
-    mod_name = None
     raw = None
     processed = None
     verbose = None
@@ -23,18 +23,18 @@ class BaseClass(ABC):
         self.capture_stdout = CaptureStdout(do_capture=silent)
 
     def set_config(self, cfg):
-        self.mod_name = cfg['__class__'].__name__       
-        self.mne_config = {self.mod_name: [{k:v} for k,v in cfg.items() \
+        self.mod = cfg['__class__']
+        self.mne_config = {self.mod.__name__: [{k:v} for k,v in cfg.items() \
             if k not in [ 'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']] }
         if 'kwargs' in cfg:
-            self.mne_config[self.mod_name].extend([{k:v} for k,v in cfg['kwargs'].items()])
+            self.mne_config[self.mod.__name__].extend([{k:v} for k,v in cfg['kwargs'].items()])
 
     def save_config(self, path, cfg_label=None):
         mne_config = self.mne_config
-        mod_name = self.mod_name
+        mod_name = self.mod.__name__
 
         if cfg_label:
-            mne_config[cfg_label] = mne_config.pop(self.mod_name)
+            mne_config[cfg_label] = mne_config.pop(self.mod.__name__)
             mod_name = cfg_label
 
         for key, val_pair in enumerate(mne_config[mod_name]):
@@ -47,6 +47,8 @@ class BaseClass(ABC):
             # remove empty vars
             if not val_pair:
                 del mne_config[mod_name][key]
+
+        mne_config[mod_name].append({'__biopap_module': str(self.mod)})
 
         # append to yaml file
         with open(path, 'a+') as outfile:
