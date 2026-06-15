@@ -187,10 +187,6 @@ class Pipeline:
             if len(anon) == 0 or \
                 min([x.Order for x in bids]) < min_anon:
                 warnings.warn("Consider adding Anonymize before exporting to BIDS.")
-            raise ValueError("pipeline contains no SaveOutput; add SaveOutput to save pipeline results")
-        # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
-        #     warnings.warn("pipeline contains steps after SaveOutput")
-
 
     def run(self):
 
