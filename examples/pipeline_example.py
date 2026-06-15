@@ -2,9 +2,7 @@ import argparse
 import logging
 import warnings
 from pathlib import Path
-from biopap.modules.helpers import custom_formatwarning
-from pipeline import PipelineStep, Pipeline
-
+from biopap.pipeline import Pipeline
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
@@ -16,6 +14,7 @@ from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
+from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.plot import Plot, PlotTypes
 from biopap.modules.rereference import Rereference
 from biopap.modules.segmentation import Segmentation
@@ -80,7 +79,8 @@ else:
         'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
         'save_folder': './'})
     pipe.add_step(SaveOutput)
-
+    pipe.add_step(SaveOutput, cfg={"export_formats": "fif", "output_file": "./preprocessed_raw.fif", "overwrite": True})
+ 
     if args.stored_pipeline:
         pipe.to_file(
             save_path=args.stored_pipeline,
