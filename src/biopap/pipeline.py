@@ -121,6 +121,11 @@ class Pipeline:
 
             return s
 
+        if isinstance(module, LoadData):
+            raise ValueError("LoadData is automatically part of the pipeline; " \
+                "there is no need to add it explicitly. Instantiate Pipeline "\
+                "with input_file=<your file> instead.")
+
         lookup = cfg_label if cfg_label else module.__name__
 
         if lookup in self._config:
@@ -153,15 +158,21 @@ class Pipeline:
             warnings.warn("Pipeline contains no steps.")
             return
 
-        anon = [x for x in self.steps if x.Module.__name__ == Anonymize.__name__ ]
-        bids = [x for x in self.steps if x.Module.__name__ == BIDSConversion.__name__ ]
-        save = [x for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]
+        anon = [x for x in self.steps if x.Module == Anonymize]
+        bids = [x for x in self.steps if x.Module == BIDSConversion]
+        save = [x for x in self.steps if x.Module == SaveOutput]
         min_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True], default=-1e6)
         max_data_alter = max([x.Order for x in self.steps if x.Module.alters_data == True], default=1e6)
-        min_anon = min([x.Order for x in self.steps if x.Module.__name__ == Anonymize.__name__], default=1e6)
+        min_anon = min([x.Order for x in self.steps if x.Module == Anonymize], default=1e6)
+
+        # make sure LoadData isn't called directly
+        if LoadData in [x.Module for x in self.steps]:
+            raise ValueError("LoadData is automatically part of the pipeline; " \
+                "there is no need to add it explicitly. Instantiate Pipeline "\
+                "with input_file=<your file> instead.")
 
         # check presence of SaveOutput
-        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+        if len(save) == 0:
             raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save results.")
 
         # check presence of data altering modules after SaveOutput
