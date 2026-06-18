@@ -53,14 +53,13 @@ class BIDSConversion(BaseClass):
                  raw,
                  eventsfile,
                  bids_root,
-                 session,
-                 task,
-                 run,
-                 subject=None,
-                 datatype='eeg',
-                 format='BrainVision',
-                 overwrite=False,
-                #  dataset_description=None,
+                 session: str=None,
+                 task: str=None,
+                 run: int=None,
+                 subject: str=None,
+                 datatype: str='eeg',
+                 format: str='BrainVision',
+                 overwrite: bool=False,
                  silent: bool=False,
                  **kwargs):
 
@@ -75,15 +74,12 @@ class BIDSConversion(BaseClass):
             if subject is None:
                 subject = self.raw.info.get("subject_info", {}).get("his_id", None)
 
-            # dataset_description = dataset_description or {}
-
             if not isinstance(self.raw, mne.io.BaseRaw):
                 raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
             w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
-            # mdd_kwargs = kwargs['make_dataset_description'] if 'make_dataset_description' in kwargs else {}
         
             # Build mappings from eventfile
             events = mne.find_events(self.raw, **f_kwargs)
@@ -96,8 +92,6 @@ class BIDSConversion(BaseClass):
                 raise ValueError(
                     f"Event {clean_unlabeled_events} has not been declared in eventsfile"
                 )
-
-            # merged_events = self.sanitize_events(merged_events, event_id)
 
             bids_path = BIDSPath(
                 subject=subject,
@@ -119,26 +113,3 @@ class BIDSConversion(BaseClass):
                 overwrite=overwrite,
                 **w_kwargs
             )
-
-            # self.write_dataset_description(dataset_description, bids_root, mdd_kwargs)
-
-    # @staticmethod
-    # def write_dataset_description(dataset_description, bids_root, mdd_kwargs):
-    #     dd = {
-    #         "name": dataset_description.get("name", "Untitled EEG Dataset"),
-    #         "data_license": dataset_description.get("data_license", "CC0"),
-    #         "authors": dataset_description.get("authors", ["Unknown"]),
-    #         "acknowledgements": dataset_description.get("acknowledgements", []),
-    #         "how_to_acknowledge": dataset_description.get("how_to_acknowledge", []),
-    #         "funding": dataset_description.get("funding", []),
-    #         "references_and_links": dataset_description.get("references", []),
-    #         "doi": dataset_description.get("doi", []),
-    #         "dataset_type": dataset_description.get("dataset_type", "raw")
-    #     }
-
-    #     make_dataset_description(
-    #         path=bids_root,
-    #         overwrite=True,
-    #         **dd,
-    #         **mdd_kwargs
-    #     )
