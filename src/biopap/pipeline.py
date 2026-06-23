@@ -178,7 +178,7 @@ class Pipeline:
                 "with input_file=<your file> instead.")
 
         # check presence of SaveOutput
-        if SaveOutput.__name__ not in [x.Module.__name__ for x in self.steps]:
+        if len(save) == 0:
             raise ValueError("Pipeline contains no SaveOutput; add SaveOutput to save results.")
 
         # check presence of data altering modules after SaveOutput
