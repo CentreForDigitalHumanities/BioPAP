@@ -127,6 +127,11 @@ class Pipeline:
 
             return s
 
+        if isinstance(module, LoadData):
+            raise ValueError("LoadData is automatically part of the pipeline; " \
+                "there is no need to add it explicitly. Instantiate Pipeline "\
+                "with input_file=<your file> instead.")
+
         lookup = cfg_label if cfg_label else module.__name__
 
         if lookup in self._config:
