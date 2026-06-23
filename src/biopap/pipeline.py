@@ -1,19 +1,32 @@
 import json
 import logging
 import mne
+import re
 import sys
 import warnings
 import yaml
+from collections import ChainMap
 from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.anonymize import Anonymize
+from biopap.modules.apply_ica import ApplyICA
+from biopap.modules.artifact_reject import ArtifactReject
+from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion
+from biopap.modules.blink_detection import BlinkDetection
+from biopap.modules.downsample import Downsample
+from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.helpers import custom_formatwarning
+from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
+from biopap.modules.pipeline_step import PipelineStep
+from biopap.modules.plot import Plot, PlotTypes
+from biopap.modules.rereference import Rereference
+from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
+from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
@@ -42,7 +55,7 @@ class Pipeline:
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
 
         self._config_file = config_file
-        self._config = self.read_config(self._config_file)
+        self._config = self.read_config_file(path=self._config_file)
 
         self.verbose = verbose
         # self.output_file = Path(output_file) if output_file else None
@@ -69,12 +82,18 @@ class Pipeline:
         self._processed_data = None
 
     @staticmethod
-    def read_config(config_file):
-        if config_file is None:
+    def read_config_file(path):
+        if path is None:
             return {}
 
-        with open(config_file, 'r') as file:
-            config = yaml.safe_load(file)
+        if not Path(path).exists:
+            raise FileNotFoundError(f"'{save_path}' does not exist")
+
+        with open(path, 'r') as stream:
+            try:
+                config = yaml.safe_load(stream)
+            except yaml.YAMLError as e:
+                logger.error("Error while reading YAML: %s" % str(e))
 
         return config
 
@@ -174,8 +193,6 @@ class Pipeline:
             if len(anon) == 0 or \
                 min([x.Order for x in bids]) < min_anon:
                 warnings.warn("Consider adding Anonymize before exporting to BIDS.")
-        # elif max([x.Order for x in self.steps if x.Module.__name__ == SaveOutput.__name__ ]) < max([x.Order for x in self.steps]):
-        #     warnings.warn("pipeline contains steps after SaveOutput")
 
     def run(self):
 
@@ -217,61 +234,62 @@ class Pipeline:
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
 
-    def to_file(self, save_path, label=None, author=None, overwrite=False):
-        if not overwrite and save_path.exists():
-            p_save_path = save_path
-            n = 1
-            while p_save_path.exists():
-                p_save_path = save_path.parent / f"{save_path.stem}_({n}){save_path.suffix}"
-                n += 1
-            save_path = p_save_path
-
-        data = {
-            'biopap_pipeline': [x.as_dict() for x in self.steps],
-            'config_file': str(self._config_file),  # not really necessary
-            'label': label,
-            'author': author,
-            'created': datetime.now().strftime("%c"),
-        }
-
-        with open(save_path, 'w+', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=True)
-
-        logger.info(f"wrote pipeline to '{save_path}'")
-
-    @staticmethod
-    def read_saved(save_path):
-        if not Path(save_path).exists:
-            raise FileNotFoundError(f"'{save_path}' does not exist")
-
-        with open(save_path, 'r') as file:
-            pipe_cfg = json.load(file)
-
-        if not 'biopap_pipeline' in pipe_cfg:
-            raise ValueError(f"'biopap_pipeline' section not found in '{save_path}'")
-
-        return pipe_cfg
-
     @classmethod
-    def from_file(cls, save_path, input_file, subject_id, **kwargs):
-        pipe_cfg = cls.read_saved(save_path)
+    def from_config(cls, config_file, input_file, subject_id, **kwargs):
+        # read config file
+        config = cls.read_config_file(config_file)
+        if not config:
+            return
+
+        # make a list of loaded BioPAP modules
+        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
+                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
+                                         str(obj))]
+        # instantiate pipeline
         pipeline = cls(
             input_file=input_file,
             config_file=None,
             subject_id=subject_id,
             **kwargs)
 
-        for step in pipe_cfg['biopap_pipeline']:
+        mod_key = '_biopap_module'
+        order = 0
+        # go through all config sections
+        for step in config:
+            # check if the BioPAP module class is listed
+            biopap_module = [x[mod_key] for x in config[step] if next(iter(x)) == mod_key]
+
+            if len(biopap_module)==0:
+                logger.warning("'%s' key missing from step %s" % (mod_key, step))
+                continue
+
+            if len(biopap_module)>1:
+                logger.warning("Multiple '%s' keys in step %s" % (mod_key, step))
+                continue
+
+            # check if the listed module is in the available modules
+            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module[0]]
+            if len(module_avail)==0:
+                logger.warning("Module '%s' not in available modules" % biopap_module[0])
+                continue
+
+            if len(module_avail)>1:
+                logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
+                continue
+
+            # add step to pipeline
             pipeline._steps.append(
                 PipelineStep(
-                    Module=getattr(sys.modules[__name__], step['module']),
-                    Cfg=step['cfg'],
-                    Order=step['order']
+                    Module=module_avail[0]['class'],
+                    Cfg={k:v for k,v in dict(ChainMap(*config[step])).items() if k != mod_key},
+                    Order=order
                 ))
 
+            order += 1
+                        
         return pipeline
 
-    def print_cfg(self, data, indent=4):
+    def _print_cfg(self, data, indent=4):
 
         def valfrmt(x):
             return f"'{x}'" if isinstance(x, str) else str(x)
@@ -287,33 +305,17 @@ class Pipeline:
             elif isinstance(val, dict):
                 print(f"{' '*indent}{key}:")
                 for subkey, subval in val.items():
-                    self.print_cfg({subkey: subval}, indent+2)
+                    self._print_cfg({subkey: subval}, indent+2)
             else:
                 print(f"{' '*indent}{key}: {val}")
 
     def inspect(self):
         for step in self.steps:
             print(f"{step.Order:>02}. {step.Module.__name__}{' *' if step.Module.alters_data else ''}")
-            self.print_cfg(step.Cfg)
+            self._print_cfg(step.Cfg)
             print()
 
         print("(modules marked * alter their input data)")
-
-    @classmethod
-    def inspect_saved(cls, save_path):
-        pipe_cfg = cls.read_saved(save_path)
-        print(f"   file: {save_path}")
-        print(f"  label: {pipe_cfg['label']}")
-        print(f" author: {pipe_cfg['author']}")
-        print(f"created: {pipe_cfg['created']}")
-        print()
-
-        tmp = cls.from_file(
-            save_path=save_path,
-            input_file=None,
-            subject_id=0)
-
-        tmp.inspect()
 
     @property
     def config(self):
