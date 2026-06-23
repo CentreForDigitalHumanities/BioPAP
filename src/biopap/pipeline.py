@@ -247,11 +247,6 @@ class Pipeline:
 
     @classmethod
     def from_config(cls, config_file, input_file, subject_id, **kwargs):
-        # read config file
-        config = cls.read_config_file(config_file)
-        if not config:
-            return
-
         # make a list of loaded BioPAP modules
         modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
                          if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
@@ -263,41 +258,47 @@ class Pipeline:
             subject_id=subject_id,
             **kwargs)
 
+        # read config file
         mod_key = '_biopap_module'
-        order = 0
-        # go through all config sections
-        for step in config:
-            # check if the BioPAP module class is listed
-            biopap_module = [x[mod_key] for x in config[step] if next(iter(x)) == mod_key]
+        with open(config_file) as stream:
+            try:
+                config = yaml.safe_load(stream)
+                order = 0
+                # go through all config sections
+                for step in config:
+                    # check if the BioPAP module class is listed
+                    biopap_module = [ v[mod_key] for v in config[step] if next(iter(v)) == mod_key]
 
-            if len(biopap_module)==0:
-                logger.warning("'%s' key missing from step %s" % (mod_key, step))
-                continue
+                    if len(biopap_module)==0:
+                        logger.warning("'%s' key missing from step %s" % (mod_key, step))
+                        continue
 
-            if len(biopap_module)>1:
-                logger.warning("Multiple '%s' keys in step %s" % (mod_key, step))
-                continue
+                    if len(biopap_module)>1:
+                        logger.warning("Multiple '%s' keys in step %s" % (mod_key, step))
+                        continue
 
-            # check if the listed module is in the available modules
-            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module[0]]
-            if len(module_avail)==0:
-                logger.warning("Module '%s' not in available modules" % biopap_module[0])
-                continue
+                    # check if the listed module is in the available modules
+                    module_avail = [x for x in modules_avail if str(x['class']) == biopap_module[0]]
+                    if len(module_avail)==0:
+                        logger.warning("Module '%s' not in available modules" % biopap_module[0])
+                        continue
 
-            if len(module_avail)>1:
-                logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
-                continue
+                    if len(module_avail)>1:
+                        logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
+                        continue
 
-            # add step to pipeline
-            pipeline._steps.append(
-                PipelineStep(
-                    Module=module_avail[0]['class'],
-                    Cfg={k:v for k,v in dict(ChainMap(*config[step])).items() if k != mod_key},
-                    Order=order
-                ))
-
-            order += 1
+                    # add step to pipeline
+                    pipeline._steps.append(
+                        PipelineStep(
+                            Module=module_avail[0]['class'],
+                            Cfg={k:v for k,v in dict(ChainMap(*config[step])).items() if k != mod_key},
+                            Order=order
+                        ))
+                    order += 1
                         
+            except yaml.YAMLError as e:
+                logger.erro("Error while reading YAML: %s" % str(e))
+
         return pipeline
 
     def _print_cfg(self, data, indent=4):
