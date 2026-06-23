@@ -297,7 +297,7 @@ class Pipeline:
                     order += 1
                         
             except yaml.YAMLError as e:
-                logger.erro("Error while reading YAML: %s" % str(e))
+                logger.error("Error while reading YAML: %s" % str(e))
 
         return pipeline
 
