@@ -61,6 +61,8 @@ class LoadData(BaseClass):
                 self.raw = self.read_bdf(file_path, preload, **kwargs)
             elif file_path.suffix.lower()=='.fif':
                 self.raw = self.read_fif(file_path, preload, **kwargs)
+            elif file_path.suffix.lower()=='.edf':
+                self.raw = self.read_edf(file_path, preload, **kwargs)
             else:
                 raise ValueError(f"'{file_path}' is not a supported file")
 
@@ -82,3 +84,8 @@ class LoadData(BaseClass):
                 raise e
 
         return raw_fif
+
+    @staticmethod
+    def read_edf(file_path, preload, **kwargs):
+        raw_edf = mne.io.read_raw_edf(file_path, preload=preload, **kwargs)
+        return raw_edf

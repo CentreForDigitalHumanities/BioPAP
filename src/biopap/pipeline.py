@@ -18,6 +18,7 @@ from biopap.modules.bids import BIDSConversion
 from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
+from biopap.modules.events_from_annotations import EventsFromAnnotations
 from biopap.modules.helpers import custom_formatwarning
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
