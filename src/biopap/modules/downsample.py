@@ -35,6 +35,8 @@ class Downsample(BaseClass):
 
         super().__init__(silent)
 
+        self.set_config({**locals()})
+
         with self.capture_stdout as self.stdout:
 
             self.processed = raw

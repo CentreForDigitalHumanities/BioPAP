@@ -36,6 +36,7 @@ class LoadData(BaseClass):
     """
 
     loaded_file = None
+    alters_data = False
 
     def __init__(self, 
                  file_path: str | Path,
@@ -46,6 +47,8 @@ class LoadData(BaseClass):
                  ) -> None:
 
         super().__init__(silent)
+
+        self.set_config({**locals()})
 
         with self.capture_stdout as self.stdout:
 

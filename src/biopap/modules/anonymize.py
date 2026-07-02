@@ -34,6 +34,7 @@ class Anonymize(BaseClass):
     """
 
     log_config = False
+    alters_data = False
 
     def __init__(self,
                  raw: mne.io.Raw,
@@ -44,6 +45,8 @@ class Anonymize(BaseClass):
                  **kwargs):
 
         super().__init__(silent)
+
+        self.set_config({**locals()})
 
         with self.capture_stdout as self.stdout:
 

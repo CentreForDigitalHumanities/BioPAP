@@ -63,6 +63,7 @@ class Plot(BaseClass):
     # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
 
     halt_on_exceptions = False
+    alters_data = False
 
     def __init__(self,
                  raw,
@@ -74,6 +75,8 @@ class Plot(BaseClass):
                  **kwargs):
 
         super().__init__(silent)
+
+        self.set_config({**locals()})
 
         with self.capture_stdout as self.stdout:
 

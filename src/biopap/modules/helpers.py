@@ -49,6 +49,9 @@ class OptionsBaseClass:
             self._selected_options = sel_options
 
     def is_selected(self, lookup):
+        if self.selected_options is None:
+            return False
+
         tmp = self.selected_options
         for opt, val in self.valid_options:
             if tmp >= val:
@@ -70,7 +73,7 @@ def custom_formatwarning(message, category, filename, *args, **kwargs):
     return f"{str(Path(filename).stem)}:{str(message)}"
 
 
-def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
+def get_new_filename(filename, save_folder, save_postfix=None, save_overwrite=False):
     d_out = Path(save_folder)
     d_out.mkdir(parents=True, exist_ok=True)
     f_src = Path(filename)
@@ -78,7 +81,7 @@ def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
     if save_postfix:
         f_new = Path(f_src.with_name(f'{f_src.stem}_{save_postfix}{f_src.suffix}').name)
     else:
-        f_new = f_src.name
+        f_new = Path(f_src.name)
 
     p_out = d_out / f_new
 
@@ -139,3 +142,34 @@ def create_template_annotations_dict(in_path,
         json.dump(a_dict, f, sort_keys=True, indent=4)
 
     print(f'Wrote template dictionary to {out_path}')
+    
+
+def save_modules_config(modules, config_path, append=False):
+    """
+    Saves ad hoc defined configuration settings of one or more
+    modules to a yaml configuration file which can be used in
+    subsequent BioPAP sessions.
+    Parameters
+    ----------
+    modules : list
+        List of BioPAP module instances
+    config_path : str or Path
+        Path to config yaml file
+    append : bool (default: False)
+        If True, appends to file or creates it if it doesn't
+        exist; if False, deletes pre-existing file if it
+        exists.
+    """
+    if not append:
+        Path(config_path).unlink(missing_ok=True)
+
+    mod_list = []
+    for module in modules:
+        mod_name = module.__class__.__name__
+        i = 2
+        while mod_name in mod_list:
+            mod_name = f"{module.__class__.__name__}_{str(i)}"
+            i += 1
+        module.save_config(path=config_path, cfg_label=mod_name)
+        mod_list.append(mod_name)
+        i = 2

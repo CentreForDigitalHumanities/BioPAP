@@ -1,8 +1,11 @@
 import mne
+import time
 from pathlib import Path
+from datetime import datetime
 from typing import Union
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import OptionsBaseClass
+from biopap.modules.helpers import (OptionsBaseClass, get_new_filename)
+from biopap.modules.pipeline_step import PipelineStep
 
 class ExportFormats(OptionsBaseClass):
 
@@ -39,24 +42,56 @@ class SaveOutput(BaseClass):
     processed : mne.io.Raw | mne.Epochs
         Output data (same as input data; this class is for saving, not processing).
     """
+
+    alters_data = False
+    intmd_postfix = '_partial'
+
     def __init__(self,
                  raw,
-                 export_formats: Union[str, int, list[str]]=None,
-                 output_file: str=None,
+                 export_formats: Union[str, int, list[str]],
+                 output_file: Union[str, Path],
                  overwrite: bool=True,
+                 steps_completed: list[PipelineStep]=[],
+                 intermediate: Union[str, int, bool]=True,
                  silent: bool=False):
 
         super().__init__(silent)
+
+        self.set_config({**locals()})
 
         with self.capture_stdout as self.stdout:
 
             self.processed = raw
             e_frmts = ExportFormats(export_formats)
 
+            if isinstance(intermediate, bool) and not intermediate:
+                intmd_postfix = None
+            elif isinstance(intermediate, bool):
+                intmd_postfix = self.intmd_postfix
+            elif isinstance(intermediate, (str, int)):
+                intmd_postfix = ''.join(c for c in str(intermediate) 
+                                        if c.isalpha() or c.isdigit() or c in [' ','_','-']
+                                       ).rstrip().replace(' ', '_')[:25]
+            else:
+                raise ValueError(f'intermediate must be bool, int or str (got {type(intermediate)})')
+
+            saved_files = []
+
             if e_frmts.is_selected(ExportFormats.FIF):
-                self.save_fif(output_file, overwrite)
+                saved_files.append(self.save_fif(
+                    filename=output_file,
+                    overwrite=overwrite,
+                    save_postfix=intmd_postfix))
+
             if e_frmts.is_selected(ExportFormats.CSV):
-                self.save_csv(output_file, overwrite)
+                saved_files.append(self.save_csv(
+                    filename=output_file,
+                    overwrite=overwrite,
+                    save_postfix=intmd_postfix))
+
+            self.save_steps_completed(
+                steps_completed=steps_completed,
+                saved_files=saved_files)
 
     @classmethod
     def check_config(cls, cfg):
@@ -64,15 +99,46 @@ class SaveOutput(BaseClass):
             # will generate error when unknown format
             _ = ExportFormats(cfg['export_formats'])
 
-    def save_fif(self, filename, overwrite):
-        #TODO implement overwrite
-        target_file = Path(filename).with_suffix('.fif')
-        self.processed.save(target_file, overwrite=overwrite)
-        print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
+    def save_fif(self, filename, overwrite, save_postfix=None):
+        f_new = Path(filename).with_suffix('.fif')
+        f_new = get_new_filename(
+            filename=f_new.name,
+            save_folder=f_new.parent,
+            save_postfix=save_postfix,
+            save_overwrite=overwrite)
+
+        self.processed.save(f_new, overwrite=overwrite)
+        print(f"wrote '{f_new}' ({f_new.stat().st_size:,})")
+        return f_new
             
-    def save_csv(self, filename, overwrite):
-        #TODO implement overwrite
-        target_file = Path(filename).with_suffix('.csv')
+    def save_csv(self, filename, overwrite, save_postfix=None):
+        f_new = Path(filename).with_suffix('.csv')
+        f_new = get_new_filename(
+            filename=f_new.name,
+            save_folder=f_new.parent,
+            save_postfix=save_postfix,
+            save_overwrite=overwrite)
+
         df = self.processed.to_data_frame()
-        df.to_csv(target_file, index=False)
-        print(f"wrote '{target_file}' ({target_file.stat().st_size:,})")
+        df.to_csv(f_new, index=False)
+        print(f"wrote '{f_new}' ({f_new.stat().st_size:,})")
+        return f_new
+
+    @staticmethod
+    def save_steps_completed(steps_completed, saved_files):
+        if len(saved_files)==0:
+            return
+        f_new = Path(saved_files[0]).with_suffix('.txt')
+        f_new = get_new_filename(
+            filename=f_new.name,
+            save_folder=f_new.parent,
+            save_overwrite=True)
+
+        with open(f_new, 'w', encoding='utf-8') as f:
+            f.write("# Steps completed:\n")
+            for step in steps_completed:
+                f.write(f"{str(step)}\n")
+            f.write("\n")
+            f.write(f"# Output ({datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')}):\n")
+            for saved_file in saved_files:
+                f.write(f"{str(saved_file)}\n")
