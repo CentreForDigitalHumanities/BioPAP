@@ -1,8 +1,9 @@
-import sys
-from pathlib import Path
-from io import StringIO
-import pandas as pd
 import mne
+import pandas as pd
+import re
+import sys
+from io import StringIO
+from pathlib import Path
 
 class CaptureStdout(list):
 
@@ -88,6 +89,7 @@ def get_new_filename(filename, save_folder, save_postfix, save_overwrite):
 
     return p_out
 
+
 def build_event_dict(events, eventsfile):
     event_id = {}
     range_map = {}
@@ -114,8 +116,26 @@ def build_event_dict(events, eventsfile):
 
     return event_id, range_map
 
+
 def merge_event_ranges(events, range_map):
     merged = events.copy()
     for label, ids in range_map.items():
         merged = mne.merge_events(merged, ids, ids[0])
     return merged
+
+def create_template_annotations_dict(in_path,
+                                     out_path,
+                                     encoding='latin-1',
+                                     default_regex=r'(?<=(^RS232 Trigger: ))(\d+)'):
+    a_dict = {}
+    annots = mne.read_annotations(in_path, encoding=encoding)
+    for annot in annots:
+        match = re.search(default_regex, annot['description'])
+        a_dict[str(annot['description'])] = int(match.group()) if match else '?'
+
+    with open(out_path, 'w') as f:
+        json.dump(a_dict, f, sort_keys=True, indent=4)
+
+    print(f'Wrote template dictionary to {out_path}')
+
+
