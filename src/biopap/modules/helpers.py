@@ -1,3 +1,4 @@
+import json
 import mne
 import pandas as pd
 import re
@@ -123,6 +124,7 @@ def merge_event_ranges(events, range_map):
         merged = mne.merge_events(merged, ids, ids[0])
     return merged
 
+
 def create_template_annotations_dict(in_path,
                                      out_path,
                                      encoding='latin-1',
@@ -137,5 +139,3 @@ def create_template_annotations_dict(in_path,
         json.dump(a_dict, f, sort_keys=True, indent=4)
 
     print(f'Wrote template dictionary to {out_path}')
-
-
