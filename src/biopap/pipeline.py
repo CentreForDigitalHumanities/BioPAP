@@ -19,7 +19,8 @@ from biopap.modules.bids import BIDSConversion
 from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
-from biopap.modules.helpers import custom_formatwarning
+from biopap.modules.events_from_annotations import EventsFromAnnotations
+from biopap.modules.helpers import custom_formatwarning, create_template_annotations_dict
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.plot import Plot, PlotTypes
@@ -354,14 +355,24 @@ if __name__=="__main__":
     
     else:
 
+
         pipe = Pipeline(
             config_file=args.config_file,
             input_file=args.input_file)
+            
+        # dictfile = '/data/annotdict.json'
+        # create_template_annotations_dict(args.input_file, dictfile, 'latin-1')
 
+        # with open(dictfile, 'r') as f:
+        #     a_dict = json.load(f)
+
+        # pipe.add_step(EventsFromAnnotations, cfg={'event_id': a_dict})
+
+        pipe.add_step(EventsFromAnnotations, cfg={'regex': r'(?<=(^RS232 Trigger: ))(\d+)'})
         pipe.add_step(Anonymize)
         pipe.add_step(Rereference)
-        pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(EOGChannels)
+        pipe.add_step(SetChannelTypeAndMontage)
         pipe.add_step(IIRFilter)
         pipe.add_step(Downsample)
         pipe.add_step(BlinkDetection)
@@ -376,7 +387,8 @@ if __name__=="__main__":
         pipe.add_step(Plot, cfg={
             'plot_types': PlotTypes.PLOT|PlotTypes.SENSORS,
             'save_folder': './'})
-        pipe.add_step(Plot)
+        # pipe.add_step(Plot)
+        pipe.add_step(EventsFromAnnotations, cfg={'regex': r'^RS232 Trigger'})
         pipe.add_step(SaveOutput)
 
         if args.stored_pipeline:
