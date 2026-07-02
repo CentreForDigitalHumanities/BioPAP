@@ -1,7 +1,8 @@
 import mne
-from biopap.modules.base_class import BaseClass
-import re
 import numpy as np
+import re
+from typing import Union
+from biopap.modules.base_class import BaseClass
 
 class EventsFromAnnotations(BaseClass):
     """
@@ -38,7 +39,7 @@ class EventsFromAnnotations(BaseClass):
 
     def __init__(self,
                  raw,
-                 event_id: str='auto',
+                 event_id: Union[dict, str, callable, None]='auto',
                  regex: str=None,
                  stim_channel: str='STI 014',
                  delete_annotations: bool=False,
@@ -51,7 +52,9 @@ class EventsFromAnnotations(BaseClass):
             self.processed = raw
 
             if regex:
-                events, _event_dict = mne.events_from_annotations(self.processed, event_id=lambda string: get_eventid_from_string(string, regex))
+                events, _event_dict = mne.events_from_annotations(
+                    self.processed,
+                    event_id=lambda string: get_eventid_from_string(string, regex))
             else:
                 events, _event_dict = mne.events_from_annotations(self.processed, event_id=event_id)
 
