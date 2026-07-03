@@ -50,7 +50,6 @@ class BaseClass(ABC):
 
         # append to yaml file
         with open(path, 'a+') as outfile:
-            # yaml.dump(mne_config, outfile, default_flow_style=False, Dumper=YamlDumper)
             yaml.dump(mne_config, outfile, default_flow_style=False, Dumper=YamlDumper)
 
     @property
