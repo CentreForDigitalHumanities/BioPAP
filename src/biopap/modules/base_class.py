@@ -1,6 +1,7 @@
 import yaml
 from abc import ABC, abstractmethod
 from typing import Union, Optional
+from biopap.modules import CONFIG_MODULE_CLASS_KEY
 from biopap.modules.helpers import CaptureStdout, get_new_filename, YamlDumper
 
 class BaseClass(ABC):
@@ -47,7 +48,8 @@ class BaseClass(ABC):
             if not val_pair:
                 del mne_config[mod_name][key]
 
-        mne_config[mod_name].insert(0, {'_biopap_module': str(self.mod)})
+        # mne_config[mod_name].insert(0, {'_biopap_module': str(self.mod)})
+        mne_config[mod_name].insert(0, {CONFIG_MODULE_CLASS_KEY: str(self.mod)})
 
         # append to yaml file
         with open(path, 'a+') as outfile:

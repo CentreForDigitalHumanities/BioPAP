@@ -10,6 +10,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
+from biopap.modules import CONFIG_MODULE_CLASS_KEY
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
@@ -25,8 +26,8 @@ from biopap.modules.load_data import LoadData
 from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.plot import Plot, PlotTypes
 from biopap.modules.rereference import Rereference
-from biopap.modules.segmentation import Segmentation
 from biopap.modules.save_output import SaveOutput
+from biopap.modules.segmentation import Segmentation
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
@@ -68,7 +69,7 @@ class Pipeline:
             self._initial_data = data
         elif input_file is not None:
             self.load_data(input_file=input_file, **kwargs)
-            logger.info(f"loaded '{input_file}'")
+            logger.info(f"Loaded '{input_file}'")
 
         # not using raw['subject_info']['his_id'], as this is before anonymizing
         if subject_id is not None:
@@ -78,7 +79,7 @@ class Pipeline:
         elif hasattr(self._initial_data, 'filename'):
             self._subject_id = Path(self._initial_data.filename).stem
         else:
-            raise ValueError("no subject_id set")
+            raise ValueError("No subject_id set")
 
         self._processed_data = None
 
@@ -145,7 +146,7 @@ class Pipeline:
             if callable(check_config):
                 check_config(cfg=cfg)
         except Exception as e:
-            logger.critical(f"add {module.__name__} failed: {str(e)} [{self.subject_id}]")
+            logger.critical(f"Add {module.__name__} failed: {str(e)} [{self.subject_id}]")
             exit()
 
         order = max([x.Order+1 for x in self._steps], default=0)
@@ -209,7 +210,7 @@ class Pipeline:
     def run(self):
 
         if self._initial_data is None:
-            raise ValueError("need input_file or data")
+            raise ValueError("Need input_file or data")
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
@@ -260,22 +261,33 @@ class Pipeline:
             **kwargs)
 
         # read config file
-        mod_key = '_biopap_module'
         with open(config_file) as stream:
             try:
                 config = yaml.safe_load(stream)
                 order = 0
                 # go through all config sections
                 for step in config:
-                    # check if the BioPAP module class is listed
-                    biopap_module = [ v[mod_key] for v in config[step] if next(iter(v)) == mod_key]
+
+                    biopap_module = []
+
+                    if config[step]:
+                        # check if the BioPAP module class is listed
+                        biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in config[step] 
+                                         if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]
 
                     if len(biopap_module)==0:
-                        logger.warning("'%s' key missing from step %s" % (mod_key, step))
-                        continue
+                        # try again by just the name (backward compat)
+                        # do substring from start (rather than equals) to catch "<module>_1" etc
+                        biopap_module = [str(v['class']) for v in modules_avail if v['name'][:len(step)] == step]
+                        if len(biopap_module)==0:
+                            logger.warning("'%s' key missing from step %s" % (CONFIG_MODULE_CLASS_KEY, step))
+                            continue
+                        else:
+                            logger.warning("Old config: inferred module %s from key name '%s'" %
+                                           (biopap_module[0], step))
 
                     if len(biopap_module)>1:
-                        logger.warning("Multiple '%s' keys in step %s" % (mod_key, step))
+                        logger.warning("Multiple '%s' keys in step %s" % (CONFIG_MODULE_CLASS_KEY, step))
                         continue
 
                     # check if the listed module is in the available modules
@@ -288,11 +300,19 @@ class Pipeline:
                         logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
                         continue
 
+                    if config[step]:
+                        # backward compatibility
+                        if isinstance(config[step], dict):
+                            config[step] = [{k:v} for k,v in config[step].items()]
+                        cfg = {k:v for k,v in dict(ChainMap(*config[step])).items() if k != CONFIG_MODULE_CLASS_KEY}
+                    else:
+                        cfg = {}
+
                     # add step to pipeline
                     pipeline._steps.append(
                         PipelineStep(
                             Module=module_avail[0]['class'],
-                            Cfg={k:v for k,v in dict(ChainMap(*config[step])).items() if k != mod_key},
+                            Cfg=cfg,
                             Order=order
                         ))
                     order += 1
@@ -328,7 +348,8 @@ class Pipeline:
             self._print_cfg(step.Cfg)
             print()
 
-        print("(modules marked * alter their input data)")
+        if len(self.steps) > 0:
+            print("(modules marked * alter their input data)")
 
     @property
     def config(self):
