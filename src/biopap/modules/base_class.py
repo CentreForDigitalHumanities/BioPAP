@@ -26,7 +26,8 @@ class BaseClass(ABC):
     def set_config(self, cfg):
         self.mod = cfg['__class__']
         self.mne_config = {self.mod.__name__: [{k:v} for k,v in cfg.items() \
-            if k not in [ 'self', 'raw', 'copy', 'silent', 'verbose', '__class__', 'kwargs']] }
+            if k not in ['self', '__class__', 'kwargs',
+                         'raw', 'copy', 'silent', 'verbose', 'steps_completed']]}
         if 'kwargs' in cfg:
             self.mne_config[self.mod.__name__].extend([{k:v} for k,v in cfg['kwargs'].items()])
 
