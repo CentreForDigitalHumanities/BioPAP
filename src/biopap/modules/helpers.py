@@ -3,6 +3,7 @@ import mne
 import pandas as pd
 import re
 import sys
+import yaml.dumper
 from io import StringIO
 from pathlib import Path
 
@@ -173,3 +174,17 @@ def save_modules_config(modules, config_path, append=False):
         module.save_config(path=config_path, cfg_label=mod_name)
         mod_list.append(mod_name)
         i = 2
+
+
+def path_representer(dumper, obj):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", str(obj))
+
+class YamlDumper(yaml.dumper.SafeDumper):
+    # also solves ' !!python/tuple' constructor, not sure why though
+    pass
+
+yaml.add_representer(
+    type(Path()),
+    path_representer,
+    YamlDumper,
+)

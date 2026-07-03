@@ -1,7 +1,7 @@
 import yaml
 from abc import ABC, abstractmethod
 from typing import Union, Optional
-from biopap.modules.helpers import CaptureStdout, get_new_filename
+from biopap.modules.helpers import CaptureStdout, get_new_filename, YamlDumper
 
 class BaseClass(ABC):
 
@@ -39,9 +39,6 @@ class BaseClass(ABC):
             mod_name = cfg_label
 
         for key, val_pair in enumerate(mne_config[mod_name]):
-            # turn tuples into lists to avoid ' !!python/tuple' constructor tags
-            for var, val in [(var, val) for var, val in val_pair.items() if isinstance(val, tuple)]:
-                mne_config[mod_name][key][var] = list(val)
             # remove None values
             for var in [var for var, val in val_pair.items() if val is None]:
                 del mne_config[mod_name][key][var]
@@ -53,7 +50,8 @@ class BaseClass(ABC):
 
         # append to yaml file
         with open(path, 'a+') as outfile:
-            yaml.dump(mne_config, outfile, default_flow_style=False)
+            # yaml.dump(mne_config, outfile, default_flow_style=False, Dumper=YamlDumper)
+            yaml.dump(mne_config, outfile, default_flow_style=False, Dumper=YamlDumper)
 
     @property
     def raw_data(self):
