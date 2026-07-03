@@ -152,5 +152,5 @@ build/
 dist/
 
 examples/my_config.ipynb
-examples/dev_pipeline.py
+examples/test_pipeline.py
 
