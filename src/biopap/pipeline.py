@@ -1,9 +1,9 @@
 import json
 import logging
 import mne
+import os
 import re
 import sys
-import warnings
 import yaml
 from collections import ChainMap
 from datetime import datetime
@@ -20,7 +20,7 @@ from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.events_from_annotations import EventsFromAnnotations
-from biopap.modules.helpers import custom_formatwarning
+from biopap.modules.helpers import (custom_formatwarning, get_logger)
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.pipeline_step import PipelineStep
@@ -30,11 +30,7 @@ from biopap.modules.save_output import SaveOutput
 from biopap.modules.segmentation import Segmentation
 from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
-log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
-logging.basicConfig(level=logging.INFO, format=log_format)
-logging.captureWarnings(True)
-warnings.formatwarning = custom_formatwarning
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 class Pipeline:
 
