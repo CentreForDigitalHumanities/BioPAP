@@ -84,3 +84,5 @@ $ BIOPAP_LOGFILE=/log/biopap.log BIOPAP_DEBUG=1 python parallel_runner.py \
     -c '/biopap/config/my_config.yaml' \
     --max_workers 4
 ```
+
+Please be aware that when running in parallel, error messages can remain invisible, causing the program to fail without apparent reason. If this happens, run the same command with a single worker (`--max_workers 1`) to catch the error.

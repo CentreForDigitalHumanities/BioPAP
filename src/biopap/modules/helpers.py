@@ -11,12 +11,14 @@ import yaml.dumper
 from io import StringIO
 from os import getenv
 from pathlib import Path
-from biopap.modules import CONFIG_MODULE_CLASS_KEY, LOG_FORMAT
+from biopap.modules import CONFIG_MODULE_CLASS_KEY
 
 
 def get_logger():
+    log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+
     DEBUG = getenv('BIOPAP_DEBUG') == '1'
-    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format=LOG_FORMAT)
+    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format=log_format)
     logging.captureWarnings(True)
     warnings.formatwarning = custom_formatwarning
     logger = logging.getLogger(__name__)
@@ -24,7 +26,7 @@ def get_logger():
     LOG_FILE = getenv('BIOPAP_LOGFILE', None)
     if LOG_FILE:
         fileHandler = logging.FileHandler(LOG_FILE)
-        fileHandler.setFormatter(logging.Formatter(LOG_FORMAT))
+        fileHandler.setFormatter(logging.Formatter(log_format))
         logger.addHandler(fileHandler)
 
     return logger
