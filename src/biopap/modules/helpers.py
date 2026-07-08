@@ -1,11 +1,34 @@
 import json
+import logging
 import mne
 import pandas as pd
+import random
 import re
+import string
 import sys
+import warnings
 import yaml.dumper
 from io import StringIO
+from os import getenv
 from pathlib import Path
+from biopap.modules import CONFIG_MODULE_CLASS_KEY, LOG_FORMAT
+
+
+def get_logger():
+    DEBUG = getenv('BIOPAP_DEBUG') == '1'
+    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format=LOG_FORMAT)
+    logging.captureWarnings(True)
+    warnings.formatwarning = custom_formatwarning
+    logger = logging.getLogger(__name__)
+
+    LOG_FILE = getenv('BIOPAP_LOGFILE', None)
+    if LOG_FILE:
+        fileHandler = logging.FileHandler(LOG_FILE)
+        fileHandler.setFormatter(logging.Formatter(LOG_FORMAT))
+        logger.addHandler(fileHandler)
+
+    return logger
+
 
 class CaptureStdout(list):
 
@@ -188,3 +211,36 @@ yaml.add_representer(
     path_representer,
     YamlDumper,
 )
+
+def generate_pseudonym_file_list(files, code_length=4, include_date=True):
+    pseudo = []
+    for file in files:
+        while True:
+            p = ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
+            if p not in [x['pseudocode'] for x in pseudo]:
+                pseudo.append({
+                    'input_file': file, 
+                    'pseudocode': p,
+                    'pseudocode_file': str(Path(file).parent / Path(p).with_suffix(Path(file).suffix))
+                    })
+                break
+
+    return pseudo
+
+def update_config_value(module, mod_config, key,  new_value):
+    biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in mod_config 
+                    if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]
+    if len(biopap_module) == 0:
+        return
+
+    r_val = None
+    biopap_module = biopap_module[0]
+
+    if biopap_module == str(module):
+        for my_dict in [x for x in mod_config if key in x]:
+            if callable(new_value):
+                r_val = new_value(my_dict[key])
+            else:
+                r_val = new_value
+            my_dict[key] = r_val
+    return r_val
