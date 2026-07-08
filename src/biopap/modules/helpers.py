@@ -220,8 +220,7 @@ def generate_pseudonym_file_list(files, code_length=4, include_date=True):
             if p not in [x['pseudocode'] for x in pseudo]:
                 pseudo.append({
                     'input_file': file, 
-                    'pseudocode': p,
-                    'pseudocode_file': str(Path(file).parent / Path(p).with_suffix(Path(file).suffix))
+                    'pseudocode': p
                     })
                 break
 
