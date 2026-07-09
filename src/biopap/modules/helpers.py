@@ -8,6 +8,7 @@ import string
 import sys
 import warnings
 import yaml.dumper
+from functools import reduce
 from io import StringIO
 from os import getenv
 from pathlib import Path
@@ -228,20 +229,23 @@ def generate_pseudonym_file_list(files, code_length=4, include_date=True):
 
     return pseudo
 
-def update_config_value(module, mod_config, key,  new_value):
-    biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in mod_config 
-                    if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]
-    if len(biopap_module) == 0:
-        return
+def read_config_file(path):
+    if path is None:
+        return {}
 
-    r_val = None
-    biopap_module = biopap_module[0]
+    if not Path(path).exists:
+        raise FileNotFoundError(f"'{save_path}' does not exist")
 
-    if biopap_module == str(module):
-        for my_dict in [x for x in mod_config if key in x]:
-            if callable(new_value):
-                r_val = new_value(my_dict[key])
-            else:
-                r_val = new_value
-            my_dict[key] = r_val
-    return r_val
+    with open(path, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while reading YAML: %s" % str(e))
+            return {}
+
+    # turn list of dicts into single dict
+    merged_config = {}
+    for key in config:
+        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+
+    return merged_config

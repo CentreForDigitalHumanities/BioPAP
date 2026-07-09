@@ -9,7 +9,7 @@ from pathlib import Path
 from termcolor import colored
 from biopap.modules import CONFIG_MODULE_CLASS_KEY 
 from biopap.modules.helpers import (custom_formatwarning, generate_pseudonym_file_list,
-                                    update_config_value, get_logger)
+                                    get_logger, read_config_file)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
 from biopap.modules.anonymize import Anonymize
@@ -75,22 +75,13 @@ class ParallelRunner:
                 new_path = old.parent / f"{old.stem}_{input_set['pseudocode']}{old.suffix}"
             return Path(new_path)
 
-        for step in config:
-
-            for item in [
-                    (Anonymize, 'participant_id', input_set['pseudocode']),
-                    (BIDSConversion, 'subject', input_set['pseudocode']),
-                    (SaveOutput, 'output_file', subst_pseudocode)
-                ]:
-
-                new_val = update_config_value(
-                    module=item[0], 
-                    mod_config=config[step],
-                    key=item[1],
-                    new_value=item[2])
-
-                if new_val:
-                    logger.debug("%s: '%s' set to '%s'" % (step, item[1], new_val))
+        for step, step_cfg in config.items():
+            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
+                step_cfg['participant_id'] = input_set['pseudocode']
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
+                step_cfg['subject'] = input_set['pseudocode']
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
+                step_cfg['output_file'] = subst_pseudocode(step_cfg['output_file'])
 
         Pipeline.from_config(
             config=config,
@@ -173,47 +164,35 @@ if __name__ == "__main__":
         args.output_dir.mkdir(parents=True, exist_ok=True)
 
     args.do_not_share_dir.mkdir(parents=True, exist_ok=True)
+
     while True:
         run_start = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
         pseudocode_file = args.do_not_share_dir / f'pseudocodes_{run_start}.txt'
         if not pseudocode_file.exists():
             break
 
-    config = Pipeline.read_config_file(args.config_file)
+    config = read_config_file(args.config_file)
 
-    def update_path(string):
-        return args.output_dir / Path(string).name
-
+    # overriding various output folders
     if args.output_dir:
-        for step in config:
-            for item in [
-                    (Plot, 'save_folder', args.output_dir),
-                    (SaveOutput, 'output_file', update_path),
-                    (BIDSConversion, 'bids_root', args.output_dir / 'bids')
-                ]:
+        for step, step_cfg in config.items():
+            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
+                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
 
-                new_val = update_config_value(
-                    module=item[0], 
-                    mod_config=config[step],
-                    key=item[1],
-                    new_value=item[2])
+            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Plot):
+                step_cfg['save_folder'] = args.output_dir
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
+                step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
+                step_cfg['bids_root'] = args.output_dir / 'bids'
+                Path(step_cfg['bids_root']).mkdir(parents=True, exist_ok=True)
 
-                if item[1] == 'bids_root' and new_val:
-                    Path(new_val).mkdir(parents=True, exist_ok=True)
-
-                if new_val:
-                    logger.debug("%s: '%s' set to '%s'" % (step, item[1], new_val))
-
-    for step in config:
-        biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in config[step] 
-                        if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]        
-        if len(biopap_module) > 0 and biopap_module[0] in [str(Segmentation), str(BIDSConversion)]:
-            eventsfile = [x for x in config[step] if 'eventsfile' in x]
-            if len(eventsfile) > 0:
-                eventsfile = Path(eventsfile[0]['eventsfile'])
-                if not eventsfile.exists():
-                    logger.critical("%s: 'eventsfile' '%s' not found" % (step, eventsfile))
-                    exit()
+    # checking eventifile's presence
+    for step, step_cfg in config.items():
+        if step_cfg[CONFIG_MODULE_CLASS_KEY] in [str(Segmentation), str(BIDSConversion)] \
+            and 'eventsfile' in step_cfg and not Path(step_cfg['eventsfile']).exists():
+            logger.critical("%s: eventsfile '%s' not found" % (step, step_cfg['eventsfile']))
+            exit()
 
     try:
         Pipeline.from_config(
