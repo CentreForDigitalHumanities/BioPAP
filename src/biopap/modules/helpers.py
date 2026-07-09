@@ -227,21 +227,3 @@ def generate_pseudonym_file_list(files, code_length=4, include_date=True):
                 break
 
     return pseudo
-
-def update_config_value(module, mod_config, key,  new_value):
-    biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in mod_config 
-                    if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]
-    if len(biopap_module) == 0:
-        return
-
-    r_val = None
-    biopap_module = biopap_module[0]
-
-    if biopap_module == str(module):
-        for my_dict in [x for x in mod_config if key in x]:
-            if callable(new_value):
-                r_val = new_value(my_dict[key])
-            else:
-                r_val = new_value
-            my_dict[key] = r_val
-    return r_val
