@@ -277,6 +277,11 @@ class Pipeline:
         order = 0
         for step in config:
 
+
+
+            print(step)
+            exit()
+
             biopap_module = []
 
             if config[step]:

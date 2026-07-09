@@ -9,7 +9,7 @@ from pathlib import Path
 from termcolor import colored
 from biopap.modules import CONFIG_MODULE_CLASS_KEY 
 from biopap.modules.helpers import (custom_formatwarning, generate_pseudonym_file_list,
-                                    update_config_value, get_logger)
+                                    get_logger)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
 from biopap.modules.anonymize import Anonymize
@@ -173,6 +173,7 @@ if __name__ == "__main__":
         args.output_dir.mkdir(parents=True, exist_ok=True)
 
     args.do_not_share_dir.mkdir(parents=True, exist_ok=True)
+
     while True:
         run_start = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
         pseudocode_file = args.do_not_share_dir / f'pseudocodes_{run_start}.txt'
