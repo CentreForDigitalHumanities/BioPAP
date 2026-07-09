@@ -275,7 +275,7 @@ class Pipeline:
             pipeline._steps.append(
                 PipelineStep(
                     Module=module_avail[0]['class'],
-                    Cfg=step_cfg,
+                    Cfg={k:v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
                     Order=order
                 ))
             order += 1

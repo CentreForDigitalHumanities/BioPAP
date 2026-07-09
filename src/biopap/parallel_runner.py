@@ -75,22 +75,13 @@ class ParallelRunner:
                 new_path = old.parent / f"{old.stem}_{input_set['pseudocode']}{old.suffix}"
             return Path(new_path)
 
-        for step in config:
-
-            for item in [
-                    (Anonymize, 'participant_id', input_set['pseudocode']),
-                    (BIDSConversion, 'subject', input_set['pseudocode']),
-                    (SaveOutput, 'output_file', subst_pseudocode)
-                ]:
-
-                new_val = update_config_value(
-                    module=item[0], 
-                    mod_config=config[step],
-                    key=item[1],
-                    new_value=item[2])
-
-                if new_val:
-                    logger.debug("%s: '%s' set to '%s'" % (step, item[1], new_val))
+        for step, step_cfg in config.items():
+            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
+                step_cfg['participant_id'] = input_set['pseudocode']
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
+                step_cfg['subject'] = input_set['pseudocode']
+            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
+                step_cfg['output_file'] = subst_pseudocode(step_cfg['output_file'])
 
         Pipeline.from_config(
             config=config,
