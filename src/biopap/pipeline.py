@@ -7,7 +7,6 @@ import sys
 import yaml
 from collections import ChainMap
 from datetime import datetime
-from functools import reduce
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
@@ -21,7 +20,7 @@ from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.events_from_annotations import EventsFromAnnotations
-from biopap.modules.helpers import (custom_formatwarning, get_logger)
+from biopap.modules.helpers import (custom_formatwarning, get_logger, read_config_file)
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.pipeline_step import PipelineStep
@@ -57,7 +56,7 @@ class Pipeline:
             self._config = config
         elif isinstance(config, (Path, str)):
             # self._config_file = config_file
-            self._config = self.read_config_file(path=config)
+            self._config = read_config_file(path=config)
         elif config is not None:
             raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
 
@@ -84,28 +83,6 @@ class Pipeline:
             raise ValueError("No subject_id set")
 
         self._processed_data = None
-
-    @staticmethod
-    def read_config_file(path):
-        if path is None:
-            return {}
-
-        if not Path(path).exists:
-            raise FileNotFoundError(f"'{save_path}' does not exist")
-
-        with open(path, 'r') as stream:
-            try:
-                config = yaml.safe_load(stream)
-            except yaml.YAMLError as e:
-                logger.error("Error while reading YAML: %s" % str(e))
-                return {}
-
-        # turn list of dicts into single dict
-        merged_config = {}
-        for key in config:
-            merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
-
-        return merged_config
 
 
     def load_data(self, input_file, **kwargs):
@@ -258,75 +235,47 @@ class Pipeline:
 
     @classmethod
     def from_config(cls, config: Union[dict, str, Path], input_file, subject_id, **kwargs):
-        # make a list of loaded BioPAP modules
-        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
-                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
-                                         str(obj))]
-        # instantiate pipeline
+
+        # check config format
+        if isinstance(config, (Path, str)):
+            config = read_config_file(config)
+        elif not isinstance(config, dict):
+            raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
+
+        # instantiate empty pipeline
         pipeline = cls(
             input_file=input_file,
             config=None,
             subject_id=subject_id,
             **kwargs)
 
-        if isinstance(config, (Path, str)):
-            config = cls.read_config_file(config)
-        elif not isinstance(config, dict):
-            raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
+        # make a list of loaded BioPAP modules
+        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
+                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
+                                         str(obj))]
 
         order = 0
-        for step in config:
+        for step, step_cfg in config.items():
 
+            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
+                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
 
-
-            print(step)
-            exit()
-
-            biopap_module = []
-
-            if config[step]:
-                # check if the BioPAP module class is listed
-                biopap_module = [v[CONFIG_MODULE_CLASS_KEY] for v in config[step] 
-                                    if next(iter(v)) == CONFIG_MODULE_CLASS_KEY]
-
-            if len(biopap_module)==0:
-                # try again by just the name (backward compat)
-                # do substring from start (rather than equals) to catch "<module>_1" etc
-                biopap_module = [str(v['class']) for v in modules_avail if v['name'][:len(step)] == step]
-                if len(biopap_module)==0:
-                    logger.warning("'%s' key missing from step %s" % (CONFIG_MODULE_CLASS_KEY, step))
-                    continue
-                else:
-                    logger.warning("Old config: inferred module %s from key name '%s'" %
-                                    (biopap_module[0], step))
-
-            if len(biopap_module)>1:
-                logger.warning("Multiple '%s' keys in step %s" % (CONFIG_MODULE_CLASS_KEY, step))
-                continue
+            biopap_module = step_cfg[CONFIG_MODULE_CLASS_KEY]
 
             # check if the listed module is in the available modules
-            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module[0]]
+            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module]
+
             if len(module_avail)==0:
-                logger.warning("Module '%s' not in available modules" % biopap_module[0])
-                continue
+                raise ValueError("Module '%s' not in available modules" % biopap_module[0])
 
             if len(module_avail)>1:
-                logger.warning("Module '%s' matches multiple available modules!?" % biopap_module[0])
-                continue
-
-            if config[step]:
-                # backward compatibility
-                if isinstance(config[step], dict):
-                    config[step] = [{k:v} for k,v in config[step].items()]
-                cfg = {k:v for k,v in dict(ChainMap(*config[step])).items() if k != CONFIG_MODULE_CLASS_KEY}
-            else:
-                cfg = {}
+                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module[0])
 
             # add step to pipeline
             pipeline._steps.append(
                 PipelineStep(
                     Module=module_avail[0]['class'],
-                    Cfg=cfg,
+                    Cfg=step_cfg,
                     Order=order
                 ))
             order += 1

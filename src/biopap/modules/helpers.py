@@ -8,6 +8,7 @@ import string
 import sys
 import warnings
 import yaml.dumper
+from functools import reduce
 from io import StringIO
 from os import getenv
 from pathlib import Path
@@ -227,3 +228,24 @@ def generate_pseudonym_file_list(files, code_length=4, include_date=True):
                 break
 
     return pseudo
+
+def read_config_file(path):
+    if path is None:
+        return {}
+
+    if not Path(path).exists:
+        raise FileNotFoundError(f"'{save_path}' does not exist")
+
+    with open(path, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while reading YAML: %s" % str(e))
+            return {}
+
+    # turn list of dicts into single dict
+    merged_config = {}
+    for key in config:
+        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+
+    return merged_config

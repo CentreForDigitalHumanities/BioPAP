@@ -9,7 +9,7 @@ from pathlib import Path
 from termcolor import colored
 from biopap.modules import CONFIG_MODULE_CLASS_KEY 
 from biopap.modules.helpers import (custom_formatwarning, generate_pseudonym_file_list,
-                                    get_logger)
+                                    get_logger, read_config_file)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
 from biopap.modules.anonymize import Anonymize
@@ -180,11 +180,14 @@ if __name__ == "__main__":
         if not pseudocode_file.exists():
             break
 
-    config = Pipeline.read_config_file(args.config_file)
+    config = read_config_file(args.config_file)
 
     # overriding various output folders
     if args.output_dir:
         for step, step_cfg in config.items():
+            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
+                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
+
             if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Plot):
                 step_cfg['save_folder'] = args.output_dir
             elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
