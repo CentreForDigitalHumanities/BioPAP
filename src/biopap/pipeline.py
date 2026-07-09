@@ -7,6 +7,7 @@ import sys
 import yaml
 from collections import ChainMap
 from datetime import datetime
+from functools import reduce
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
@@ -97,8 +98,15 @@ class Pipeline:
                 config = yaml.safe_load(stream)
             except yaml.YAMLError as e:
                 logger.error("Error while reading YAML: %s" % str(e))
+                return {}
 
-        return config
+        # turn list of dicts into single dict
+        merged_config = {}
+        for key in config:
+            merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+
+        return merged_config
+
 
     def load_data(self, input_file, **kwargs):
         load = LoadData(
