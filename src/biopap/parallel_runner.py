@@ -109,7 +109,7 @@ if __name__ == "__main__":
         "--extensions", 
         nargs="+",
         help="valid extensions for input files",
-        default=[".bdf", ".edf"]
+        default=[".bdf", ".edf", ".fif"]
     )
     argp.add_argument(
         "-o", "--output_dir",
