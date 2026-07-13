@@ -1,11 +1,64 @@
 import json
+import logging
 import mne
 import pandas as pd
+import random
 import re
+import string
 import sys
+import warnings
 import yaml.dumper
+from functools import reduce
 from io import StringIO
+from os import getenv
 from pathlib import Path
+from termcolor import colored
+from biopap.modules import CONFIG_MODULE_CLASS_KEY
+
+
+class CustomFormatter(logging.Formatter):
+
+    log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+
+    FORMATS = {
+        logging.DEBUG: colored(log_format, 'white'),
+        logging.INFO:  colored(log_format, 'white'),
+        logging.WARNING:  colored(log_format, 'light_yellow'),
+        logging.ERROR:  colored(log_format, 'light_red'),
+        logging.CRITICAL: colored(log_format, 'light_red', attrs=['bold'])
+    }
+
+    def __init__(self, use_color=True):
+        self.use_color = use_color
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno) if self.use_color else self.log_format
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+def get_logger(use_color=True):
+
+    rootLogger = logging.getLogger()
+
+    DEBUG = getenv('BIOPAP_DEBUG') == '1'
+    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
+
+    if (rootLogger.hasHandlers()):
+        rootLogger.handlers.clear()
+
+    LOG_FILE = getenv('BIOPAP_LOGFILE', None)
+    if LOG_FILE:
+        fileHandler = logging.FileHandler(LOG_FILE)
+        fileHandler.setFormatter(CustomFormatter(use_color))
+        rootLogger.addHandler(fileHandler)
+
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(CustomFormatter(use_color))
+    rootLogger.addHandler(consoleHandler)
+
+    return rootLogger
+
 
 class CaptureStdout(list):
 
@@ -179,6 +232,7 @@ def save_modules_config(modules, config_path, append=False):
 def path_representer(dumper, obj):
     return dumper.represent_scalar("tag:yaml.org,2002:str", str(obj))
 
+
 class YamlDumper(yaml.dumper.SafeDumper):
     # also solves ' !!python/tuple' constructor, not sure why though
     pass
@@ -188,3 +242,40 @@ yaml.add_representer(
     path_representer,
     YamlDumper,
 )
+
+
+def generate_pseudonym_file_list(files, code_length=4, include_date=True):
+    pseudo = []
+    for file in files:
+        while True:
+            p = ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
+            if p not in [x['pseudocode'] for x in pseudo]:
+                pseudo.append({
+                    'input_file': file, 
+                    'pseudocode': p
+                    })
+                break
+
+    return pseudo
+
+
+def read_config_file(path):
+    if path is None:
+        return {}
+
+    if not Path(path).exists:
+        raise FileNotFoundError(f"'{save_path}' does not exist")
+
+    with open(path, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while reading YAML: %s" % str(e))
+            return {}
+
+    # turn list of dicts into single dict
+    merged_config = {}
+    for key in config:
+        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+
+    return merged_config
