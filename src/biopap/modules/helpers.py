@@ -12,51 +12,52 @@ from functools import reduce
 from io import StringIO
 from os import getenv
 from pathlib import Path
+from termcolor import colored
 from biopap.modules import CONFIG_MODULE_CLASS_KEY
 
 
 class CustomFormatter(logging.Formatter):
 
-    grey = "\x1b[38;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    reset = "\x1b[0m"
-    format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+    log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
 
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: grey + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.DEBUG: colored(log_format, 'white'),
+        logging.INFO:  colored(log_format, 'white'),
+        logging.WARNING:  colored(log_format, 'light_yellow'),
+        logging.ERROR:  colored(log_format, 'light_red'),
+        logging.CRITICAL: colored(log_format, 'light_red', attrs=['bold'])
     }
 
+    def __init__(self, use_color=True):
+        self.use_color = use_color
+
     def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
+        log_fmt = self.FORMATS.get(record.levelno) if self.use_color else self.log_format
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
 
-def get_logger():
-    log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+def get_logger(use_color=True):
+
+    rootLogger = logging.getLogger()
 
     DEBUG = getenv('BIOPAP_DEBUG') == '1'
-    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format=log_format)
-    logging.captureWarnings(True)
-    warnings.formatwarning = custom_formatwarning
-    logger = logging.getLogger(__name__)
-    ch = logging.StreamHandler()
-    ch.setFormatter(CustomFormatter())
-    logger.addHandler(ch)
+    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
+
+    if (rootLogger.hasHandlers()):
+        rootLogger.handlers.clear()
 
     LOG_FILE = getenv('BIOPAP_LOGFILE', None)
     if LOG_FILE:
         fileHandler = logging.FileHandler(LOG_FILE)
-        fileHandler.setFormatter(logging.Formatter(log_format))
-        logger.addHandler(fileHandler)
+        fileHandler.setFormatter(CustomFormatter(use_color))
+        rootLogger.addHandler(fileHandler)
 
-    return logger
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(CustomFormatter(use_color))
+    rootLogger.addHandler(consoleHandler)
+
+    return rootLogger
 
 
 class CaptureStdout(list):
@@ -231,6 +232,7 @@ def save_modules_config(modules, config_path, append=False):
 def path_representer(dumper, obj):
     return dumper.represent_scalar("tag:yaml.org,2002:str", str(obj))
 
+
 class YamlDumper(yaml.dumper.SafeDumper):
     # also solves ' !!python/tuple' constructor, not sure why though
     pass
@@ -240,6 +242,7 @@ yaml.add_representer(
     path_representer,
     YamlDumper,
 )
+
 
 def generate_pseudonym_file_list(files, code_length=4, include_date=True):
     pseudo = []
@@ -254,6 +257,7 @@ def generate_pseudonym_file_list(files, code_length=4, include_date=True):
                 break
 
     return pseudo
+
 
 def read_config_file(path):
     if path is None:
