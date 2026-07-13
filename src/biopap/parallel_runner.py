@@ -6,7 +6,6 @@ import time
 import warnings
 from datetime import datetime
 from pathlib import Path
-from termcolor import colored
 from biopap.modules import CONFIG_MODULE_CLASS_KEY 
 from biopap.modules.helpers import (custom_formatwarning, generate_pseudonym_file_list,
                                     get_logger, read_config_file)
@@ -211,7 +210,7 @@ if __name__ == "__main__":
         for file in input_sets:
             f.write(f"{file['pseudocode']}{sep}{file['input_file']}\n")
     
-    logger.info(colored(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!", 'red', attrs=["bold"]))
+    logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
 
     ParallelRunner(
         input_sets=input_sets,
@@ -221,4 +220,4 @@ if __name__ == "__main__":
         mp_spawn_or_fork=args.mp_start_method,
     )
 
-    logger.info(colored(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!", 'red', attrs=["bold"]))
+    logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
