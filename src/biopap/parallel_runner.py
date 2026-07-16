@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import os
 from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
 from biopap.modules.helpers import (get_logger, read_config_file)
@@ -41,7 +42,7 @@ class ParallelRunner:
                     pool.apply_async(
                         self.runner,
                         args=({
-                            "config": dict(config),
+                            "config": config,
                             "input_set": input_set,
                             "logger": logger
                         },),
@@ -55,7 +56,7 @@ class ParallelRunner:
         elif max_workers == 1:
             for input_set in input_sets:
                 handle_result(self.runner({
-                    "config": dict(config),
+                    "config": config,
                     "input_set": input_set,
                     "logger": logger
                 }))
