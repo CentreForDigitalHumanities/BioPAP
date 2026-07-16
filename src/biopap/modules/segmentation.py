@@ -19,9 +19,10 @@ class Segmentation(BaseClass):
     ----------
     raw : mne.io.Raw
         Input data.
-    stim_channel : str
-        Name of the stimulation channel used to detect events
-        (e.g., 'Status').
+    stim_channel : str | None
+        Name of the stimulation channel used to detect events (e.g., ``'Status'``).
+        If None, MNE falls back to config variables ``'MNE_STIM_CHANNEL'``,
+        ``'STI 014'``, or the first ``'stim'``-type channel found.
     start : float
         Start time of each epoch in seconds relative to the event.
     end : float 
@@ -54,14 +55,14 @@ class Segmentation(BaseClass):
     """
 
     def __init__(self,
-                 raw,
-                 stim_channel,
-                 start,
-                 end,
-                 baseline=None,
-                 reference_markers=None,
-                 eventsfile=None,
-                 silent: bool=False,
+                 raw: mne.io.Raw,
+                 start: float,
+                 end: float,
+                 stim_channel: str = None,
+                 baseline: tuple = None,
+                 reference_markers: dict = None,
+                 eventsfile: str = None,
+                 silent: bool = False,
                  **kwargs):
         
         super().__init__(silent)
@@ -82,11 +83,11 @@ class Segmentation(BaseClass):
 
             include = None
 
-            if reference_markers.get("range"):
+            if reference_markers is not None and reference_markers.get("range"):
                 range_markers = re.split('-|,|:', reference_markers.get("range"))
                 include = list(range(int(range_markers[0]), int(range_markers[1])+1))
 
-            elif reference_markers.get("list"):
+            elif reference_markers is not None and reference_markers.get("list"):
                 include = reference_markers["list"]
 
             if include:
@@ -100,7 +101,7 @@ class Segmentation(BaseClass):
                 event_dict, range_map = build_event_dict(events, eventsfile)
                 merged_events = merge_event_ranges(events, range_map)
                 events = merged_events
-           
+
             self.processed = mne.Epochs(self.processed, 
                                 events, 
                                 event_id=event_dict,
@@ -109,4 +110,3 @@ class Segmentation(BaseClass):
                                 baseline=baseline,
                                 preload=True,
                                 **e_kwargs)
-

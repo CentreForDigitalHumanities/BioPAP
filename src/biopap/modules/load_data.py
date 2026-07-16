@@ -57,10 +57,15 @@ class LoadData(BaseClass):
             if not file_path.exists():
                 raise ValueError(f"File '{file_path}' does not exist")
 
-            if file_path.suffix.lower()=='.bdf':
-                self.raw = self.read_bdf(file_path, preload, **kwargs)
-            elif file_path.suffix.lower()=='.fif':
+            bdf_kwargs = kwargs['load_bdf'] if 'load_bdf' in kwargs else {}
+            edf_kwargs = kwargs['load_edf'] if 'load_edf' in kwargs else {}
+
+            if file_path.suffix.lower() == '.bdf':
+                self.raw = self.read_bdf(file_path, preload, **bdf_kwargs)
+            elif file_path.suffix.lower() == '.fif':
                 self.raw = self.read_fif(file_path, preload, **kwargs)
+            elif file_path.suffix.lower() == '.edf':
+                self.raw = self.read_edf(file_path, preload, **edf_kwargs)
             else:
                 raise ValueError(f"'{file_path}' is not a supported file")
 
@@ -73,12 +78,23 @@ class LoadData(BaseClass):
 
     @staticmethod
     def read_fif(file_path, preload, **kwargs):
+        fif_kwargs = kwargs['load_fif'] if 'load_fif' in kwargs else {}
+        epo_kwargs = kwargs['load_epochs'] if 'load_epochs' in kwargs else {}
         try:
-            raw_fif = mne.read_epochs(file_path, preload=preload)
+            raw_fif = mne.read_epochs(file_path, preload=preload, **epo_kwargs)
         except ValueError as e:
             if str(e).strip().lower() == "could not find event data":
-                raw_fif = mne.io.read_raw_fif(file_path, preload=preload, **kwargs)
+                raw_fif = mne.io.read_raw_fif(file_path, preload=preload, **fif_kwargs)
             else:
                 raise e
 
         return raw_fif
+
+    @staticmethod
+    def read_edf(file_path, preload, **kwargs):
+        try:
+            raw_edf = mne.io.read_raw_edf(file_path, preload=preload, **kwargs)
+        except Exception:
+            raw_edf = mne.io.read_raw_edf(file_path, preload=preload, encoding='latin-1', **kwargs)
+
+        return raw_edf

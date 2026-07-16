@@ -1,8 +1,64 @@
-import sys
-from pathlib import Path
-from io import StringIO
-import pandas as pd
+import json
+import logging
 import mne
+import pandas as pd
+import random
+import re
+import string
+import sys
+import warnings
+import yaml.dumper
+from functools import reduce
+from io import StringIO
+from os import getenv
+from pathlib import Path
+from termcolor import colored
+from biopap.modules import CONFIG_MODULE_CLASS_KEY
+
+
+class CustomFormatter(logging.Formatter):
+
+    log_format = "%(asctime)s:%(levelname)s:%(module)s:%(message)s"
+
+    FORMATS = {
+        logging.DEBUG: colored(log_format, 'white'),
+        logging.INFO:  colored(log_format, 'white'),
+        logging.WARNING:  colored(log_format, 'light_yellow'),
+        logging.ERROR:  colored(log_format, 'light_red'),
+        logging.CRITICAL: colored(log_format, 'light_red', attrs=['bold'])
+    }
+
+    def __init__(self, use_color=True):
+        self.use_color = use_color
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno) if self.use_color else self.log_format
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+def get_logger(use_color=True):
+
+    rootLogger = logging.getLogger()
+
+    DEBUG = getenv('BIOPAP_DEBUG') == '1'
+    logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
+
+    if (rootLogger.hasHandlers()):
+        rootLogger.handlers.clear()
+
+    LOG_FILE = getenv('BIOPAP_LOGFILE', None)
+    if LOG_FILE:
+        fileHandler = logging.FileHandler(LOG_FILE)
+        fileHandler.setFormatter(CustomFormatter(use_color))
+        rootLogger.addHandler(fileHandler)
+
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(CustomFormatter(use_color))
+    rootLogger.addHandler(consoleHandler)
+
+    return rootLogger
+
 
 class CaptureStdout(list):
 
@@ -91,6 +147,7 @@ def get_new_filename(filename, save_folder, save_postfix=None, save_overwrite=Fa
 
     return p_out
 
+
 def build_event_dict(events, eventsfile):
     event_id = {}
     range_map = {}
@@ -108,20 +165,40 @@ def build_event_dict(events, eventsfile):
             start, end = map(int, id_value.split("-"))
             ids = list(range(start, end + 1))
 
-            if int(ids[0]) in events:
+            if int(ids[0]) in events[:, 2]:
                 event_id[label] = int(ids[0])
                 range_map[label] = ids
                 
         else:
-            event_id[label] = int(id_value) if id_value.isnumeric() else id_value
+            if not int(id_value) in events[:, 2]:
+                continue
+            event_id[label] = int(id_value)
 
     return event_id, range_map
+
 
 def merge_event_ranges(events, range_map):
     merged = events.copy()
     for label, ids in range_map.items():
         merged = mne.merge_events(merged, ids, ids[0])
     return merged
+
+
+def create_template_annotations_dict(in_path,
+                                     out_path,
+                                     encoding='latin-1',
+                                     default_regex=r'(?<=(^RS232 Trigger: ))(\d+)'):
+    a_dict = {}
+    annots = mne.read_annotations(in_path, encoding=encoding)
+    for annot in annots:
+        match = re.search(default_regex, annot['description'])
+        a_dict[str(annot['description'])] = int(match.group()) if match else '?'
+
+    with open(out_path, 'w') as f:
+        json.dump(a_dict, f, sort_keys=True, indent=4)
+
+    print(f'Wrote template dictionary to {out_path}')
+    
 
 def save_modules_config(modules, config_path, append=False):
     """
@@ -152,3 +229,55 @@ def save_modules_config(modules, config_path, append=False):
         module.save_config(path=config_path, cfg_label=mod_name)
         mod_list.append(mod_name)
         i = 2
+
+
+def path_representer(dumper, obj):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", str(obj))
+
+
+class YamlDumper(yaml.dumper.SafeDumper):
+    # also solves ' !!python/tuple' constructor, not sure why though
+    pass
+
+yaml.add_representer(
+    type(Path()),
+    path_representer,
+    YamlDumper,
+)
+
+
+def generate_pseudonym_file_list(files, code_length=4, include_date=True):
+    pseudo = []
+    for file in files:
+        while True:
+            p = ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
+            if p not in [x['pseudocode'] for x in pseudo]:
+                pseudo.append({
+                    'input_file': file, 
+                    'pseudocode': p
+                    })
+                break
+
+    return pseudo
+
+
+def read_config_file(path):
+    if path is None:
+        return {}
+
+    if not Path(path).exists:
+        raise FileNotFoundError(f"'{save_path}' does not exist")
+
+    with open(path, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while reading YAML: %s" % str(e))
+            return {}
+
+    # turn list of dicts into single dict
+    merged_config = {}
+    for key in config:
+        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+
+    return merged_config
