@@ -44,15 +44,15 @@ class SaveOutput(BaseClass):
     """
 
     alters_data = False
-    int_postfix = '_PARTIAL'
 
     def __init__(self,
                  raw,
                  export_formats: Union[str, int, list[str]],
                  output_file: Union[str, Path],
                  overwrite: bool=True,
-                 steps_completed: list[PipelineStep]=[],
-                 intermediate: Union[str, int, bool]=True,
+                 postfix: Union[str, None]=None,
+                 _steps_completed: list[PipelineStep]=[],
+                 _intermediate: bool=True,
                  silent: bool=False):
 
         self._saved_files = []
@@ -64,33 +64,27 @@ class SaveOutput(BaseClass):
         with self.capture_stdout as self.stdout:
 
             self.processed = raw
-            e_frmts = ExportFormats(export_formats)
 
-            if isinstance(intermediate, bool) and not intermediate:
-                int_postfix = None
-            elif isinstance(intermediate, bool):
-                int_postfix = self.int_postfix
-            elif isinstance(intermediate, (str, int)):
-                int_postfix = ''.join(c for c in str(intermediate) 
-                                        if c.isalpha() or c.isdigit() or c in [' ','_','-']
-                                       ).rstrip().replace(' ', '_')[:25]
-            else:
-                raise ValueError(f'intermediate must be bool, int or str (got {type(intermediate)})')
+            f_postfix = postfix if postfix else ''
+            if _intermediate:
+                f_postfix = f"{f_postfix}_PARTIAL"
+
+            e_frmts = ExportFormats(export_formats)
 
             if e_frmts.is_selected(ExportFormats.FIF):
                 self._saved_files.append(self.save_fif(
                     filename=output_file,
                     overwrite=overwrite,
-                    save_postfix=int_postfix))
+                    save_postfix=f_postfix))
 
             if e_frmts.is_selected(ExportFormats.CSV):
                 self._saved_files.append(self.save_csv(
                     filename=output_file,
                     overwrite=overwrite,
-                    save_postfix=int_postfix))
+                    save_postfix=f_postfix))
 
-            self.save_steps_completed(
-                steps_completed=steps_completed,
+            self.save__steps_completed(
+                _steps_completed=_steps_completed,
                 saved_files=self._saved_files)
 
     @property
@@ -129,7 +123,7 @@ class SaveOutput(BaseClass):
         return f_new
 
     @staticmethod
-    def save_steps_completed(steps_completed, saved_files):
+    def save__steps_completed(_steps_completed, saved_files):
         if len(saved_files)==0:
             return
 
@@ -142,7 +136,7 @@ class SaveOutput(BaseClass):
 
         with open(f_new, 'w', encoding='utf-8') as f:
             f.write("# Steps completed:\n")
-            for step in steps_completed:
+            for step in _steps_completed:
                 f.write(f"{str(step)}\n")
             f.write("\n")
             f.write(f"# Output ({datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')}):\n")

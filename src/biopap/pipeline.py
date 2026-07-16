@@ -229,26 +229,26 @@ class Pipeline:
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
-        self.steps.sort(key=lambda x: x.Order)
-        final_step = max([x.Order for x in self.steps])
-        self.check_steps()
         self._processed_data = self._initial_data.copy()
+
+        self.steps.sort(key=lambda x: x.Order)
+        self.check_steps()
+        final_step = max([x.Order for x in self.steps])
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
 
-            if step.Module.__name__ == SaveOutput.__name__:
-                cfg['steps_completed'] = [x for x in self.steps if x.Order < step.Order]
-                cfg['intermediate'] = step.Order != final_step
-
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
-            msg = f"{msg} [{self.subject_id}]"
-            logger.info(msg)
+            logger.info(f"{msg} [{self.subject_id}]")
+
+            if step.Module.__name__ == SaveOutput.__name__:
+                cfg['_steps_completed'] = [x for x in self.steps if x.Order < step.Order]
+                cfg['_intermediate'] = step.Order != final_step
 
             try:
-                inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
+                inst = step.Module(** {'raw': self._processed_data, 'silent': True } | cfg )
                 if len(inst.stdout)>0:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
 
