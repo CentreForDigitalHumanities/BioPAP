@@ -63,6 +63,12 @@ class ArtifactReject(BaseClass):
                     f"got {type(self.processed)} instead."
                 )
             
+            if mode == "interpolation" and not self.processed.get_montage():
+                raise ValueError(
+                    "Cannot interpolate bad channels without a montage. "
+                    "Please set a montage with `set_montage()` or SetChannelTypeAndMontage before using interpolation."
+                )
+            
             p_kwargs = kwargs['pick_types'] if 'pick_types' in kwargs else {}
             i_kwargs = kwargs['interpolate_bads'] if 'interpolate_bads' in kwargs else {}
 

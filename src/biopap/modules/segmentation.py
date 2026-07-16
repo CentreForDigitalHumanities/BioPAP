@@ -73,6 +73,9 @@ class Segmentation(BaseClass):
 
             self.processed = raw
 
+            if not isinstance(self.processed, mne.io.BaseRaw):
+                raise ValueError(f"Segmentation module can only handle 'mne.io.BaseRaw' class, got '{type(self.processed)}'")
+
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             e_kwargs = kwargs['Epochs'] if 'Epochs' in kwargs else {}
 
