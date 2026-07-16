@@ -165,12 +165,14 @@ def build_event_dict(events, eventsfile):
             start, end = map(int, id_value.split("-"))
             ids = list(range(start, end + 1))
 
-            if int(ids[0]) in events:
+            if int(ids[0]) in events[:, 2]:
                 event_id[label] = int(ids[0])
                 range_map[label] = ids
                 
         else:
-            event_id[label] = int(id_value) if id_value.isnumeric() else id_value
+            if not int(id_value) in events[:, 2]:
+                continue
+            event_id[label] = int(id_value)
 
     return event_id, range_map
 
