@@ -38,9 +38,9 @@ for step, step_cfg in config.items():
     if CONFIG_MODULE_CLASS_KEY not in step_cfg:
         # try by resolving the step's name (backward compatibility)
         # do substring from start (rather than equals) to catch "<module>_1" etc
-        biopap_module = [str(v['class']) for v in modules_avail if v['name'][:len(step)] == step]
+        biopap_module = [str(v['class']) for v in modules_avail if v['name'] == step[:len(v['name'])]]
         if len(biopap_module)==0:
-            raise ValueError("'%s' missing from '%s'; could not '%s' resolve to BioPAP module" % (CONFIG_MODULE_CLASS_KEY, step, step))
+            raise ValueError("'%s' missing from '%s'; could not resolve '%s' to BioPAP module" % (CONFIG_MODULE_CLASS_KEY, step, step))
         else:
             print("Inferred module %s from key name '%s'" % (biopap_module[0], step))
             step_cfg[CONFIG_MODULE_CLASS_KEY] = biopap_module[0]
