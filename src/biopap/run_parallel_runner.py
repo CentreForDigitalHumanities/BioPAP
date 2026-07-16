@@ -21,6 +21,12 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     argp.add_argument(
+        "-c", "--config_file",
+        type=Path,
+        required=True,
+        help="path to YAML file containing pipeline configuration",
+    )
+    argp.add_argument(
         "-i", "--input_dir", 
         type=Path,
         required=True,
@@ -46,10 +52,10 @@ if __name__ == "__main__":
         help="Folder to save pseudocode lookup file in",
     )
     argp.add_argument(
-        "-c", "--config_file",
+        "--pseudocode_file",
         type=Path,
-        required=True,
-        help="path to YAML file containing pipeline configuration",
+        required=False,
+        help="path to file containing pseudocodes and output from previous run",
     )
     argp.add_argument(
         "--max_workers",
@@ -71,6 +77,9 @@ if __name__ == "__main__":
     if args.output_dir and args.output_dir.exists() and not args.input_dir.is_dir():
         raise ValueError(f"'{args.output_dir}' is not a directory")
 
+    if not args.do_not_share_dir.exists() or not args.do_not_share_dir.is_dir():
+        raise ValueError(f"'{args.do_not_share_dir}' doesn\'t exist or is not a directory")
+
     valid_extensions = list(map(lambda x: f".{x.lower().lstrip('.')}", args.extensions))
     logger.debug("Extension(s): %s" % valid_extensions)
     input_files = [x for x in glob.glob(f"{args.input_dir}/*.*") if Path(x).suffix.lower() in valid_extensions]
@@ -88,13 +97,13 @@ if __name__ == "__main__":
 
     while True:
         run_start = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
-        pseudocode_file = args.do_not_share_dir / f'pseudocodes_{run_start}.txt'
-        if not pseudocode_file.exists():
+        new_pseudocode_file = args.do_not_share_dir / f'pseudocodes_{run_start}.txt'
+        if not new_pseudocode_file.exists():
             break
 
+    # read config and override various output folders, checks etc
     config = read_config_file(args.config_file)
 
-    # overriding various output folders, checks etc
     for step, step_cfg in config.items():
 
         if not CONFIG_MODULE_CLASS_KEY in step_cfg:
@@ -118,11 +127,12 @@ if __name__ == "__main__":
             step_cfg['bids_root'] = args.output_dir / 'bids'
             Path(step_cfg['bids_root']).mkdir(parents=True, exist_ok=True)
 
-        # checking eventifile's presence
+        # checking eventfile's presence
         elif s_mod in [str(Segmentation), str(BIDSConversion)] \
             and 'eventsfile' in step_cfg and not Path(step_cfg['eventsfile']).exists():
             raise FileNotFoundError("%s: eventsfile '%s' not found" % (step, step_cfg['eventsfile']))
 
+    # create new pipeline from config
     try:
         p = Pipeline.from_config(
             config=config,
@@ -146,7 +156,7 @@ if __name__ == "__main__":
 
     f_sep = '\t'
     v_sep = ';'
-    with open(pseudocode_file, 'w+') as f:
+    with open(new_pseudocode_file, 'w+') as f:
         f.write(f"{f_sep.join(['input_file', 'pseudocode', 'saved_files', 'exit_code'])}\n")
         for result in para.results:
             fields = [
@@ -156,4 +166,4 @@ if __name__ == "__main__":
                 v_sep.join(map(str, result['exit_code']))]
             f.write(f"{f_sep.join(fields)}\n")
 
-        logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
+        logger.critical(f"Pseudcodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")
