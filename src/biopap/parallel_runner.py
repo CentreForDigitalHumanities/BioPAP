@@ -2,22 +2,26 @@ import argparse
 import glob
 import multiprocessing as mp
 import os
+import re
 import time
 import warnings
 from datetime import datetime
 from pathlib import Path
-from biopap.modules import CONFIG_MODULE_CLASS_KEY 
+from typing import Union, Optional
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
 from biopap.modules.helpers import (custom_formatwarning, generate_pseudonym_file_list,
                                     get_logger, read_config_file)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
 from biopap.modules.anonymize import Anonymize
+from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.save_output import SaveOutput
 from biopap.modules.segmentation import Segmentation
 from biopap.pipeline import Pipeline
 
 
 class ParallelRunner:
+
     def __init__(
         self,
         input_sets,
@@ -26,6 +30,15 @@ class ParallelRunner:
         max_workers=None,
         mp_spawn_or_fork="spawn",
     ):
+
+        self._results = []
+
+        def handle_result(result):
+            self._results.append(result)
+            if result['exit_code'][0] == 0:
+                logger.info(f"'{result['input_file']}' done [{result['pseudocode']}]")
+            else:
+                logger.error(f"'{result['input_file']}' raised error: {result['exit_code'][1]} [{result['pseudocode']}]")
 
         logger.info(f"Processing {len(input_sets):,} file(s)")
 
@@ -41,11 +54,12 @@ class ParallelRunner:
                     pool.apply_async(
                         self.runner,
                         args=({
-                            "config": config,
+                            "config": dict(config),
                             "input_set": input_set,
                             "logger": logger
                         },),
-                        callback=logger.info,
+                        callback=handle_result,
+                        # callback=logger.info,
                     )
 
                 pool.close()
@@ -53,13 +67,14 @@ class ParallelRunner:
 
         elif max_workers == 1:
             for input_set in input_sets:
-                logger.info(self.runner({
-                    "config": config,
+                handle_result(self.runner({
+                    "config": dict(config),
                     "input_set": input_set,
                     "logger": logger
                 }))
         else:
             raise ValueError(f"No workers available ({max_workers}).")
+
 
     @staticmethod
     def runner(params):
@@ -79,16 +94,29 @@ class ParallelRunner:
                 step_cfg['participant_id'] = input_set['pseudocode']
             elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
                 step_cfg['subject'] = input_set['pseudocode']
-            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
-                step_cfg['output_file'] = subst_pseudocode(step_cfg['output_file'])
 
-        Pipeline.from_config(
-            config=config,
-            input_file=input_set['input_file'],
-            subject_id=input_set['pseudocode']
-        ).run()
+        try:
+            pipe = Pipeline.from_config(
+                config=config,
+                input_file=input_set['input_file'],
+                subject_id=input_set['pseudocode']
+            )
+            pipe.run()
+            exit_code = (0, 'success')
+        except Exception as e:
+            exit_code = (1, str(e))
 
-        return f"'{input_set['input_file']} [{input_set['pseudocode']}]' done"
+        return {
+            'input_file': input_set['input_file'],
+            'pseudocode': input_set['pseudocode'],
+            'saved_files': pipe.saved_files,
+            'exit_code': exit_code
+        }
+
+    @property
+    def results(self):
+        # [{input_file, pseudocode, saved_files, exit_code}]
+        return self._results
 
 
 if __name__ == "__main__":
@@ -172,47 +200,49 @@ if __name__ == "__main__":
 
     config = read_config_file(args.config_file)
 
-    # overriding various output folders
-    if args.output_dir:
-        for step, step_cfg in config.items():
-            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
-                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
-
-            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Plot):
-                step_cfg['save_folder'] = args.output_dir
-            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
-                step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name
-            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
-                step_cfg['bids_root'] = args.output_dir / 'bids'
-                Path(step_cfg['bids_root']).mkdir(parents=True, exist_ok=True)
-
-    # checking eventifile's presence
+    # overriding various output folders, checks etc
     for step, step_cfg in config.items():
-        if step_cfg[CONFIG_MODULE_CLASS_KEY] in [str(Segmentation), str(BIDSConversion)] \
+
+        if not CONFIG_MODULE_CLASS_KEY in step_cfg:
+            raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
+
+        s_mod = step_cfg[CONFIG_MODULE_CLASS_KEY]
+
+        if s_mod == str(Plot) and args.output_dir:
+            step_cfg['save_folder'] = args.output_dir / 'plots'
+
+        elif s_mod == str(SaveOutput):
+            
+            if TPL_SUBJECT_ID not in step_cfg['output_file']:
+                tmp = Path(step_cfg['output_file'])
+                step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
+
+            if args.output_dir:
+                step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name
+
+        elif s_mod == str(BIDSConversion) and args.output_dir:
+            step_cfg['bids_root'] = args.output_dir / 'bids'
+            Path(step_cfg['bids_root']).mkdir(parents=True, exist_ok=True)
+
+        # checking eventifile's presence
+        elif s_mod in [str(Segmentation), str(BIDSConversion)] \
             and 'eventsfile' in step_cfg and not Path(step_cfg['eventsfile']).exists():
-            logger.critical("%s: eventsfile '%s' not found" % (step, step_cfg['eventsfile']))
-            exit()
+            raise FileNotFoundError("%s: eventsfile '%s' not found" % (step, step_cfg['eventsfile']))
 
     try:
-        Pipeline.from_config(
+        p = Pipeline.from_config(
             config=config,
             input_file=None,
             subject_id='test'
         ).check_steps()
+
     except Exception as e:
         logger.critical("Pipeline steps check raised error: %s" % str(e))
         exit()
 
     input_sets = generate_pseudonym_file_list(input_files)
-    sep = ';'
-    with open(pseudocode_file, 'w+') as f:
-        f.write(f"pseudocode{sep}original_file\n")
-        for file in input_sets:
-            f.write(f"{file['pseudocode']}{sep}{file['input_file']}\n")
-    
-    logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
 
-    ParallelRunner(
+    para = ParallelRunner(
         input_sets=input_sets,
         output_dir=args.output_dir,
         config=config,
@@ -220,4 +250,16 @@ if __name__ == "__main__":
         mp_spawn_or_fork=args.mp_start_method,
     )
 
-    logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
+    f_sep = '\t'
+    v_sep = ';'
+    with open(pseudocode_file, 'w+') as f:
+        f.write(f"{f_sep.join(['input_file', 'pseudocode', 'saved_files', 'exit_code'])}\n")
+        for result in para.results:
+            fields = [
+                result['input_file'],
+                result['pseudocode'],
+                v_sep.join(map(str, result['saved_files'])),
+                v_sep.join(map(str, result['exit_code']))]
+            f.write(f"{f_sep.join(fields)}\n")
+    
+        logger.critical(f"Pseudcodes file: '{pseudocode_file}'. DO NOT SHARE FILE!")
