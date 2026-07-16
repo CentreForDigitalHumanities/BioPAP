@@ -33,10 +33,10 @@ class Metadata(BaseClass):
         with self.capture_stdout as self.stdout:
             
             self.processed = raw
-            
+
             if isinstance(self.processed, mne.Epochs):
                 new_metadata = pd.read_csv(epochs_metadata)
-                self.processed.metadata = new_metadata
+                self.processed.metadata = pd.concat([self.processed.metadata, new_metadata], axis=1)
                 self.processed.metadata
             else:
                 raise TypeError(f"Metadata can only be added to mne.Epochs objects (got {type(self.processed)})")
