@@ -154,7 +154,7 @@ class Pipeline:
             p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
         
-        cfg = {k: parse_config_values(v) for k, v in cfg.items()}
+        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k != CONFIG_MODULE_CLASS_KEY}
 
         try:
             check_config = getattr(module, "check_config", None)
