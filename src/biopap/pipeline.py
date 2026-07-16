@@ -254,6 +254,9 @@ class Pipeline:
 
                 self._processed_data = inst.processed
 
+                if step.Module.__name__ == SaveOutput.__name__:
+                    self._saved_files = inst.saved_files
+
                 del inst
             except Exception as e:
                 if step.Module.halt_on_exceptions:
