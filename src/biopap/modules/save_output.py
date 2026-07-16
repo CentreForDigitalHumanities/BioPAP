@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Union
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import (OptionsBaseClass, get_new_filename, c_print)
+from biopap.modules.helpers import (OptionsBaseClass, get_new_filename)
 from biopap.modules.pipeline_step import PipelineStep
 
 class ExportFormats(OptionsBaseClass):
