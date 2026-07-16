@@ -8,7 +8,6 @@ import string
 import sys
 import warnings
 import yaml.dumper
-from functools import reduce
 from io import StringIO
 from os import getenv
 from pathlib import Path
@@ -273,9 +272,4 @@ def read_config_file(path):
             logger.error("Error while reading YAML: %s" % str(e))
             return {}
 
-    # turn list of dicts into single dict
-    merged_config = {}
-    for key in config:
-        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
-
-    return merged_config
+    return config
