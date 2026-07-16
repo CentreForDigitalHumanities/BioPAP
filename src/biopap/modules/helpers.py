@@ -244,7 +244,7 @@ yaml.add_representer(
 )
 
 
-def generate_pseudonym_file_list(files, code_length=4, include_date=True):
+def get_pseudocoded_file_list(files, code_length=4, include_date=True):
     pseudo = []
     for file in files:
         while True:

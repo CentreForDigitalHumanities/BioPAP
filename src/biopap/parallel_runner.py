@@ -240,7 +240,7 @@ if __name__ == "__main__":
         logger.critical("Pipeline steps check raised error: %s" % str(e))
         exit()
 
-    input_sets = generate_pseudonym_file_list(input_files)
+    input_sets = get_pseudocoded_file_list(input_files)
 
     para = ParallelRunner(
         input_sets=input_sets,
