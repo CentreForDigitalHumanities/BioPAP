@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Union
 from biopap.modules.base_class import BaseClass
-from biopap.modules.helpers import (OptionsBaseClass, get_new_filename)
+from biopap.modules.helpers import (OptionsBaseClass, get_new_filename, c_print)
 from biopap.modules.pipeline_step import PipelineStep
 
 class ExportFormats(OptionsBaseClass):
@@ -44,7 +44,7 @@ class SaveOutput(BaseClass):
     """
 
     alters_data = False
-    intmd_postfix = '_partial'
+    int_postfix = '_PARTIAL'
 
     def __init__(self,
                  raw,
@@ -54,6 +54,8 @@ class SaveOutput(BaseClass):
                  steps_completed: list[PipelineStep]=[],
                  intermediate: Union[str, int, bool]=True,
                  silent: bool=False):
+
+        self._saved_files = []
 
         super().__init__(silent)
 
@@ -65,33 +67,35 @@ class SaveOutput(BaseClass):
             e_frmts = ExportFormats(export_formats)
 
             if isinstance(intermediate, bool) and not intermediate:
-                intmd_postfix = None
+                int_postfix = None
             elif isinstance(intermediate, bool):
-                intmd_postfix = self.intmd_postfix
+                int_postfix = self.int_postfix
             elif isinstance(intermediate, (str, int)):
-                intmd_postfix = ''.join(c for c in str(intermediate) 
+                int_postfix = ''.join(c for c in str(intermediate) 
                                         if c.isalpha() or c.isdigit() or c in [' ','_','-']
                                        ).rstrip().replace(' ', '_')[:25]
             else:
                 raise ValueError(f'intermediate must be bool, int or str (got {type(intermediate)})')
 
-            saved_files = []
-
             if e_frmts.is_selected(ExportFormats.FIF):
-                saved_files.append(self.save_fif(
+                self._saved_files.append(self.save_fif(
                     filename=output_file,
                     overwrite=overwrite,
-                    save_postfix=intmd_postfix))
+                    save_postfix=int_postfix))
 
             if e_frmts.is_selected(ExportFormats.CSV):
-                saved_files.append(self.save_csv(
+                self._saved_files.append(self.save_csv(
                     filename=output_file,
                     overwrite=overwrite,
-                    save_postfix=intmd_postfix))
+                    save_postfix=int_postfix))
 
             self.save_steps_completed(
                 steps_completed=steps_completed,
-                saved_files=saved_files)
+                saved_files=self._saved_files)
+
+    @property
+    def saved_files(self):
+        return self._saved_files
 
     @classmethod
     def check_config(cls, cfg):
@@ -128,7 +132,9 @@ class SaveOutput(BaseClass):
     def save_steps_completed(steps_completed, saved_files):
         if len(saved_files)==0:
             return
-        f_new = Path(saved_files[0]).with_suffix('.txt')
+
+        f_tmp = Path(saved_files[0])
+        f_new = f_tmp.parent / Path(f"{f_tmp.stem}__PIPELINE_PROGRESS").with_suffix('.txt')
         f_new = get_new_filename(
             filename=f_new.name,
             save_folder=f_new.parent,
