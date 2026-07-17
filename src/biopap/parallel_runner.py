@@ -46,8 +46,7 @@ class ParallelRunner:
                             "input_set": input_set,
                             "logger": logger
                         },),
-                        callback=handle_result,
-                        # callback=logger.info,
+                        callback=handle_result
                     )
 
                 pool.close()
@@ -103,5 +102,5 @@ class ParallelRunner:
 
     @property
     def results(self):
-        # [{input_file, pseudocode, saved_files, exit_code}]
+        # [{input_file, pseudocode, saved_files, exit_code}, ... ]
         return self._results
