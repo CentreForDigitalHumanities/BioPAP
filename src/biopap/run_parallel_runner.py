@@ -3,8 +3,7 @@ import glob
 from datetime import datetime
 from pathlib import Path
 from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
-from biopap.modules.helpers import (get_pseudocoded_file_list,
-                                    get_logger, read_config_file)
+from biopap.modules.helpers import (get_logger, read_config_file, PseudoCodes)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
 from biopap.modules.save_output import SaveOutput
@@ -95,12 +94,6 @@ if __name__ == "__main__":
 
     args.do_not_share_dir.mkdir(parents=True, exist_ok=True)
 
-    while True:
-        run_start = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
-        new_pseudocode_file = args.do_not_share_dir / f'pseudocodes_{run_start}.txt'
-        if not new_pseudocode_file.exists():
-            break
-
     # read config and override various output folders, checks etc
     config = read_config_file(args.config_file)
 
@@ -144,7 +137,11 @@ if __name__ == "__main__":
         logger.critical("Pipeline steps check raised error: %s" % str(e))
         exit()
 
-    input_sets = get_pseudocoded_file_list(input_files)
+    pseudo = PseudoCodes()
+
+    input_sets = pseudo.get_pseudocoded_file_list(
+        files=input_files,
+        filecode_list=pseudo.read_pseudocoded_file_list(file=args.pseudocode_file))
 
     para = ParallelRunner(
         input_sets=input_sets,
@@ -154,16 +151,6 @@ if __name__ == "__main__":
         mp_spawn_or_fork=args.mp_start_method,
     )
 
-    f_sep = '\t'
-    v_sep = ';'
-    with open(new_pseudocode_file, 'w+') as f:
-        f.write(f"{f_sep.join(['input_file', 'pseudocode', 'saved_files', 'exit_code'])}\n")
-        for result in para.results:
-            fields = [
-                result['input_file'],
-                result['pseudocode'],
-                v_sep.join(map(str, result['saved_files'])),
-                v_sep.join(map(str, result['exit_code']))]
-            f.write(f"{f_sep.join(fields)}\n")
-
-        logger.critical(f"Pseudcodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")
+    new_pseudocode_file = pseudo.get_pseudocode_filename(do_not_share_dir=args.do_not_share_dir)
+    pseudo.write_pseudocode_file(file=new_pseudocode_file)
+    logger.critical(f"Pseudcodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")
