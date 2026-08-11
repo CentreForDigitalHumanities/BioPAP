@@ -1,11 +1,11 @@
 import argparse
 import glob
-from datetime import datetime
 from pathlib import Path
 from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
-from biopap.modules.helpers import (get_logger, read_config_file, PseudoCodes)
+from biopap.modules.helpers import (get_logger, read_config_file)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.plot import Plot
+from biopap.modules.pseudocodes import PseudoCodes
 from biopap.modules.save_output import SaveOutput
 from biopap.modules.segmentation import Segmentation
 from biopap.parallel_runner import ParallelRunner
@@ -106,6 +106,7 @@ if __name__ == "__main__":
 
         if s_mod == str(Plot) and args.output_dir:
             step_cfg['save_folder'] = args.output_dir / 'plots'
+            Path(step_cfg['save_folder']).mkdir(parents=True, exist_ok=True)
 
         elif s_mod == str(SaveOutput):
             
@@ -151,6 +152,8 @@ if __name__ == "__main__":
         mp_spawn_or_fork=args.mp_start_method,
     )
 
-    new_pseudocode_file = pseudo.get_pseudocode_filename(do_not_share_dir=args.do_not_share_dir)
-    pseudo.write_pseudocode_file(file=new_pseudocode_file)
+    new_pseudocode_file = pseudo.get_pseudocode_filename(
+        do_not_share_dir=args.do_not_share_dir,
+        suffix=f"--{Path(args.config_file).stem}")
+    pseudo.write_pseudocode_file(results=para.results, file=new_pseudocode_file)
     logger.critical(f"Pseudcodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")

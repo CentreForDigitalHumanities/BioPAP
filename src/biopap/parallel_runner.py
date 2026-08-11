@@ -90,13 +90,15 @@ class ParallelRunner:
             )
             pipe.run()
             exit_code = (0, 'success')
+            saved_files = pipe.saved_files
         except Exception as e:
             exit_code = (1, str(e))
+            saved_files = []
 
         return {
             'input_file': input_set['input_file'],
             'pseudocode': input_set['pseudocode'],
-            'saved_files': pipe.saved_files,
+            'saved_files': saved_files,
             'exit_code': exit_code
         }
 
