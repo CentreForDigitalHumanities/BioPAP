@@ -304,6 +304,9 @@ class Pipeline:
         elif not isinstance(config, dict):
             raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
 
+        if 'Pipeline' in config:
+            kwargs = kwargs | config['Pipeline']
+
         # instantiate empty pipeline
         pipe = cls(
             input_file=input_file,
@@ -317,6 +320,9 @@ class Pipeline:
                                          str(obj))]
 
         for step, step_cfg in config.items():
+
+            if step == 'Pipeline':
+                continue
 
             if not CONFIG_MODULE_CLASS_KEY in step_cfg:
                 raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
