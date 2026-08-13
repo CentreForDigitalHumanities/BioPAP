@@ -59,11 +59,12 @@ class LoadData(BaseClass):
 
             bdf_kwargs = kwargs['load_bdf'] if 'load_bdf' in kwargs else {}
             edf_kwargs = kwargs['load_edf'] if 'load_edf' in kwargs else {}
+            fif_kwargs = kwargs['load_fif'] if 'load_fif' in kwargs else {}
 
             if file_path.suffix.lower() == '.bdf':
                 self.raw = self.read_bdf(file_path, preload, **bdf_kwargs)
             elif file_path.suffix.lower() == '.fif':
-                self.raw = self.read_fif(file_path, preload, **kwargs)
+                self.raw = self.read_fif(file_path, preload, **fif_kwargs)
             elif file_path.suffix.lower() == '.edf':
                 self.raw = self.read_edf(file_path, preload, **edf_kwargs)
             else:
