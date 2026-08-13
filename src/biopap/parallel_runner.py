@@ -69,13 +69,6 @@ class ParallelRunner:
         input_set = params["input_set"]
         logger = params["logger"]
 
-        def subst_pseudocode(old_path):
-            new_path = str(old_path).replace('{subject_id}',input_set['pseudocode'])
-            if str(old_path) == new_path:
-                old = Path(old_path)
-                new_path = old.parent / f"{old.stem}_{input_set['pseudocode']}{old.suffix}"
-            return Path(new_path)
-
         for step, step_cfg in config.items():
             if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
                 step_cfg['participant_id'] = input_set['pseudocode']
