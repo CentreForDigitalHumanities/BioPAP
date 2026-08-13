@@ -99,6 +99,9 @@ if __name__ == "__main__":
 
     for step, step_cfg in config.items():
 
+        if step == 'Pipeline':
+            continue
+
         if not CONFIG_MODULE_CLASS_KEY in step_cfg:
             raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
 
