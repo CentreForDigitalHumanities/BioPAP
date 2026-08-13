@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     # create new pipeline from config
     try:
-        p = Pipeline.from_config(
+        Pipeline.from_config(
             config=config,
             input_file=None,
             subject_id='test'
