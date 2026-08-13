@@ -70,6 +70,9 @@ class ParallelRunner:
         logger = params["logger"]
 
         for step, step_cfg in config.items():
+            if step == 'Pipeline':
+                continue
+
             if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
                 step_cfg['participant_id'] = input_set['pseudocode']
             elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
