@@ -40,14 +40,13 @@ if __name__ == "__main__":
     argp.add_argument(
         "-o", "--output_dir",
         type=Path,
-        required=False,
-        help="Optional folder to write results to (overrides output paths of Plot, BIDS and SaveOutput modules in config file)",
+        required=True,
+        help="Folder to write results to (overrides output paths of Plot, BIDS and SaveOutput modules in config file)",
     )
     argp.add_argument(
         "--do_not_share_dir",
         type=Path,
         required=True,
-        default="./",
         help="Folder to save pseudocode lookup file in",
     )
     argp.add_argument(
