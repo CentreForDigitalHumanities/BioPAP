@@ -3,9 +3,9 @@ from biopap.modules.base_class import BaseClass
 
 class IIRFilter(BaseClass):
     """
-    Class for applying IIR filtering.
+    Class for applying IIR or FIR filtering.
 
-    Filters the input data using an IIR filter with MNE's ``filter()`` method.
+    Filters the input data using an FIR/IIR filter with MNE's ``filter()`` method.
 
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.filter
 
@@ -27,6 +27,7 @@ class IIRFilter(BaseClass):
         - ``'cheby2'`` (Chebyshev II)
         - ``'ellip'`` (Cauer/elliptic)
         - ``'bessel'`` (Bessel/Thomson)
+    method: {'fir', 'iir'}, default 'iir'
     **kwargs
         Additional keyword arguments passed to MNE's ``filter()`` method.
         Example: {'fir_window': 'hann'}
@@ -43,6 +44,7 @@ class IIRFilter(BaseClass):
                  h_freq,
                  order=4, 
                  ftype='butter',
+                 method='iir',
                  silent: bool=False,
                  **kwargs):
 
@@ -58,7 +60,7 @@ class IIRFilter(BaseClass):
 
             self.processed = self.processed.filter(l_freq=l_freq,
                 h_freq=h_freq,
-                method='iir',
+                method=method,
                 iir_params=iir_params, 
                 verbose=self.verbose,
                 **kwargs)
