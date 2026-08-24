@@ -1,45 +1,67 @@
 # Batch processing
 
-`parallel_runner.py` allows you to run multiple pipelines in parallel. The program will divide 
-files in an input folder among the available workers (cores) and process them in parallel.
+`run_pipeline.py` allows you to run multiple pipelines in parallel. The program will divide 
+files in an input folder among the available workers (cores) and process them in parallel. The 
+process also takes care of the pseudonomisation of the output files.
 
 ## Usage
 
 ```bash
-usage: parallel_runner.py [-h] -i INPUT_DIR
-                          [--extensions EXTENSIONS [EXTENSIONS ...]]
-                          [-o OUTPUT_DIR] --do_not_share_dir
-                          DO_NOT_SHARE_DIR -c CONFIG_FILE
-                          [--max_workers MAX_WORKERS]
-                          [--mp_start_method {spawn,fork}]
+usage: run_pipeline.py [-h] -c CONFIG_FILE -i INPUT_DIR
+                       [--extensions EXTENSIONS [EXTENSIONS ...]] [-o OUTPUT_DIR]
+                       --do_not_share_dir DO_NOT_SHARE_DIR
+                       [--pseudocode_file PSEUDOCODE_FILE]
+                       [--max_workers MAX_WORKERS] [--mp_start_method {spawn,fork}]
 
 options:
   -h, --help            show this help message and exit
-  -i INPUT_DIR, --input_dir INPUT_DIR
-                        folder with input files to process
-                        (default: None)
-  --extensions EXTENSIONS [EXTENSIONS ...]
-                        valid extensions for input files (default:
-                        ['.bdf', '.edf'])
-  -o OUTPUT_DIR, --output_dir OUTPUT_DIR
-                        Optional folder to write results to
-                        (overrides Plot, BIDS and SaveOutput
-                        settings in config file) (default: None)
-  --do_not_share_dir DO_NOT_SHARE_DIR
-                        Folder to save pseudocode lookup file in
-                        (default: ./)
   -c CONFIG_FILE, --config_file CONFIG_FILE
-                        path to YAML file containing pipeline
-                        configuration (default: None)
+                        Path to YAML file containing pipeline configuration (default:
+                        None)
+  -i INPUT_DIR, --input_dir INPUT_DIR
+                        Folder with input files to process (default: None)
+  --extensions EXTENSIONS [EXTENSIONS ...]
+                        Valid extensions for input files (default: ['.bdf', '.edf',
+                        '.fif'])
+  -o OUTPUT_DIR, --output_dir OUTPUT_DIR
+                        Optional folder to write results to (overrides output paths
+                        of Plot, BIDS and SaveOutput modules in config file)
+                        (default: None)
+  --do_not_share_dir DO_NOT_SHARE_DIR
+                        Folder to save pseudocode lookup file in (default: ./)
+  --pseudocode_file PSEUDOCODE_FILE
+                        Path to file containing pseudocodes and output from previous
+                        run (default: None)
   --max_workers MAX_WORKERS
-                        defaults to max available workers; set to
-                        1 for no parallelization (default: None)
+                        Maximun number of workers. Defaults to maximum available
+                        number. Set to 1 for no parallelization (default: None)
   --mp_start_method {spawn,fork}
-                        multiprocessing start method (default:
-                        spawn)
+                        Multiprocessing start method (default: spawn)
 
 
 ```
+
+For relevant modules, a save path is included in their configuration, listed in the config file.
+When running the pipeline in parallel, you can override the save paths by setting `output_dir`,
+allowing you to easily manage the general output location without having to edit the configuration.
+For instance, when you run a multi-part pipeline, the `output_dir` set in the run for the first part
+can then become the `input_dir` of the second part, without having to manually move files around.
+
+Before running the actual pipeline, a four-letter pseudocode is created for each input file. The
+anonymization module uses the pseudocode to overwrite the user ID in the 'subject_info' field of
+the input's metadata. The pseudocode is also prepended to the file names of all files the pipeline
+outputs (save, plot and BIDS modules). A file listing input files and corresponding pseudocodes
+and output files is written to the `do_not_share_dir` folder. As the name implies, the contents
+in this folder should never be shared when sharing the pipeline's output.
+
+When you run a multi-part pipeline - for instance when the complete process includes a module that
+requires user interaction - the pipeline can re-use the generated pseudocodes from the first step
+by adding the generated file with pseudocodes as values for the `pseudocode_file` parameter for the
+next step (the full path of the pseudocode file is printed to the screen at the end of each run).
+
+If you want to run your pipeline over each file sequentially, rather than in parallel,
+simply call `run_pipeline.py` with `max_workers` set to 1.
+
 
 ## Process flow
 

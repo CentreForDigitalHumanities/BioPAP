@@ -2,18 +2,14 @@ import json
 import logging
 import mne
 import pandas as pd
-import random
 import re
-import string
 import sys
 import warnings
 import yaml.dumper
-from functools import reduce
 from io import StringIO
 from os import getenv
 from pathlib import Path
 from termcolor import colored
-from biopap.modules import CONFIG_MODULE_CLASS_KEY
 
 
 class CustomFormatter(logging.Formatter):
@@ -246,21 +242,6 @@ yaml.add_representer(
 )
 
 
-def generate_pseudonym_file_list(files, code_length=4, include_date=True):
-    pseudo = []
-    for file in files:
-        while True:
-            p = ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
-            if p not in [x['pseudocode'] for x in pseudo]:
-                pseudo.append({
-                    'input_file': file, 
-                    'pseudocode': p
-                    })
-                break
-
-    return pseudo
-
-
 def read_config_file(path):
     if path is None:
         return {}
@@ -275,9 +256,5 @@ def read_config_file(path):
             logger.error("Error while reading YAML: %s" % str(e))
             return {}
 
-    # turn list of dicts into single dict
-    merged_config = {}
-    for key in config:
-        merged_config[key] = reduce(lambda x, y: x | y, [z for z in config[key]])
+    return config
 
-    return merged_config

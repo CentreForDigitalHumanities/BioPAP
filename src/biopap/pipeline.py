@@ -4,13 +4,14 @@ import mne
 import os
 import re
 import sys
+import warnings
 import yaml
 from collections import ChainMap
 from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-from biopap.modules import CONFIG_MODULE_CLASS_KEY
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
@@ -34,8 +35,6 @@ logger = get_logger()
 
 class Pipeline:
 
-    _steps = []
-
     def __init__(self, 
                  config = Union[dict, str, Path],
                  input_file: Optional[Union[str, Path]] = None,
@@ -51,6 +50,9 @@ class Pipeline:
         # The verbose keyword argument can be ‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’, ‘CRITICAL’, 
         # True (an alias for ‘INFO’), or False (an alias for ‘WARNING’), or
         # 10 for DEBUG, 20 for INFO, 30 for WARNING, 40 for ERROR, or 50 for CRITICAL
+
+        self._steps = []
+        self._saved_files = []
 
         if isinstance(config, dict):
             self._config = config
@@ -84,6 +86,29 @@ class Pipeline:
 
         self._processed_data = None
 
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def subject_id(self):
+        return self._subject_id
+        
+    @property
+    def steps(self):
+        return self._steps
+        
+    @property
+    def initial_data(self):
+        return self._initial_data
+
+    @property
+    def processed_data(self):
+        return self._processed_data
+
+    @property
+    def saved_files(self):
+        return self._saved_files
 
     def load_data(self, input_file, **kwargs):
         load = LoadData(
@@ -104,16 +129,19 @@ class Pipeline:
         cfg_label for referencing different settings for same class
         """
 
-        def parse_template(s):
-            reps = [('{subject_id}', self._subject_id)]
-
-            if not isinstance(s, str):
+        def parse_config_values(s):
+            if not isinstance(s, (str, Path)):
                 return s
 
-            for rep in reps:
-                s = s.replace(rep[0], rep[1])
+            reps = [(TPL_SUBJECT_ID, self._subject_id)]
+            tmp = str(s) if isinstance(s, Path) else s
 
-            return s
+            for rep in reps:
+                tmp = tmp.replace(rep[0], rep[1])
+
+            tmp = Path(tmp) if isinstance(s, Path) else tmp
+
+            return tmp
 
         if isinstance(module, LoadData):
             raise ValueError("LoadData is automatically part of the pipeline; " \
@@ -125,7 +153,8 @@ class Pipeline:
         if lookup in self._config:
             p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
-            cfg = {k: parse_template(v) for k, v in cfg.items()}
+        
+        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k != CONFIG_MODULE_CLASS_KEY}
 
         try:
             check_config = getattr(module, "check_config", None)
@@ -155,8 +184,8 @@ class Pipeline:
         anon = [x for x in self.steps if x.Module == Anonymize]
         bids = [x for x in self.steps if x.Module == BIDSConversion]
         save = [x for x in self.steps if x.Module == SaveOutput]
-        min_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True], default=-1e6)
-        max_data_alter = max([x.Order for x in self.steps if x.Module.alters_data == True], default=1e6)
+        min_data_alter = min([x.Order for x in self.steps if x.Module.alters_data == True], default=1e6)
+        max_data_alter = max([x.Order for x in self.steps if x.Module.alters_data == True], default=-1e6)
         min_anon = min([x.Order for x in self.steps if x.Module.__name__ == Anonymize.__name__], default=1e6)
 
         # make sure LoadData isn't called directly
@@ -200,30 +229,34 @@ class Pipeline:
 
         p_log_level = mne.set_log_level(verbose=self.verbose, return_old_level=True)
 
-        self.steps.sort(key=lambda x: x.Order)
-        final_step = max([x.Order for x in self.steps])
-        self.check_steps()
         self._processed_data = self._initial_data.copy()
+
+        self.steps.sort(key=lambda x: x.Order)
+        self.check_steps()
+        final_step = max([x.Order for x in self.steps])
 
         for step in self.steps:
             cfg = step.Cfg if step.Cfg else {}
 
-            if step.Module.__name__ == SaveOutput.__name__:
-                cfg['steps_completed'] = [x for x in self.steps if x.Order < step.Order]
-                cfg['intermediate'] = step.Order != final_step
-
             msg = f"Running ({step.Order}) {step.Module.__name__}"
             if step.Module.log_config and cfg:
                 msg = f"{msg} < {cfg}"
-            msg = f"{msg} [{self.subject_id}]"
-            logger.info(msg)
+            logger.info(f"{msg} [{self.subject_id}]")
+
+            if step.Module.__name__ == SaveOutput.__name__:
+                cfg['_steps_completed'] = [x for x in self.steps if x.Order < step.Order]
+                cfg['_intermediate'] = step.Order != final_step
 
             try:
-                inst = step.Module(** {'raw' : self._processed_data, 'silent' : True } | cfg )
+                inst = step.Module(** {'raw': self._processed_data, 'silent': True } | cfg )
                 if len(inst.stdout)>0:
                     [logger.info(f"{step.Module.__name__}:{x} [{self.subject_id}]") for x in inst.stdout]
 
                 self._processed_data = inst.processed
+
+                if step.Module.__name__ == SaveOutput.__name__:
+                    self._saved_files = inst.saved_files
+
                 del inst
             except Exception as e:
                 if step.Module.halt_on_exceptions:
@@ -232,55 +265,6 @@ class Pipeline:
                 logger.error(f"({step.Order}) {step.Module.__name__} failed: {str(e)} (non-blocking) [{self.subject_id}]")
 
         mne.set_log_level(verbose=p_log_level, return_old_level=False)
-
-    @classmethod
-    def from_config(cls, config: Union[dict, str, Path], input_file, subject_id, **kwargs):
-
-        # check config format
-        if isinstance(config, (Path, str)):
-            config = read_config_file(config)
-        elif not isinstance(config, dict):
-            raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
-
-        # instantiate empty pipeline
-        pipeline = cls(
-            input_file=input_file,
-            config=None,
-            subject_id=subject_id,
-            **kwargs)
-
-        # make a list of loaded BioPAP modules
-        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
-                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
-                                         str(obj))]
-
-        order = 0
-        for step, step_cfg in config.items():
-
-            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
-                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
-
-            biopap_module = step_cfg[CONFIG_MODULE_CLASS_KEY]
-
-            # check if the listed module is in the available modules
-            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module]
-
-            if len(module_avail)==0:
-                raise ValueError("Module '%s' not in available modules" % biopap_module[0])
-
-            if len(module_avail)>1:
-                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module[0])
-
-            # add step to pipeline
-            pipeline._steps.append(
-                PipelineStep(
-                    Module=module_avail[0]['class'],
-                    Cfg={k:v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
-                    Order=order
-                ))
-            order += 1
-
-        return pipeline
 
     def _print_cfg(self, data, indent=4):
 
@@ -311,22 +295,52 @@ class Pipeline:
         if len(self.steps) > 0:
             print("(modules marked * alter their input data)")
 
-    @property
-    def config(self):
-        return self._config
+    @classmethod
+    def from_config(cls, config: Union[dict, str, Path], input_file, subject_id, **kwargs):
 
-    @property
-    def subject_id(self):
-        return self._subject_id
-        
-    @property
-    def steps(self):
-        return self._steps
-        
-    @property
-    def initial_data(self):
-        return self._initial_data
+        # check config format
+        if isinstance(config, (Path, str)):
+            config = read_config_file(config)
+        elif not isinstance(config, dict):
+            raise ValueError("config should be str, Path or dict (got '%s')" % type(config))
 
-    @property
-    def processed_data(self):
-        return self._processed_data
+        if 'Pipeline' in config:
+            kwargs = kwargs | config['Pipeline']
+
+        # instantiate empty pipeline
+        pipe = cls(
+            input_file=input_file,
+            config={},
+            subject_id=subject_id,
+            **kwargs)
+
+        # make a list of loaded BioPAP modules
+        modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
+                         if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
+                                         str(obj))]
+
+        for step, step_cfg in config.items():
+
+            if step == 'Pipeline':
+                continue
+
+            if not CONFIG_MODULE_CLASS_KEY in step_cfg:
+                raise ValueError("'%s' misses '%s' key; run 'tools/update_config.py' to update config file" % (step, CONFIG_MODULE_CLASS_KEY))
+
+            biopap_module = step_cfg[CONFIG_MODULE_CLASS_KEY]
+
+            # check if the listed module is in the available modules
+            module_avail = [x for x in modules_avail if str(x['class']) == biopap_module]
+
+            if len(module_avail)==0:
+                raise ValueError("Module '%s' not in available modules" % biopap_module[0])
+
+            if len(module_avail)>1:
+                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module[0])
+
+            pipe.add_step(
+                module=module_avail[0]['class'],
+                cfg={k: v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
+            )
+
+        return pipe
