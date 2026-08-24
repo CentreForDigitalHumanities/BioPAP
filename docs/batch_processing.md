@@ -88,6 +88,78 @@ The program then launches a pool of `MAX_WORKERS` workers, dividing the input fi
 + Creates a pipeline from the configuration and runs it.
 
 
+## Running a multi-part pipeline: example
+
+Suppose you have a pipeline in three parts, because there are intermediate steps between part one and two, and again
+between part two and three, that are interactive. First, create separate configuration-files for each part of the pipeline.
+Make sure each part ends with a SaveModule. If you have previously designed you pipeline as one complete configuration-file,
+you can just split that file into three separate files, and add a SaveModule as extra step to the first and second part.
+In the examples below, the configuration files are named `/pipeline/cfg/part1.yaml`, `.../part2.yaml`, and `.../part3.yaml`,
+respectively.
+
+Next, make sure you collect the input files into one folder (you can also start `run_parallel_runner.py` with the path of a
+single file as input, but this example assumes you are preparing to process an entire batch). In the example below, this
+is the folder `/pipeline/input`. Next, specify a general output folder (`/pipeline/output_1`) for the pipeline to write its
+output to. This path takes precedent over any output folders configured for individual modules in your configuration-files,
+and makes it easier to pass along the output of the first part of the pipeline as input to the next part. Finally, create a 
+folder to save the pseudocode-file to `/pipeline/do_not_share/`, and run the first part of the pipeline thus:
+
+
+```bash
+python ./run_parallel_runner.py \
+    -c '/pipeline/cfg/part1.yaml'  \
+    -i '/pipeline/input' \
+    -o '/pipeline/output_1' \
+    --do_not_share_dir '/pipeline/do_not_share/'
+```
+
+Once done, the (partially) processed files are in the output folder, and there is a file with filepaths and corresponding
+pseudocodes in the `do_not_share_dir` folder. The file's complete path is printed to the terminal as the very last log line.
+The file is named using the datetimestamp of the moment of its creation, plus the filename of the config-file used for
+running the pipeline: `pseudocodes_<date YYYYMMDD>-<time HHMMSS>--<config file's name>.tsv'`.
+
+The contents of the file look something like this:
+
+```csv
+input_file                        pseudocode  saved_files                         exit_code
+/pipeline/input/CBN1BD071212.bdf  XKVG        /pipeline/output_1/XKVG_part1.fif   0;success
+/pipeline/input/CBN1BD023561.bdf  NHSE        /pipeline/output_1/NHSE_part1.fif   0;success
+
+```
+
+After having done any intermediate processing, either return the files to the `/pipeline/output_1` folder for the next part, or
+create a new folder and put them there - as long as the file**names** remain unchanged. In the next step, rather than creating 
+new pseudocodes, the pipeline will match the previously generated pseudocodes to the matching input file, using just the filename.
+
+For example, the next step below uses `/pipeline/output_1` as its new input folder, and `/pipeline/output_2` as new output folder.
+Furthermore, the extra `pseudocode_file` parameter points to the pseudocode file as it was output by the previouis step. The program
+will read all the files in the folder `/pipeline/output_1`, and try to match them to the filenames in the pseudocode-document. If it
+for instance finds the file `NHSE_part1.fif` in the new input folder, it will match that to the saved file in the second line of the 
+pesudocode-file, and again use `NHSE` as the corresponding pseudocode for the second pipeline.
+
+```bash
+python ./run_parallel_runner.py \
+    -c '/pipeline/cfg/part2.yaml'  \
+    -i '/pipeline/output_1' \
+    -o '/pipeline/output_2' \
+    --do_not_share_dir '/pipeline/do_not_share/' \
+    --pseudocode_file '/pipeline/do_not_share/pseudocodes_20260811-152639--part1.tsv'
+```
+
+This step will write its output to `/pipeline/output_2`, and once it's done, will write its own pseudocode-file
+to `do_not_share_dir`. These outputs will form the input for the next step:
+
+
+```bash
+python ./run_parallel_runner.py \
+    -c '/pipeline/cfg/part3.yaml'  \
+    -i '/pipeline/output_2' \
+    -o '/pipeline/output_3' \
+    --do_not_share_dir '/pipeline/do_not_share/' \
+    --pseudocode_file '/pipeline/do_not_share/pseudocodes_20260811-152731--part2.tsv'
+```
+
+
 ## Log settings
 
 Log level can be set to DEBUG (default is INFO) through the environment variable `BIOPAP_DEBUG`.
