@@ -132,7 +132,7 @@ create a new folder and put them there - as long as the file**names** remain unc
 new pseudocodes, the pipeline will match the previously generated pseudocodes to the matching input file, using just the filename.
 
 For example, the next step below uses `/pipeline/output_1` as its new input folder, and `/pipeline/output_2` as new output folder.
-Furthermore, the extra `pseudocode_file` parameter points to the pseudocode file as it was output by the previouis step. The program
+Furthermore, the extra `pseudocode_file` parameter points to the pseudocode file as it was output by the previous step. The program
 will read all the files in the folder `/pipeline/output_1`, and try to match them to the filenames in the pseudocode-document. If it
 for instance finds the file `NHSE_part1.fif` in the new input folder, it will match that to the saved file in the second line of the 
 pesudocode-file, and again use `NHSE` as the corresponding pseudocode for the second pipeline.
