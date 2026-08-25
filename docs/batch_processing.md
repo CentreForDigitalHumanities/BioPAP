@@ -97,7 +97,7 @@ you can just split that file into three separate files, and add a SaveModule as 
 In the examples below, the configuration files are named `/pipeline/cfg/part1.yaml`, `.../part2.yaml`, and `.../part3.yaml`,
 respectively.
 
-Next, make sure you collect the input files into one folder (you can also start `run_parallel_runner.py` with the path of a
+Next, make sure you collect the input files into one folder (you can also start `run_pipeline.py` with the path of a
 single file as input, but this example assumes you are preparing to process an entire batch). In the example below, this
 is the folder `/pipeline/input`. Next, specify a general output folder (`/pipeline/output_1`) for the pipeline to write its
 output to. This path takes precedent over any output folders configured for individual modules in your configuration-files,
@@ -106,7 +106,7 @@ folder to save the pseudocode-file to `/pipeline/do_not_share/`, and run the fir
 
 
 ```bash
-python ./run_parallel_runner.py \
+python ./run_pipeline.py \
     -c '/pipeline/cfg/part1.yaml'  \
     -i '/pipeline/input' \
     -o '/pipeline/output_1' \
@@ -138,7 +138,7 @@ for instance finds the file `NHSE_part1.fif` in the new input folder, it will ma
 pesudocode-file, and again use `NHSE` as the corresponding pseudocode for the second pipeline.
 
 ```bash
-python ./run_parallel_runner.py \
+python ./run_pipeline.py \
     -c '/pipeline/cfg/part2.yaml'  \
     -i '/pipeline/output_1' \
     -o '/pipeline/output_2' \
@@ -151,7 +151,7 @@ to `do_not_share_dir`. These outputs will form the input for the next step:
 
 
 ```bash
-python ./run_parallel_runner.py \
+python ./run_pipeline.py \
     -c '/pipeline/cfg/part3.yaml'  \
     -i '/pipeline/output_2' \
     -o '/pipeline/output_3' \
@@ -172,7 +172,7 @@ export BIOPAP_LOGFILE=/biopap/logs/my_logfile.txt
 
 # or when executing:
 
-$ BIOPAP_LOGFILE=/log/biopap.log BIOPAP_DEBUG=1 python parallel_runner.py \
+$ BIOPAP_LOGFILE=/log/biopap.log BIOPAP_DEBUG=1 python run_pipeline.py \
     -i /biopap/data \
     -o /biopap/out \
     -c '/biopap/config/my_config.yaml' \
