@@ -85,7 +85,7 @@ if __name__ == "__main__":
         if not Path(args.input).suffix.lower() in valid_extensions:
             logger.warning("Unknown extension: '%s' (valid extensions: %s)" % (Path(args.input).suffix, ';'.join(valid_extensions)))
             exit()
-        input_files = [args.input]
+        input_files = [str(args.input)]
     else:
         input_files = [x for x in glob.glob(f"{args.input}/*.*") if Path(x).suffix.lower() in valid_extensions]
 
