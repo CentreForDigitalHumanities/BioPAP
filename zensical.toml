@@ -12,7 +12,6 @@ nav = [
     { "Batch Running" = "tutorials/run_batch.md" },
   ] },
   { Modules = [
-    { ApplyICA = "api/ica.md" },
     { ArtifactReject = "api/artifact_reject.md" },
     { Anonymize = "api/anonymize.md" },
     { BaselineCorrection = "api/baseline_correction.md" },

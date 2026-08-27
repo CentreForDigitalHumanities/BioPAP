@@ -113,7 +113,6 @@ pipe.add_step(Anonymize)
 pipe.add_step(Downsample)
 pipe.add_step(IIRFilter)
 pipe.add_step(Rereference)
-pipe.add_step(ApplyICA)
 pipe.add_step(SaveOutput)
 ```
 
