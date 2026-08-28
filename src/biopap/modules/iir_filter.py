@@ -56,7 +56,7 @@ class IIRFilter(BaseClass):
 
             self.processed = raw
 
-            iir_params = dict(order=order, ftype=ftype)
+            iir_params = dict(order=order, ftype=ftype) if method == 'iir' else None
 
             self.processed = self.processed.filter(l_freq=l_freq,
                 h_freq=h_freq,
