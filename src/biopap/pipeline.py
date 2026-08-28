@@ -123,7 +123,7 @@ class Pipeline:
 
         self._initial_data = load.raw
 
-    def add_step(self, module, cfg=None, cfg_label=None):
+    def add_step(self, module, cfg={}, cfg_label=None):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
