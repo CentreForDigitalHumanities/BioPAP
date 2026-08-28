@@ -1,5 +1,3 @@
-LoadData:
-    file_path: '/data/my_file.bdf'
 Rereference:
     ref_channels: ['EXG1', 'EXG2']
 EOGChannels:
