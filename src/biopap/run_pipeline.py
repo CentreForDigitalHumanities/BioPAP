@@ -26,10 +26,10 @@ if __name__ == "__main__":
         help="Path to YAML file containing pipeline configuration",
     )
     argp.add_argument(
-        "-i", "--input_dir", 
+        "-i", "--input", 
         type=Path,
         required=True,
-        help="Folder with input files to process",
+        help="Path to file or folder with files to process",
     )
     argp.add_argument(
         "--extensions", 
@@ -69,10 +69,10 @@ if __name__ == "__main__":
 
     args = argp.parse_args()
 
-    if not args.input_dir.exists() or not args.input_dir.is_dir():
-        raise ValueError(f"'{args.input_dir}' doesn\'t exist or is not a directory")
+    if not args.input.exists():
+        raise ValueError(f"'{args.input}' doesn\'t exist")
 
-    if args.output_dir and args.output_dir.exists() and not args.input_dir.is_dir():
+    if args.output_dir and args.output_dir.exists() and not args.output_dir.is_dir():
         raise ValueError(f"'{args.output_dir}' is not a directory")
 
     if not args.do_not_share_dir.exists() or not args.do_not_share_dir.is_dir():
@@ -80,13 +80,20 @@ if __name__ == "__main__":
 
     valid_extensions = list(map(lambda x: f".{x.lower().lstrip('.')}", args.extensions))
     logger.debug("Extension(s): %s" % valid_extensions)
-    input_files = [x for x in glob.glob(f"{args.input_dir}/*.*") if Path(x).suffix.lower() in valid_extensions]
 
-    if len(input_files)==0:
-        logger.warning("No files found in %s" % args.input_dir)
-        exit()
+    if args.input.is_file():
+        if not Path(args.input).suffix.lower() in valid_extensions:
+            logger.warning("Unknown extension: '%s' (valid extensions: %s)" % (Path(args.input).suffix, ';'.join(valid_extensions)))
+            exit()
+        input_files = [str(args.input)]
+    else:
+        input_files = [x for x in glob.glob(f"{args.input}/*.*") if Path(x).suffix.lower() in valid_extensions]
 
-    logger.info("Found %s files in '%s'" % (len(input_files), args.input_dir))
+        if len(input_files)==0:
+            logger.warning("No files found in %s" % args.input)
+            exit()
+
+        logger.info("Found %s files in '%s'" % (len(input_files), args.input    ))
 
     if args.output_dir:
         args.output_dir.mkdir(parents=True, exist_ok=True)
