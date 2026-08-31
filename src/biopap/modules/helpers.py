@@ -251,8 +251,9 @@ def read_config_file(path):
         raise FileNotFoundError(f"'{save_path}' does not exist")
 
     with open(path, 'r') as f:
-        keys = [x.strip(' :\n') for x in f.readlines() if x[0]!=' ']
+        keys = [x.strip(' :\n') for x in f.readlines() if x[0] not in [' ', '#'] and len(x.strip())>0]
         multiples = [item for item, count in collections.Counter(keys).items() if count > 1]
+
         if len(multiples) > 0:
             raise KeyError(f"Your config-file has duplicate module keys: {'; '.join(multiples)}.")
         f.seek(0)

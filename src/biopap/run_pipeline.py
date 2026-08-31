@@ -50,12 +50,6 @@ if __name__ == "__main__":
         help="Folder to save pseudocode lookup file in",
     )
     argp.add_argument(
-        "--pseudocode_file",
-        type=Path,
-        required=False,
-        help="Path to file containing pseudocodes and output from previous run",
-    )
-    argp.add_argument(
         "--max_workers",
         type=int,
         help="Maximun number of workers. Defaults to maximum available number. Set to 1 for no parallelization",
@@ -112,9 +106,9 @@ if __name__ == "__main__":
 
         elif s_mod == str(SaveOutput):
             
-            if TPL_SUBJECT_ID not in step_cfg['output_file']:
-                tmp = Path(step_cfg['output_file'])
-                step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
+            # if TPL_SUBJECT_ID not in step_cfg['output_file']:
+            tmp = Path(step_cfg['output_file'])
+            step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
 
             if args.output_dir:
                 step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name
@@ -142,9 +136,7 @@ if __name__ == "__main__":
 
     pseudo = PseudoCodes()
 
-    input_sets = pseudo.get_pseudocoded_file_list(
-        files=input_files,
-        filecode_list=pseudo.read_pseudocoded_file_list(file=args.pseudocode_file))
+    input_sets = pseudo.get_pseudocoded_file_list(files=input_files)
 
     para = ParallelRunner(
         input_sets=input_sets,

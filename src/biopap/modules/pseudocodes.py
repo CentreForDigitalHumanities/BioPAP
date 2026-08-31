@@ -1,54 +1,44 @@
 import csv
 import random
+import re
 import string
 from datetime import datetime
 from pathlib import Path
+from biopap.modules.helpers import (get_logger)
+
+logger = get_logger()
 
 class PseudoCodes:
 
     F_SEP = '\t'
     V_SEP = ';'
     OUTFILE = 'pseudocodes_{timestamp}{suffix}.tsv'
+    REGEX_MATCH = re.compile('^[A-Z]{4}_')
 
     @staticmethod
-    def get_pseudocoded_file_list(files, filecode_list=None, code_length=4, include_date=True):
+    def generate_pseudocode(code_length):
+        return ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
 
-        pseudo = []
+    def get_pseudocoded_file_list(self, files, code_length=4):
 
-        if filecode_list:
-            to_be_processed = []
-            for file in files:
-                f_name = Path(file).name
-                if f_name in filecode_list:
-                    pseudo.append({
-                        'input_file': filecode_list[f_name][1],
-                        'pseudocode': filecode_list[f_name][0]
-                    })
-                else:
-                    to_be_processed.append(file)
-        else:
-            to_be_processed = files
+        p_files = []
 
-        for file in to_be_processed:
-            while True:
-                p = ''.join([random.choice(string.ascii_letters[26:]) for x in range(code_length)])
-                if p not in [x['pseudocode'] for x in pseudo]:
-                    pseudo.append({'input_file': file, 'pseudocode': p})
-                    break
+        for file in files:
+            prefix = Path(file).name[:code_length]
 
-        return pseudo
+            if self.REGEX_MATCH.match(prefix + '_'):
+                p_code = prefix
+                logger.info(f"'{Path(file).name}': using implied pseudocode {p_code}")
+            else:
+                p_code = self.generate_pseudocode(code_length=code_length)
+                logger.warning(f"'{Path(file).name}': using new pseudocode {p_code}")
 
-    def read_pseudocoded_file_list(self, file):
-        if not file:
-            return {}
+            p_files.append({
+                'input_file': file,
+                'pseudocode': p_code
+            })
 
-        reader = csv.DictReader(open(file), delimiter=self.F_SEP)
-        p_list = {}
-        for item in [x for x in reader]:
-            for file in item['saved_files'].split(self.V_SEP):
-                p_list[Path(file).name] = (item['pseudocode'], file)
-
-        return p_list
+        return p_files
 
     def get_pseudocode_filename(self, do_not_share_dir, suffix=''):
         while True:
