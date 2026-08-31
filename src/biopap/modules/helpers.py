@@ -1,3 +1,4 @@
+import collections
 import json
 import logging
 import mne
@@ -249,9 +250,15 @@ def read_config_file(path):
     if not Path(path).exists:
         raise FileNotFoundError(f"'{save_path}' does not exist")
 
-    with open(path, 'r') as stream:
+    with open(path, 'r') as f:
+        keys = [x.strip(' :\n') for x in f.readlines() if x[0]!=' ']
+        multiples = [item for item, count in collections.Counter(keys).items() if count > 1]
+        if len(multiples) > 0:
+            raise KeyError(f"Your config-file has duplicate module keys: {'; '.join(multiples)}.")
+        f.seek(0)
+
         try:
-            config = yaml.safe_load(stream)
+            config = yaml.safe_load(f)
         except yaml.YAMLError as e:
             logger.error("Error while reading YAML: %s" % str(e))
             return {}
