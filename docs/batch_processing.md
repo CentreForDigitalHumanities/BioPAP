@@ -29,9 +29,6 @@ options:
                         (default: None)
   --do_not_share_dir DO_NOT_SHARE_DIR
                         Folder to save pseudocode lookup file in (default: ./)
-  --pseudocode_file PSEUDOCODE_FILE
-                        Path to file containing pseudocodes and output from previous
-                        run (default: None)
   --max_workers MAX_WORKERS
                         Maximun number of workers. Defaults to maximum available
                         number. Set to 1 for no parallelization (default: None)
@@ -55,9 +52,10 @@ and output files is written to the `do_not_share_dir` folder. As the name implie
 in this folder should never be shared when sharing the pipeline's output.
 
 When you run a multi-part pipeline - for instance when the complete process includes a module that
-requires user interaction - the pipeline can re-use the generated pseudocodes from the first step
-by adding the generated file with pseudocodes as values for the `pseudocode_file` parameter for the
-next step (the full path of the pseudocode file is printed to the screen at the end of each run).
+requires user interaction - the pipeline automatically re-uses the generated pseudocodes from the
+first step by re-using the first four characters from the input filenames as pseudocodes for the
+next step (provided they match the pseudocode pattern, i.e. four capital letters followed by an
+underscores)
 
 If you want to run your pipeline over each file sequentially, rather than in parallel,
 simply call `run_pipeline.py` with `max_workers` set to 1.
@@ -88,6 +86,66 @@ The program then launches a pool of `MAX_WORKERS` workers, dividing the input fi
 + Creates a pipeline from the configuration and runs it.
 
 
+## Running a multi-part pipeline: example
+
+Suppose you have a pipeline in three parts, because there are intermediate steps between part one and two, and again
+between part two and three, that are interactive. First, create separate configuration-files for each part of the pipeline.
+Make sure each part ends with a SaveModule. If you have previously designed you pipeline as one complete configuration-file,
+you can just split that file into three separate files, and add a SaveModule as extra step to the first and second part.
+In the examples below, the configuration files are named `/pipeline/cfg/part1.yaml` and `.../part2.yaml`, respectively.
+
+Next, make sure you collect the input files into one folder (you can also start `run_pipeline.py` with the path of a
+single file as input, but this example assumes you are preparing to process an entire batch). In the example below, this
+is the folder `/pipeline/input`. Next, specify a general output folder (`/pipeline/output_1`) for the pipeline to write its
+output to. This path takes precedent over any output folders configured for individual modules in your configuration-files,
+and makes it easier to pass along the output of the first part of the pipeline as input to the next part. Finally, create a 
+folder to save the pseudocode-file to `/pipeline/do_not_share/`, and run the first part of the pipeline thus:
+
+
+```bash
+python ./run_pipeline.py \
+    -c '/pipeline/cfg/part1.yaml'  \
+    -i '/pipeline/input' \
+    -o '/pipeline/output_1' \
+    --do_not_share_dir '/pipeline/do_not_share/'
+```
+
+Once done, the (partially) processed files are in the output folder, and there is a file with filepaths and corresponding
+pseudocodes in the `do_not_share_dir` folder. The file's complete path is printed to the terminal as the very last log line.
+The file is named using the datetimestamp of the moment of its creation, plus the filename of the config-file used for
+running the pipeline: `pseudocodes_<date YYYYMMDD>-<time HHMMSS>--<config file's name>.tsv'`.
+
+The contents of the file look something like this:
+
+```csv
+input_file                        pseudocode  saved_files                         exit_code
+/pipeline/input/CBN1BD071212.bdf  XKVG        /pipeline/output_1/XKVG_part1.fif   0;success
+/pipeline/input/CBN1BD023561.bdf  NHSE        /pipeline/output_1/NHSE_part1.fif   0;success
+
+```
+
+After having done any intermediate processing, either return the files to the `/pipeline/output_1` folder for the next part, or
+create a new folder and put them there - as long as the pseudocodes at the start of the filenames remain unchanged (`XKVG_`,
+`NHSE_`). In the next step, rather than creating  new pseudocodes, the pipeline will deduce the previously generated pseudocodes
+from input files' names.
+
+For example, the next step below uses `/pipeline/output_1` as its new input folder, and `/pipeline/output_2` as new output folder.
+The program will read all the files in the folder `/pipeline/output_1`, and try to deduce the pseudocodes from the filenames. For
+instance, if it finds the file `NHSE_part1.fif` in the new input folder, it will (again) use `NHSE` as the pseudocode for the
+second pipeline.
+
+```bash
+python ./run_pipeline.py \
+    -c '/pipeline/cfg/part2.yaml'  \
+    -i '/pipeline/output_1' \
+    -o '/pipeline/output_2' \
+    --do_not_share_dir '/pipeline/do_not_share/'
+```
+
+This step will write its output to `/pipeline/output_2`, and once it's done, will write its own pseudocode-file
+to `do_not_share_dir`.
+
+
 ## Log settings
 
 Log level can be set to DEBUG (default is INFO) through the environment variable `BIOPAP_DEBUG`.
@@ -100,7 +158,7 @@ export BIOPAP_LOGFILE=/biopap/logs/my_logfile.txt
 
 # or when executing:
 
-$ BIOPAP_LOGFILE=/log/biopap.log BIOPAP_DEBUG=1 python parallel_runner.py \
+$ BIOPAP_LOGFILE=/log/biopap.log BIOPAP_DEBUG=1 python run_pipeline.py \
     -i /biopap/data \
     -o /biopap/out \
     -c '/biopap/config/my_config.yaml' \
