@@ -12,4 +12,8 @@ IIRFilter:
     h_freq: 35
     order: 4
     ftype: 'butter'
+    method: 'fir'
 ```
+
+Please note that by setting method to either 'iir' or 'fir,
+this module can apply either an IIR-filter, or an FIR-filter.

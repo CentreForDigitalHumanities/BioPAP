@@ -23,6 +23,7 @@ from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.events_from_annotations import EventsFromAnnotations
 from biopap.modules.helpers import (custom_formatwarning, get_logger, read_config_file)
 from biopap.modules.iir_filter import IIRFilter
+from biopap.modules.notch_filter import NotchFilter
 from biopap.modules.load_data import LoadData
 from biopap.modules.pipeline_step import PipelineStep
 from biopap.modules.plot import Plot, PlotTypes
