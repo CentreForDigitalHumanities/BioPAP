@@ -1,20 +1,31 @@
-LoadData:
-    file_path: '/data/my_file.bdf'
-Rereference:
-    ref_channels: ['EXG1', 'EXG2']
-EOGChannels:
-    ref_channels: ['hEOG', 'vEOG']
-    anode_channels: ['EXG3','EXG5']
-    cathode_channels: ['EXG4','EXG6']
-IIRFilter:
-    l_freq: 0.1
-    h_freq: 35
-Downsample:
-    sfreq: 500
-Downsample_1000:
-    sfreq: 1000
 Anonymize:
-    daysback: 100
-    experimenter: 'J. Jansen'
-    participant_id: 'AB00123'
-
+  _biopap_module: <class 'biopap.modules.anonymize.Anonymize'>
+  daysback: 100
+  experimenter: J. Jansen
+  participant_id: AB00123
+Downsample:
+  _biopap_module: <class 'biopap.modules.downsample.Downsample'>
+  sfreq: 500
+Downsample_1000:
+  _biopap_module: <class 'biopap.modules.downsample.Downsample'>
+  sfreq: 1000
+EOGChannels:
+  _biopap_module: <class 'biopap.modules.eog_channels.EOGChannels'>
+  anode_channels:
+  - EXG3
+  - EXG5
+  cathode_channels:
+  - EXG4
+  - EXG6
+  ref_channels:
+  - hEOG
+  - vEOG
+IIRFilter:
+  _biopap_module: <class 'biopap.modules.iir_filter.IIRFilter'>
+  h_freq: 35
+  l_freq: 0.1
+Rereference:
+  _biopap_module: <class 'biopap.modules.rereference.Rereference'>
+  ref_channels:
+  - EXG1
+  - EXG2
