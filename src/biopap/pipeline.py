@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Union, Optional
 from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
 from biopap.modules.anonymize import Anonymize
-from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
 from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion

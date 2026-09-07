@@ -4,7 +4,6 @@ import yaml
 from pathlib import Path
 from biopap.modules import CONFIG_MODULE_CLASS_KEY
 from biopap.modules.anonymize import Anonymize
-from biopap.modules.apply_ica import ApplyICA
 from biopap.modules.artifact_reject import ArtifactReject
 from biopap.modules.baseline_correction import BaselineCorrection
 from biopap.modules.bids import BIDSConversion

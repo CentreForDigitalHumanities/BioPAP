@@ -32,9 +32,6 @@ Downsample:
 Downsample_1000:
     sfreq: 1000
 
-ApplyICA:
-    method: 'fastica'
-
 Segmentation:
     # 'list' contains explicit marker ids
     # 'range' define an inclusive range
