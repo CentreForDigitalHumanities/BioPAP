@@ -129,8 +129,8 @@ if __name__ == "__main__":
             tmp = Path(step_cfg['output_file'])
             if args.no_pseudo:
                 step_cfg['output_file'] = tmp.parent / tmp.name
-            else:
-                step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
+            elif TPL_SUBJECT_ID not in tmp.name:
+                step_cfg['output_file'] = tmp.parent / f"{tmp.stem}_{TPL_SUBJECT_ID}{tmp.suffix}"
 
             if args.output_dir:
                 step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     else:
         pseudo = PseudoCodes()
         input_sets = pseudo.get_pseudocoded_file_list(files=input_files)
-    
+
     # launch runner
     para = ParallelRunner(
         input_sets=input_sets,
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     )
 
     if not args.no_pseudo:
-        new_pseudocode_file = pseudo.get_pseudocode_filename(
+        new_pseudocode_file = pseudo.get_pseudocodes_filepath(
             do_not_share_dir=args.do_not_share_dir,
             suffix=f"--{Path(args.config_file).stem}")
         pseudo.write_pseudocode_file(results=para.results, file=new_pseudocode_file)
