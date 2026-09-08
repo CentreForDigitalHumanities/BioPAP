@@ -1,10 +1,12 @@
 import multiprocessing as mp
 import os
-from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
+from pathlib import Path
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_FILENAME)
 from biopap.modules.helpers import (get_logger, read_config_file)
 from biopap.modules.bids import BIDSConversion
 from biopap.modules.anonymize import Anonymize
 from biopap.pipeline import Pipeline
+from biopap.modules.save_output import SaveOutput
 
 logger = get_logger()
 
@@ -81,12 +83,18 @@ class ParallelRunner:
                 elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
                     step_cfg['subject'] = input_set['pseudocode']
 
+            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(SaveOutput):
+                step_cfg['output_file'] = str(step_cfg['output_file']).replace(
+                    TPL_FILENAME,
+                    Path(input_set['input_file']).name)
+
         try:
             pipe = Pipeline.from_config(
                 config=config,
                 input_file=input_set['input_file'],
                 subject_id=input_set['pseudocode']
             )
+            pipe.inspect()
             pipe.run()
             exit_code = (0, 'success')
             saved_files = pipe.saved_files

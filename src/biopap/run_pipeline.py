@@ -109,8 +109,10 @@ if __name__ == "__main__":
     # read config and override various output folders, checks etc
     config = read_config_file(args.config_file)
 
+    # overriding settings that are identical for all input files
     for step, step_cfg in config.items():
 
+        # key 'Pipeline' allows for passing kwargs to embedded LoadData module
         if step == 'Pipeline':
             continue
 
@@ -124,13 +126,10 @@ if __name__ == "__main__":
             Path(step_cfg['save_folder']).mkdir(parents=True, exist_ok=True)
 
         elif s_mod == str(SaveOutput):
-            
+            tmp = Path(step_cfg['output_file'])
             if args.no_pseudo:
-                tmp = Path(step_cfg['output_file'])
                 step_cfg['output_file'] = tmp.parent / tmp.name
             else:
-                # if TPL_SUBJECT_ID not in step_cfg['output_file']:
-                tmp = Path(step_cfg['output_file'])
                 step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
 
             if args.output_dir:
@@ -145,7 +144,7 @@ if __name__ == "__main__":
             and 'eventsfile' in step_cfg and not Path(step_cfg['eventsfile']).exists():
             raise FileNotFoundError("%s: eventsfile '%s' not found" % (step, step_cfg['eventsfile']))
 
-    # create new pipeline from config
+    # create "empty" new pipeline to check steps
     try:
         Pipeline.from_config(
             config=config,
@@ -157,12 +156,14 @@ if __name__ == "__main__":
         logger.critical("Pipeline steps check raised error: %s" % str(e))
         exit()
 
+    # create sets of input files + pseudocode
     if args.no_pseudo:
         input_sets = [{'input_file': x, 'pseudocode': None} for x in input_files]
     else:
         pseudo = PseudoCodes()
         input_sets = pseudo.get_pseudocoded_file_list(files=input_files)
     
+    # launch runner
     para = ParallelRunner(
         input_sets=input_sets,
         output_dir=args.output_dir,
