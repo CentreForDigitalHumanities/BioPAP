@@ -73,10 +73,13 @@ class ParallelRunner:
             if step == 'Pipeline':
                 continue
 
-            if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
-                step_cfg['participant_id'] = input_set['pseudocode']
-            elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
-                step_cfg['subject'] = input_set['pseudocode']
+            if input_set['pseudocode'] is None:
+                logger.warning(f"'{step_cfg[CONFIG_MODULE_CLASS_KEY]}': skipping pseudonymization")
+            else:
+                if step_cfg[CONFIG_MODULE_CLASS_KEY] == str(Anonymize):
+                    step_cfg['participant_id'] = input_set['pseudocode']
+                elif step_cfg[CONFIG_MODULE_CLASS_KEY] == str(BIDSConversion):
+                    step_cfg['subject'] = input_set['pseudocode']
 
         try:
             pipe = Pipeline.from_config(

@@ -82,7 +82,8 @@ class Pipeline:
         elif hasattr(self._initial_data, 'filename'):
             self._subject_id = Path(self._initial_data.filename).stem
         else:
-            raise ValueError("No subject_id set")
+            # raise ValueError("No subject_id set")
+            logger.warning("No subject_id set")
 
         self._processed_data = None
 

@@ -46,8 +46,14 @@ if __name__ == "__main__":
     argp.add_argument(
         "--do_not_share_dir",
         type=Path,
-        required=True,
-        help="Folder to save pseudocode lookup file in",
+        required=False,
+        help="Folder to save pseudocode lookup file in (cannot be combined with --no_pseudo)",
+    )
+    argp.add_argument(
+        "--no_pseudo",
+        action='store_true',
+        required=False,
+        help="Do not create and apply pseudocodes (cannot be combined with --do_not_share_dir)",
     )
     argp.add_argument(
         "--max_workers",
@@ -69,7 +75,12 @@ if __name__ == "__main__":
     if args.output_dir and args.output_dir.exists() and not args.output_dir.is_dir():
         raise ValueError(f"'{args.output_dir}' is not a directory")
 
-    if not args.do_not_share_dir.exists() or not args.do_not_share_dir.is_dir():
+    if args.no_pseudo and args.do_not_share_dir:
+        raise ValueError("--do_not_share_dir and --no_pseudo cannot be combined")
+    elif not args.no_pseudo and not args.do_not_share_dir:
+        raise ValueError("Either --do_not_share_dir or --no_pseudo cannot is required")
+
+    if args.do_not_share_dir and (not args.do_not_share_dir.exists() or not args.do_not_share_dir.is_dir()):
         raise ValueError(f"'{args.do_not_share_dir}' doesn\'t exist or is not a directory")
 
     valid_extensions = list(map(lambda x: f".{x.lower().lstrip('.')}", args.extensions))
@@ -92,7 +103,8 @@ if __name__ == "__main__":
     if args.output_dir:
         args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    args.do_not_share_dir.mkdir(parents=True, exist_ok=True)
+    if args.do_not_share_dir:
+        args.do_not_share_dir.mkdir(parents=True, exist_ok=True)
 
     # read config and override various output folders, checks etc
     config = read_config_file(args.config_file)
@@ -141,10 +153,12 @@ if __name__ == "__main__":
         logger.critical("Pipeline steps check raised error: %s" % str(e))
         exit()
 
-    pseudo = PseudoCodes()
-
-    input_sets = pseudo.get_pseudocoded_file_list(files=input_files)
-
+    if args.no_pseudo:
+        input_sets = [{'input_file': x, 'pseudocode': None} for x in input_files]
+    else:
+        pseudo = PseudoCodes()
+        input_sets = pseudo.get_pseudocoded_file_list(files=input_files)
+    
     para = ParallelRunner(
         input_sets=input_sets,
         output_dir=args.output_dir,
@@ -153,8 +167,9 @@ if __name__ == "__main__":
         mp_spawn_or_fork=args.mp_start_method,
     )
 
-    new_pseudocode_file = pseudo.get_pseudocode_filename(
-        do_not_share_dir=args.do_not_share_dir,
-        suffix=f"--{Path(args.config_file).stem}")
-    pseudo.write_pseudocode_file(results=para.results, file=new_pseudocode_file)
-    logger.critical(f"Pseudcodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")
+    if not args.no_pseudo:
+        new_pseudocode_file = pseudo.get_pseudocode_filename(
+            do_not_share_dir=args.do_not_share_dir,
+            suffix=f"--{Path(args.config_file).stem}")
+        pseudo.write_pseudocode_file(results=para.results, file=new_pseudocode_file)
+        logger.critical(f"Pseudocodes file: '{new_pseudocode_file}'. DO NOT SHARE FILE!")
