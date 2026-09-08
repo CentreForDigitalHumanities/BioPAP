@@ -125,9 +125,13 @@ if __name__ == "__main__":
 
         elif s_mod == str(SaveOutput):
             
-            # if TPL_SUBJECT_ID not in step_cfg['output_file']:
-            tmp = Path(step_cfg['output_file'])
-            step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
+            if args.no_pseudo:
+                tmp = Path(step_cfg['output_file'])
+                step_cfg['output_file'] = tmp.parent / tmp.name
+            else:
+                # if TPL_SUBJECT_ID not in step_cfg['output_file']:
+                tmp = Path(step_cfg['output_file'])
+                step_cfg['output_file'] = tmp.parent / f"{TPL_SUBJECT_ID}_{tmp.name}"
 
             if args.output_dir:
                 step_cfg['output_file'] = args.output_dir / Path(step_cfg['output_file']).name

@@ -82,6 +82,7 @@ class Pipeline:
         elif hasattr(self._initial_data, 'filename'):
             self._subject_id = Path(self._initial_data.filename).stem
         else:
+            self._subject_id = None
             # raise ValueError("No subject_id set")
             logger.warning("No subject_id set")
 
@@ -134,10 +135,10 @@ class Pipeline:
             if not isinstance(s, (str, Path)):
                 return s
 
-            reps = [(TPL_SUBJECT_ID, self._subject_id)]
+            reps = [(TPL_SUBJECT_ID, self.subject_id)]
             tmp = str(s) if isinstance(s, Path) else s
 
-            for rep in reps:
+            for rep in [x for x in reps if x[1] is not None]:
                 tmp = tmp.replace(rep[0], rep[1])
 
             tmp = Path(tmp) if isinstance(s, Path) else tmp
@@ -342,5 +343,5 @@ class Pipeline:
                 module=module_avail[0]['class'],
                 cfg={k: v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
             )
-
+    
         return pipe
