@@ -146,7 +146,7 @@ if __name__ == "__main__":
         Pipeline.from_config(
             config=config,
             input_file=None,
-            subject_id='test'
+            subject_id=None
         ).check_steps()
 
     except Exception as e:
