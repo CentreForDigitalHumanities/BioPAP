@@ -50,7 +50,7 @@ class SaveOutput(BaseClass):
                  export_formats: Union[str, int, list[str]],
                  output_file: Union[str, Path],
                  overwrite: bool=True,
-                 postfix: Union[str, None]=None,
+                #  postfix: Union[str, None]=None,
                  _steps_completed: list[PipelineStep]=[],
                  _intermediate: bool=True,
                  silent: bool=False):
@@ -65,23 +65,23 @@ class SaveOutput(BaseClass):
 
             self.processed = raw
 
-            f_postfix = postfix if postfix else ''
-            if _intermediate:
-                f_postfix = f"{f_postfix}_PARTIAL"
+            # f_postfix = postfix if postfix else ''
+            # if _intermediate:
+            #     f_postfix = f"{f_postfix}_PARTIAL"
 
             e_frmts = ExportFormats(export_formats)
 
             if e_frmts.is_selected(ExportFormats.FIF):
                 self._saved_files.append(self.save_fif(
                     filename=output_file,
-                    overwrite=overwrite,
-                    save_postfix=f_postfix))
+                    overwrite=overwrite))
+                    # ,save_postfix=f_postfix))
 
             if e_frmts.is_selected(ExportFormats.CSV):
                 self._saved_files.append(self.save_csv(
                     filename=output_file,
-                    overwrite=overwrite,
-                    save_postfix=f_postfix))
+                    overwrite=overwrite))
+                    # ,save_postfix=f_postfix))
 
             self.save__steps_completed(
                 _steps_completed=_steps_completed,
