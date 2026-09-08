@@ -94,7 +94,7 @@ class ParallelRunner:
                 input_file=input_set['input_file'],
                 subject_id=input_set['pseudocode']
             )
-            pipe.inspect()
+            # pipe.inspect()
             pipe.run()
             exit_code = (0, 'success')
             saved_files = pipe.saved_files
