@@ -318,7 +318,6 @@ class Pipeline:
         modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
                          if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
                                          str(obj))]
-
         for step, step_cfg in config.items():
 
             if step == 'Pipeline':
@@ -333,10 +332,10 @@ class Pipeline:
             module_avail = [x for x in modules_avail if str(x['class']) == biopap_module]
 
             if len(module_avail)==0:
-                raise ValueError("Module '%s' not in available modules" % biopap_module[0])
+                raise ValueError("Module '%s' not in available modules" % biopap_module)
 
             if len(module_avail)>1:
-                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module[0])
+                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module)
 
             pipe.add_step(
                 module=module_avail[0]['class'],
