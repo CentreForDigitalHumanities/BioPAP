@@ -14,7 +14,6 @@ Each module performs a single processing step such as:
 
 - filtering
 - artifact rejection
-- ICA decomposition
 - epoching
 - plotting
 
@@ -28,13 +27,11 @@ Anonymize
 ↓
 Filter
 ↓
-ICA
-↓
 Epoching
 ```
 
 This modular design makes it easy to:  
-- experiment with different analysis strategies  
+- experiment with different preprocessing methods  
 - modify processing steps  
 - reuse pipelines across datasets  
 
@@ -45,7 +42,7 @@ This modular design makes it easy to:
 A pipeline consists of three main components.
 
 **Modules**  
-: Modules define the processing steps of the analysis pipeline. Each module performs a specific operation on the EEG data.
+: Modules define the processing steps of the pipeline. Each module performs a specific operation on the EEG data.
 
 : Examples include filtering, artifact rejection, or epoch creation.
 
