@@ -10,7 +10,7 @@ class Anonymize(BaseClass):
     Applies MNE's built-in anonymization (``Raw.anonymize()`` or
     ``Epochs.anonymize()``) to the provided data object.
 
-    MNE-modules used:
+    MNE-functions used:
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
 
