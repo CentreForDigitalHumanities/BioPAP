@@ -7,6 +7,7 @@ class NotchFilter(BaseClass):
 
     Filters the input data using a notch filter with MNE's ``notch_filter()`` method.
 
+    MNE-function used:
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.notch_filter
 
     Parameters
