@@ -11,7 +11,7 @@ class LoadData(BaseClass):
     """
     Class for loading BDF data from file.
 
-    mne-functions used:
+    MNE-functions used:
     https://mne.tools/stable/generated/mne.io.read_raw_bdf.html
     https://mne.tools/stable/generated/mne.read_epochs.html
     https://mne.tools/stable/generated/mne.io.read_raw_fif.html
