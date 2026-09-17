@@ -7,6 +7,7 @@ class IIRFilter(BaseClass):
 
     Filters the input data using an FIR/IIR filter with MNE's ``filter()`` method.
 
+    MNE-function used:
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.filter
 
     Parameters
