@@ -25,7 +25,7 @@ class Plot(BaseClass):
     Displays the data using MNE's ``plot()`` method. If save options are
     provided, a screenshot of the figure is saved to disk.
 
-    mne-functions used:
+    MNE-functions used:
     https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
     https://mne.tools/stable/generated/mne.viz.plot_sensors.html
     https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot
