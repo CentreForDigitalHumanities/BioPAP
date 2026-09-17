@@ -39,7 +39,11 @@ class BIDSConversion(BaseClass):
     overwrite : bool, default False
         Whether to overwrite existing BIDS files.
     **kwargs
-        Additional keyword arguments passed to MNE-BIDS functions. Example:
+        Additional keyword arguments passed to
+        ``mne.find_events()``, ``mne_bids.BIDSPath()``  or ``mne_bids.write_raw_bids()``
+        MNE-BIDS functions by using a dictionary with ``find_events``, ``BIDSPath``, and
+        ``write_raw_bids`` as keys.
+     Example:
         'BIDSPath': {'suffix': 'channels'}, 'write_raw_bids': {'acpc_aligned': True}}
 
     Attributes
