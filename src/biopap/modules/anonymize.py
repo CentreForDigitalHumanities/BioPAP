@@ -18,8 +18,10 @@ class Anonymize(BaseClass):
     ----------
     raw : mne.io.Raw | mne.Epochs
         Input data to anonymize.
-    daysback : int | None
-        Number of days to subtract from all dates.
+    daysback : int | Str
+        Number of days to subtract from all dates. Can be either
+        integer or the string 'random', in which case the program
+        selects a random number bewteen 1 and 100.
     experimenter : str
         Name of the experimenter to store in the anonymized metadata.
     participant_id : str
