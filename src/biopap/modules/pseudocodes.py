@@ -13,7 +13,7 @@ class PseudoCodes:
     F_SEP = '\t'
     V_SEP = ';'
     OUTFILE = 'pseudocodes_{timestamp}{suffix}.tsv'
-    REGEX_MATCH = re.compile('^[A-Z]{4}_')
+    REGEX_MATCH = '^_[A-Z]{{{code_length}}}$'
 
     @staticmethod
     def generate_pseudocode(code_length):
@@ -21,13 +21,14 @@ class PseudoCodes:
 
     def get_pseudocoded_file_list(self, files, code_length=4):
 
+        p_regex = re.compile(self.REGEX_MATCH.format(code_length=code_length))
         p_files = []
 
         for file in files:
-            prefix = Path(file).name[:code_length]
+            postfix = Path(file).stem[-code_length:]
 
-            if self.REGEX_MATCH.match(prefix + '_'):
-                p_code = prefix
+            if p_regex.match('_' + postfix):
+                p_code = postfix
                 logger.info(f"'{Path(file).name}': using implied pseudocode {p_code}")
             else:
                 p_code = self.generate_pseudocode(code_length=code_length)
@@ -40,7 +41,7 @@ class PseudoCodes:
 
         return p_files
 
-    def get_pseudocode_filename(self, do_not_share_dir, suffix=''):
+    def get_pseudocodes_filepath(self, do_not_share_dir, suffix=''):
         while True:
             ts = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
             new_pseudocode_file = do_not_share_dir / self.OUTFILE.format(timestamp=ts, suffix=suffix)

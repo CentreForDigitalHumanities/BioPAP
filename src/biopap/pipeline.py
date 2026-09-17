@@ -82,7 +82,9 @@ class Pipeline:
         elif hasattr(self._initial_data, 'filename'):
             self._subject_id = Path(self._initial_data.filename).stem
         else:
-            raise ValueError("No subject_id set")
+            self._subject_id = None
+            # raise ValueError("No subject_id set")
+            logger.warning("No subject_id set")
 
         self._processed_data = None
 
@@ -133,10 +135,10 @@ class Pipeline:
             if not isinstance(s, (str, Path)):
                 return s
 
-            reps = [(TPL_SUBJECT_ID, self._subject_id)]
+            reps = [(TPL_SUBJECT_ID, self.subject_id)]
             tmp = str(s) if isinstance(s, Path) else s
 
-            for rep in reps:
+            for rep in [x for x in reps if x[1] is not None]:
                 tmp = tmp.replace(rep[0], rep[1])
 
             tmp = Path(tmp) if isinstance(s, Path) else tmp
@@ -318,7 +320,6 @@ class Pipeline:
         modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
                          if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
                                          str(obj))]
-
         for step, step_cfg in config.items():
 
             if step == 'Pipeline':
@@ -333,14 +334,14 @@ class Pipeline:
             module_avail = [x for x in modules_avail if str(x['class']) == biopap_module]
 
             if len(module_avail)==0:
-                raise ValueError("Module '%s' not in available modules" % biopap_module[0])
+                raise ValueError("Module '%s' not in available modules" % biopap_module)
 
             if len(module_avail)>1:
-                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module[0])
+                raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module)
 
             pipe.add_step(
                 module=module_avail[0]['class'],
                 cfg={k: v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
             )
-
+    
         return pipe
