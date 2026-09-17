@@ -27,7 +27,10 @@ class LoadData(BaseClass):
         hard drive (slower, requires less memory).
     **kwargs
         Additional keyword arguments passed to the underlying
-        ``mne.io.read_raw_bdf()``  or ``mne.io.read_raw_fif()`` method.
+        ``mne.io.read_raw_bdf()``, ``mne.io.read_raw_edf()``  or ``mne.io.read_raw_fif()``
+        functions by using a dictionary with ``load_bdf``, ``load_edf``, and
+        ``load_fif`` or ``load_epochs`` as keys.
+
 
     Attributes
     ----------
