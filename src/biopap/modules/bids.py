@@ -11,7 +11,7 @@ class BIDSConversion(BaseClass):
 
     It uses MNE-BIDS library for the conversion. The module reads event information from a provided eventfile and maps it to the events in the raw data. It then writes the raw data, events, and other metadata to a BIDS-compliant directory structure.
 
-    MNE-modules used:
+    MNE-functions used:
     https://mne.tools/mne-bids/stable/generated/mne_bids.BIDSPath.html#mne_bids.BIDSPath
     https://mne.tools/mne-bids/stable/generated/mne_bids.write_raw_bids.html#mne_bids.write_raw_bids
 
