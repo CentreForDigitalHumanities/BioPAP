@@ -8,6 +8,7 @@ class BlinkDetection(BaseClass):
     Detects blinks using MNE's ``find_eog_events()`` function and
     generates annotations for the input data.
 
+    MNE-modules used:
     https://mne.tools/stable/generated/mne.preprocessing.find_eog_events.html
     https://mne.tools/stable/generated/mne.Annotations.html
     
