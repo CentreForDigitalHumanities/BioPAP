@@ -15,6 +15,7 @@ class BaseClass(ABC):
     log_config = True
     halt_on_exceptions = True
     alters_data = True
+    standalone_module = True
 
     def __init__(self,
                  silent: bool=False):

@@ -6,7 +6,8 @@ import pandas as pd
 import re
 import sys
 import warnings
-import yaml.dumper
+import yaml
+from yaml import load, Loader, dumper
 from io import StringIO
 from os import getenv
 from pathlib import Path
@@ -233,6 +234,7 @@ def path_representer(dumper, obj):
 
 
 class YamlDumper(yaml.dumper.SafeDumper):
+    standalone_module = False
     # also solves ' !!python/tuple' constructor, not sure why though
     pass
 
@@ -243,6 +245,21 @@ yaml.add_representer(
 )
 
 
+def _parse_config_lines(lines):
+    keys = [x.strip(' :\n') for x in lines if len(x)>0 and x[0] not in ['-', '#', ' '] and len(x.strip())>0]
+    multiples = [item for item, count in collections.Counter(keys).items() if count > 1]
+
+    if len(multiples) > 0:
+        raise KeyError(f"Your config-file has duplicate module keys: {'; '.join(multiples)}.")
+
+    try:
+        config = yaml.load("\n".join(lines), Loader=Loader)
+    except yaml.YAMLError as e:
+        logger.error("Error while reading YAML: %s" % str(e))
+        return {}
+
+    return config
+
 def read_config_file(path):
     if path is None:
         return {}
@@ -251,18 +268,12 @@ def read_config_file(path):
         raise FileNotFoundError(f"'{save_path}' does not exist")
 
     with open(path, 'r') as f:
-        keys = [x.strip(' :\n') for x in f.readlines() if x[0] not in [' ', '#'] and len(x.strip())>0]
-        multiples = [item for item, count in collections.Counter(keys).items() if count > 1]
+        lines = f.readlines()
 
-        if len(multiples) > 0:
-            raise KeyError(f"Your config-file has duplicate module keys: {'; '.join(multiples)}.")
-        f.seek(0)
+    return _parse_config_lines(lines)
 
-        try:
-            config = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            logger.error("Error while reading YAML: %s" % str(e))
-            return {}
+def read_config_string(data):
+    if data is None:
+        return {}
 
-    return config
-
+    return _parse_config_lines(data.strip().split("\n"))
