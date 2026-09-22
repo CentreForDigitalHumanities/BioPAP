@@ -22,6 +22,7 @@ nav = [
     { EventsFromAnnotations = "api/events_from_annotations.md" },
     { IIRFilter = "api/iir_filter.md" },
     { LoadData = "api/load_data.md" },
+    { Metadata = "api/metadata.md" },
     { NotchFilter = "api/notch_filter.md" },
     { Plot = "api/plot.md" },
     { Rereference = "api/rereference.md" },
