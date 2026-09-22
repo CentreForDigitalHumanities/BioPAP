@@ -25,19 +25,12 @@ class Plot(BaseClass):
     Displays the data using MNE's ``plot()`` method. If save options are
     provided, a screenshot of the figure is saved to disk.
 
-    MNE-functions used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot
-    https://mne.tools/stable/generated/mne.viz.plot_sensors.html
-    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot
-    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topo
-    https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topomap
+    MNE-functions used: [mne.io.Raw.plot](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.plot), [mne.viz.plot_sensors](https://mne.tools/stable/generated/mne.viz.plot_sensors.html), [mne.time_frequency.Spectrum.plot](https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot), [mne.time_frequency.Spectrum.plot_topo](https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topo), [mne.time_frequency.Spectrum.plot_topomap](https://mne.tools/stable/generated/mne.time_frequency.Spectrum.html#mne.time_frequency.Spectrum.plot_topomap)
 
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
         Input data.
-    title : str | None
-        Title of the plot window.
     plot_types : PlotTypes | None
         Types of plots to make; use | to specify multiple plot types
         (eg. PlotTypes.PLOT|PlotTypes.SPECTRUM_TOPO)

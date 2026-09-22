@@ -19,16 +19,13 @@ class SaveOutput(BaseClass):
     """
     Class for saving the output data.
 
-    MNE-functions used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.save
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.to_data_frame
-    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.to_data_frame
+    MNE-functions used: [mne.io.Raw.save](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.save), [mne.io.Raw.to_data_frame](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.to_data_frame), [mne.Epochs.to_data_frame](https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.to_data_frame)
 
     Parameters
     ----------
     raw : mne.io.Raw | mne.Epochs
         Input data to be saved.
-    export_format : 'fif' | 'csv' | None
+    export_formats : 'fif' | 'csv' | None
         Format to save the data. If None, the data is not saved.
     output_file : str | None
         Path to the output file. If None, the data is not saved.

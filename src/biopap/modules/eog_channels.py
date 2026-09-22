@@ -8,9 +8,8 @@ class EOGChannels(BaseClass):
     Creates new bipolar channels from specified reference, anode, and
     cathode channels using MNE's ``set_bipolar_reference()`` function.
 
-    MNE-function used:
-    https://mne.tools/stable/generated/mne.set_bipolar_reference.html
-    
+    MNE-function used: [mne.set_bipolar_reference](https://mne.tools/stable/generated/mne.set_bipolar_reference.html)
+
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs

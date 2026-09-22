@@ -12,8 +12,8 @@ class BIDSConversion(BaseClass):
     It uses MNE-BIDS library for the conversion. The module reads event information from a provided eventfile and maps it to the events in the raw data. It then writes the raw data, events, and other metadata to a BIDS-compliant directory structure.
 
     MNE-functions used:
-    https://mne.tools/mne-bids/stable/generated/mne_bids.BIDSPath.html#mne_bids.BIDSPath
-    https://mne.tools/mne-bids/stable/generated/mne_bids.write_raw_bids.html#mne_bids.write_raw_bids
+    [mne_bids.BIDSPath](https://mne.tools/mne-bids/stable/generated/mne_bids.BIDSPath.html#mne_bids.BIDSPath),
+    [mne_bids.write_raw_bids](https://mne.tools/mne-bids/stable/generated/mne_bids.write_raw_bids.html#mne_bids.write_raw_bids)
 
     
     Parameters
@@ -27,7 +27,7 @@ class BIDSConversion(BaseClass):
     session : str
         Session identifier.
     task : str
-        Task identifier.
+        Experimental task identifier.
     run : str
         Run identifier.
     subject : str, optional
@@ -42,9 +42,10 @@ class BIDSConversion(BaseClass):
         Additional keyword arguments passed to
         ``mne.find_events()``, ``mne_bids.BIDSPath()``  or ``mne_bids.write_raw_bids()``
         MNE-BIDS functions by using a dictionary with ``find_events``, ``BIDSPath``, and
-        ``write_raw_bids`` as keys.
-     Example:
-        'BIDSPath': {'suffix': 'channels'}, 'write_raw_bids': {'acpc_aligned': True}}
+        ``write_raw_bids`` as keys.  
+        
+        Example:  
+            'BIDSPath': {'suffix': 'channels'}, 'write_raw_bids': {'acpc_aligned': True}}
 
     Attributes
     ----------
@@ -58,8 +59,8 @@ class BIDSConversion(BaseClass):
                  raw,
                  eventsfile,
                  bids_root,
-                 session: str=None,
-                 task: str=None,
+                 task,
+                 session: str=None,                 
                  run: int=None,
                  subject: str=None,
                  datatype: str='eeg',
@@ -74,22 +75,22 @@ class BIDSConversion(BaseClass):
 
         with self.capture_stdout as self.stdout:
                 
-            self.raw = raw
+            self.processed = raw
             
             bids_root = Path(bids_root)
 
             if subject is None:
-                subject = self.raw.info.get("subject_info", {}).get("his_id", None)
+                subject = self.processed.info.get("subject_info", {}).get("his_id", None)
 
-            if not isinstance(self.raw, mne.io.BaseRaw):
-                raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.raw)}'")
+            if not isinstance(self.processed, mne.io.BaseRaw):
+                raise ValueError(f"BIDS module can only handle 'mne.io.BaseRaw' class, got '{type(self.processed)}'")
 
             f_kwargs = kwargs['find_events'] if 'find_events' in kwargs else {}
             b_kwargs = kwargs['BIDSPath'] if 'BIDSPath' in kwargs else {}
             w_kwargs = kwargs['write_raw_bids'] if 'write_raw_bids' in kwargs else {}
         
             # Build mappings from eventfile
-            events = mne.find_events(self.raw, **f_kwargs)
+            events = mne.find_events(self.processed, **f_kwargs)
             event_id, range_map = build_event_dict(events, eventsfile)
             merged_events = merge_event_ranges(events, range_map)
 
@@ -111,7 +112,7 @@ class BIDSConversion(BaseClass):
             )
 
             write_raw_bids(
-                raw=self.raw, 
+                raw=self.processed, 
                 format=format, 
                 bids_path=bids_path, 
                 events=merged_events, 

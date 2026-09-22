@@ -8,8 +8,7 @@ class BaselineCorrection(BaseClass):
     Performs baseline correction on the input data using MNE's
     built-in ``apply_baseline()`` method (for Epochs).
 
-    MNE-function used:
-    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.apply_baseline
+    MNE-function used: [mne.Epochs.apply_baseline](https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.apply_baseline)
 
     Parameters
     ----------

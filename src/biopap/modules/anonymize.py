@@ -7,16 +7,14 @@ class Anonymize(BaseClass):
     """
     Class for anonymizing raw or epoched data.
 
-    Applies MNE's built-in anonymization (``Raw.anonymize()`` or
-    ``Epochs.anonymize()``) to the provided data object.
+    Applies MNE's built-in anonymization (``Raw.anonymize()``) to the provided data object.
 
     MNE-functions used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize
+    [mne.io.Raw.anonymize](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.anonymize)
 
     Parameters
     ----------
-    raw : mne.io.Raw | mne.Epochs
+    raw : mne.io.Raw
         Input data to anonymize.
     daysback : int | Str
         Number of days to subtract from all dates. Can be either
@@ -28,11 +26,11 @@ class Anonymize(BaseClass):
         Participant identifier to store in the anonymized metadata.
     **kwargs
         Additional keyword arguments passed to the underlying MNE
-        ``Raw.anonymize()`` or ``Epochs.anonymize()`` method.
+        ``Raw.anonymize()`` method.
 
     Attributes
     ----------
-    processed : mne.io.Raw | mne.Epochs
+    processed : mne.io.Raw
         Anonymized output data.
     """
 

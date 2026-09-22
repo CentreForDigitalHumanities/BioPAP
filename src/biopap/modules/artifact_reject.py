@@ -9,10 +9,7 @@ class ArtifactReject(BaseClass):
     Identifies bad channels per epoch and either interpolates them
     using MNE's built-in functionality, or replaces them with NaNs.
 
-    MNE-functions used:
-    https://mne.tools/stable/generated/mne.pick_types.html
-    https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.interpolate_bads
-
+    MNE-functions used: [mne.pick_types](https://mne.tools/stable/generated/mne.pick_types.html), [mne.Epochs.interpolate_bads](https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.interpolate_bads)
 
     Parameters
     ----------
