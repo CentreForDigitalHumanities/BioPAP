@@ -11,7 +11,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, CONFIG_MODULE_ORDER_KEY, TPL_SUBJECT_ID)
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.artifact_reject import ArtifactReject
 from biopap.modules.baseline_correction import BaselineCorrection
@@ -125,7 +125,7 @@ class Pipeline:
 
         self._initial_data = load.raw
 
-    def add_step(self, module, cfg={}, cfg_label=None):
+    def add_step(self, module, cfg={}, cfg_label=None, order=None):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
@@ -156,7 +156,7 @@ class Pipeline:
             p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
         
-        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k != CONFIG_MODULE_CLASS_KEY}
+        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k[0] != '_'}
 
         try:
             check_config = getattr(module, "check_config", None)
@@ -166,13 +166,21 @@ class Pipeline:
             logger.critical(f"Add {module.__name__} failed: {str(e)} [{self.subject_id}]")
             exit()
 
-        order = max([x.Order+1 for x in self._steps], default=0)
+        if not isinstance(order, int):
+            raise ValueError(f"Order needs to be an integer (got {type(order)})")
+        elif order and order > -1 and order not in [x.Order for x in self._steps]:
+            pass
+        else:
+            order = max([x.Order+1 for x in self._steps], default=0)
+
         self._steps.append(
             PipelineStep(
                 Module=module,
                 Cfg=cfg,
                 Order=order
             ))
+
+        logger.info(f"Added {module.__name__} as step #{order} with config {cfg}")
 
     def reset(self):
         self._steps = []
@@ -339,9 +347,12 @@ class Pipeline:
             if len(module_avail)>1:
                 raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module)
 
+            order  = int(step_cfg[CONFIG_MODULE_CLASS_KEY]) if CONFIG_MODULE_ORDER_KEY in step_cfg else None
+
             pipe.add_step(
                 module=module_avail[0]['class'],
-                cfg={k: v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
+                cfg={k: v for k,v in step_cfg.items() if k[0] != '_'},
+                order=order
             )
     
         return pipe
