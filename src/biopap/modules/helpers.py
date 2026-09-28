@@ -228,7 +228,6 @@ def save_modules_config(modules, config_path, append=False):
             cfg_label=mod_name,
             order=key)
         mod_list.append(mod_name)
-        i = 2
 
 
 def path_representer(dumper, obj):
