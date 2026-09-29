@@ -1,5 +1,5 @@
 import multiprocessing as mp
-import os
+import psutil
 from pathlib import Path
 from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_FILENAME)
 from biopap.modules.helpers import (get_logger, read_config_file)
@@ -33,7 +33,7 @@ class ParallelRunner:
         logger.info(f"Processing {len(input_sets):,} file(s)")
 
         if max_workers:
-            max_workers = min(max_workers, len(os.sched_getaffinity(0)))
+            max_workers = min(max_workers, len(psutil.Process().cpu_affinity()))
             logger.info(f"Using {max_workers} worker(s)")
 
         if max_workers is None or max_workers > 1:
