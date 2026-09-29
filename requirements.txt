@@ -1,3 +1,2 @@
 mne[full]
 mne_bids
-psutils
