@@ -14,6 +14,8 @@ class PlotTypes(OptionsBaseClass):
     SPECTRUM_TOPO = 8
     SPECTRUM_TOPO_MAP = 16
 
+    standalone_module = False
+
     def __init__(self, sel_options=0):
         super().__init__(sel_options)
 

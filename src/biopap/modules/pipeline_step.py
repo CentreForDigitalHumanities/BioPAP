@@ -7,6 +7,8 @@ class PipelineStep:
     Cfg: dict
     Order: int
 
+    standalone_module = False
+
     def __repr__(self):
         return f"{self.Order}: {self.Module.__name__} ← {self.Cfg}"
 

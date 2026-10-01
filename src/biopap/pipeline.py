@@ -328,7 +328,8 @@ class Pipeline:
         # make a list of loaded BioPAP modules
         modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
                          if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
-                                         str(obj))]
+                                         str(obj)) and obj.standalone_module]
+
         for step, step_cfg in config.items():
 
             if step == 'Pipeline':
