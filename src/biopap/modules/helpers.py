@@ -217,15 +217,17 @@ def save_modules_config(modules, config_path, append=False):
         Path(config_path).unlink(missing_ok=True)
 
     mod_list = []
-    for module in modules:
+    for key, module in enumerate(modules):
         mod_name = module.__class__.__name__
         i = 2
         while mod_name in mod_list:
             mod_name = f"{module.__class__.__name__}_{str(i)}"
             i += 1
-        module.save_config(path=config_path, cfg_label=mod_name)
+        module.save_config(
+            path=config_path,
+            cfg_label=mod_name,
+            order=key)
         mod_list.append(mod_name)
-        i = 2
 
 
 def path_representer(dumper, obj):
