@@ -11,7 +11,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Union, Optional
-from biopap.modules import (CONFIG_MODULE_CLASS_KEY, TPL_SUBJECT_ID)
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, CONFIG_MODULE_ORDER_KEY, TPL_SUBJECT_ID)
 from biopap.modules.anonymize import Anonymize
 from biopap.modules.artifact_reject import ArtifactReject
 from biopap.modules.baseline_correction import BaselineCorrection
@@ -20,7 +20,8 @@ from biopap.modules.blink_detection import BlinkDetection
 from biopap.modules.downsample import Downsample
 from biopap.modules.eog_channels import EOGChannels
 from biopap.modules.events_from_annotations import EventsFromAnnotations
-from biopap.modules.helpers import (custom_formatwarning, get_logger, read_config_file)
+from biopap.modules.helpers import (custom_formatwarning, get_logger, read_config_file, 
+                                    save_modules_config, YamlDumper)
 from biopap.modules.iir_filter import IIRFilter
 from biopap.modules.notch_filter import NotchFilter
 from biopap.modules.load_data import LoadData
@@ -125,7 +126,7 @@ class Pipeline:
 
         self._initial_data = load.raw
 
-    def add_step(self, module, cfg={}, cfg_label=None):
+    def add_step(self, module, cfg={}, cfg_label=None, order=None):
         """
         cfg adds to/overwrites values from config file (if any)
         cfg_label for referencing different settings for same class
@@ -156,7 +157,7 @@ class Pipeline:
             p_cfg = self._config[lookup]
             cfg = p_cfg if cfg is None else p_cfg | cfg
         
-        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k != CONFIG_MODULE_CLASS_KEY}
+        cfg = {k: parse_config_values(v) for k, v in cfg.items() if k[0] != '_'}
 
         try:
             check_config = getattr(module, "check_config", None)
@@ -166,13 +167,21 @@ class Pipeline:
             logger.critical(f"Add {module.__name__} failed: {str(e)} [{self.subject_id}]")
             exit()
 
-        order = max([x.Order+1 for x in self._steps], default=0)
+        if order and not isinstance(order, int):
+            raise ValueError(f"Order needs to be an integer (got {type(order)})")
+        elif order and order > -1 and order not in [x.Order for x in self._steps]:
+            pass
+        else:
+            order = max([x.Order+1 for x in self._steps], default=0)
+
         self._steps.append(
             PipelineStep(
                 Module=module,
                 Cfg=cfg,
                 Order=order
             ))
+
+        logger.info(f"Added {module.__name__} as step #{order} with config {cfg}")
 
     def reset(self):
         self._steps = []
@@ -319,7 +328,8 @@ class Pipeline:
         # make a list of loaded BioPAP modules
         modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
                          if re.fullmatch(r"\<class \'biopap\.modules\.([a-z_]+)\.([A-Za-z]+)\'\>",
-                                         str(obj))]
+                                         str(obj)) and obj.standalone_module]
+
         for step, step_cfg in config.items():
 
             if step == 'Pipeline':
@@ -339,9 +349,44 @@ class Pipeline:
             if len(module_avail)>1:
                 raise ValueError("Module '%s' matches multiple available modules!?" % biopap_module)
 
+            order  = int(step_cfg[CONFIG_MODULE_ORDER_KEY]) if CONFIG_MODULE_ORDER_KEY in step_cfg else None
+
             pipe.add_step(
                 module=module_avail[0]['class'],
-                cfg={k: v for k,v in step_cfg.items() if k != CONFIG_MODULE_CLASS_KEY},
+                cfg={k: v for k,v in step_cfg.items() if k[0] != '_'},
+                order=order
             )
-    
+
+        pipe.steps.sort(key=lambda x: x.Order)
+
         return pipe
+
+    def to_config(self, config_path: Union[str, Path]):
+        config_path = Path(config_path)
+
+        if config_path.exists():
+            dt_stamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            bak_file = config_path.parent / f"{config_path.stem}_{dt_stamp}{config_path.suffix}"
+            config_path.rename(bak_file)
+            logger.info(f"Backed up existing file to '{bak_file}'")
+        else:
+            Path(config_path).parent.mkdir(exist_ok=True, parents=True)
+
+        label_list = []
+        pipe_config = {}
+
+        for step in self.steps:
+            step_label = step.Module.__name__
+            i = 2
+            while step_label in label_list:
+                step_label = f"{step.Module.__name__}_{str(i)}"
+                i += 1
+            label_list.append(step_label)
+            
+            pipe_config[step_label] = {k:v for k,v in step.Cfg.items() if v is not None} | \
+                {CONFIG_MODULE_CLASS_KEY: str(step.Module),  CONFIG_MODULE_ORDER_KEY: step.Order}
+            
+        with open(config_path, 'a+') as f:
+            yaml.dump(pipe_config, f, default_flow_style=False, Dumper=YamlDumper)
+
+        logger.info(f"Wrote pipeline configuration to '{config_path}'")
