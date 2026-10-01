@@ -1,8 +1,8 @@
 import yaml
 from abc import ABC, abstractmethod
 from typing import Union, Optional
-from biopap.modules import CONFIG_MODULE_CLASS_KEY
-from biopap.modules.helpers import CaptureStdout, get_new_filename, YamlDumper
+from biopap.modules import (CONFIG_MODULE_CLASS_KEY, CONFIG_MODULE_ORDER_KEY)
+from biopap.modules.helpers import (CaptureStdout, get_new_filename, YamlDumper)
 
 class BaseClass(ABC):
 
@@ -37,7 +37,7 @@ class BaseClass(ABC):
                 self.mne_config[self.mod.__name__][key] = val
             self.mne_config[self.mod.__name__].pop('kwargs', None)
 
-    def save_config(self, path, cfg_label=None):
+    def save_config(self, path, cfg_label=None, order=None):
         mne_config = self.mne_config
         mod_name = self.mod.__name__
 
@@ -46,6 +46,8 @@ class BaseClass(ABC):
             mod_name = cfg_label
 
         mne_config[mod_name][CONFIG_MODULE_CLASS_KEY] = str(self.mod)
+        if order:
+            mne_config[mod_name][CONFIG_MODULE_ORDER_KEY] = order
         mne_config[mod_name] = {k:v for k,v in mne_config[mod_name].items() if v is not None}
 
         with open(path, 'a+') as outfile:
