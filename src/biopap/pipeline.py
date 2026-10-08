@@ -383,7 +383,7 @@ class Pipeline:
                 i += 1
             label_list.append(step_label)
             
-            pipe_config[step_label] = {k:v for k,v in step.Cfg.items() if v is not None} | \
+            pipe_config[step_label] = {k:v for k,v in step.Cfg.items() if k[0] != '_' and v is not None} | \
                 {CONFIG_MODULE_CLASS_KEY: str(step.Module),  CONFIG_MODULE_ORDER_KEY: step.Order}
             
         with open(config_path, 'a+') as f:
