@@ -8,7 +8,8 @@ Example settings in correct format for the config file.
 
 ```yaml
 Anonymize: 
-    daysback: 100
-    experimenter: 'J. Jansen'
-    participant_id: 'AB00123'
+  _biopap_module: <class 'biopap.modules.anonymize.Anonymize'>
+  daysback: 100
+  experimenter: J. Jansen
+  participant_id: AB00123
 ```
