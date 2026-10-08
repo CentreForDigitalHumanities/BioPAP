@@ -7,5 +7,8 @@
 Example settings in correct format for the config file.
 
 ```yaml
-TODO
+BIDSConversion:
+  bids_root: ./bids_data
+  eventsfile: /path/to/your/eventsfile.csv
+  task: task
 ```

@@ -10,6 +10,8 @@ nav = [
     { "Building pipeline" = "tutorials/building_pipeline.md" },
     { Configuration = "tutorials/configuration.md" },
     { "Batch Running" = "tutorials/run_batch.md" },
+    { "ICA Example" = "tutorials/notebook_ica.md" },
+    { "ROI Example" = "tutorials/notebook_roi.md" },
   ] },
   { Modules = [
     { Anonymize = "api/anonymize.md" },
@@ -22,6 +24,7 @@ nav = [
     { EventsFromAnnotations = "api/events_from_annotations.md" },
     { IIRFilter = "api/iir_filter.md" },
     { LoadData = "api/load_data.md" },
+    { Metadata = "api/metadata.md" },
     { NotchFilter = "api/notch_filter.md" },
     { Plot = "api/plot.md" },
     { Rereference = "api/rereference.md" },

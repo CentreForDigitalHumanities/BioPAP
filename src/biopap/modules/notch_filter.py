@@ -7,15 +7,12 @@ class NotchFilter(BaseClass):
 
     Filters the input data using a notch filter with MNE's ``notch_filter()`` method.
 
-    MNE-function used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.notch_filter
+    MNE-function used: [mne.io.Raw.notch_filter](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.notch_filter)
 
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs
         Input data.
-    Fs: float
-        Sampling rate in Hz. 
     freqs: float | array of float | None
         Frequencies to notch filter in Hz.
     method: {'fir', 'iir'}, default 'iir'

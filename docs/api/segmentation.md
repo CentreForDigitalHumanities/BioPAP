@@ -15,4 +15,5 @@ Segmentation:
     reference_markers:
         list: ['100', '101', '120']
         range: 10-69
+    eventsfile: /path/to/your/events_metadata.csv
 ```

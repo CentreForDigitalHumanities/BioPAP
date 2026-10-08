@@ -11,9 +11,7 @@ class Segmentation(BaseClass):
     epochs around selected markers using MNE's ``find_events()`` and
     ``Epochs`` functions.
 
-    MNE-functions used:
-    https://mne.tools/stable/generated/mne.find_events.html
-    https://mne.tools/stable/generated/mne.pick_events.html
+    MNE-functions used: [mne.find_events](https://mne.tools/stable/generated/mne.find_events.html), [mne.pick_events](https://mne.tools/stable/generated/mne.pick_events.html)
 
     Parameters
     ----------

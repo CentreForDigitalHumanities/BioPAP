@@ -8,8 +8,7 @@ class EventsFromAnnotations(BaseClass):
     """
     Class for extracting events from annotations in MNE Raw objects, and adding them to the stim channel. If the stim channel does not exist, it will be created.
 
-    MNE-function used:
-    https://mne.tools/stable/generated/mne.events_from_annotations.html 
+    MNE-function used: [mne.events_from_annotations](https://mne.tools/stable/generated/mne.events_from_annotations.html)
 
     Parameters
     ----------

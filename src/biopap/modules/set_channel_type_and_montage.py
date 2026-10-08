@@ -9,11 +9,7 @@ class SetChannelTypeAndMontage(BaseClass):
     using ``set_channel_types()``, ``make_standard_montage()``, and
     ``set_montage()``.
 
-    MNE-functions used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.set_channel_types
-    https://mne.tools/stable/generated/mne.channels.make_standard_montage.html
-    https://mne.tools/stable/generated/mne.channels.make_standard_montage.html
-
+    MNE-functions used: [mne.io.Raw.set_channel_types](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.set_channel_types), [mne.channels.make_standard_montage](https://mne.tools/stable/generated/mne.channels.make_standard_montage.html), [mne.io.Raw.set_montage](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.set_montage), [mne.Epochs.set_channel_types](https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.set_channel_types), [mne.Epochs.set_montage](https://mne.tools/stable/generated/mne.Epochs.html#mne.Epochs.set_montage)
 
     Parameters
     ----------

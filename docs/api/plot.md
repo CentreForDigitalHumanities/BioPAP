@@ -16,7 +16,6 @@ Example settings in correct format for the config file.
 
 ```yaml
 Plot:
-    title: 'Example'
     plot_types: 8
     save_folder: './examples/data/plots'
     save_postfix: 'participant1'

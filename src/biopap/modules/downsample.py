@@ -7,9 +7,8 @@ class Downsample(BaseClass):
 
     Applies MNE's built-in ``resample`` function to the input data.
 
-    MNE-function used:
-    https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.resample
-    
+    MNE-function used: [mne.io.Raw.resample](https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.resample)
+
     Parameters
     ----------
     raw : mne.Raw | mne.Epochs
