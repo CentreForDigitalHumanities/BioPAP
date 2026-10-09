@@ -152,6 +152,7 @@ build/
 dist/
 
 examples/my_config.ipynb
+examples/data/my_config.ipynb
 examples/test_pipeline.py
 examples/*.png
 examples/*.fif
