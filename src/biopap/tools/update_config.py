@@ -23,6 +23,21 @@ from biopap.modules.set_channel_type_and_montage import SetChannelTypeAndMontage
 
 class ConfigurationUpdater:
 
+    """
+    The class is for updating configuration files that lack explicit references to each
+    step's BioPAP module. In order to create the pipeline at runtime, each step in the
+    configuration file requires the key '_biopap_module' with a value pointing to the
+    correct module. Example:
+
+        ArtifactReject:
+            _biopap_module: <class 'biopap.modules.artifact_reject.ArtifactReject'>
+            [...]
+
+    If the pipeline steps lack the `_biopap_module'-key, they can be added calling either
+    ConfigurationUpdater.convert_file() on your configuration file, or 
+    ConfigurationUpdater.convert() on an in-memory configuration dictionary.
+    """
+
     def __init__(self):
         # list of loaded BioPAP modules
         self.modules_avail = [{'name': obj.__name__, 'class': obj} for name, obj in globals().items()
