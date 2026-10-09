@@ -10,6 +10,7 @@ Example settings in correct format for the config file.
 
 ```yaml
 NotchFilter:
+  _biopap_module: <class 'biopap.modules.notch_filter.NotchFilter'>
   freqs: [60, 120, 180]
   method: 'fir'
 ```

@@ -3,12 +3,34 @@ Anonymize:
   daysback: 100
   experimenter: J. Jansen
   participant_id: AB00123
-Downsample:
-  _biopap_module: <class 'biopap.modules.downsample.Downsample'>
-  sfreq: 500
-Downsample_1000:
-  _biopap_module: <class 'biopap.modules.downsample.Downsample'>
-  sfreq: 1000
+Rereference:
+  _biopap_module: <class 'biopap.modules.rereference.Rereference'>
+  ref_channels:
+  - EXG1
+  - EXG2
+SetChannelTypeAndMontage:
+  _biopap_module: <class 'biopap.modules.set_channel_type_and_montage.SetChannelTypeAndMontage'>
+  channel_types:
+    gsr:
+    - GSR1
+    - GSR2
+    misc:
+    - EXG1
+    - EXG2
+    - EXG3
+    - EXG4
+    - EXG5
+    - EXG6
+    - EXG7
+    - EXG8
+    - Erg1
+    - Erg2
+    - Plet
+    resp:
+    - Resp
+    temperature:
+    - Temp
+  mne_standard_montage: biosemi64
 EOGChannels:
   _biopap_module: <class 'biopap.modules.eog_channels.EOGChannels'>
   anode_channels:
@@ -24,8 +46,25 @@ IIRFilter:
   _biopap_module: <class 'biopap.modules.iir_filter.IIRFilter'>
   h_freq: 35
   l_freq: 0.1
-Rereference:
-  _biopap_module: <class 'biopap.modules.rereference.Rereference'>
-  ref_channels:
-  - EXG1
-  - EXG2
+Downsample:
+  _biopap_module: <class 'biopap.modules.downsample.Downsample'>
+  sfreq: 500
+Segmentation:
+  _biopap_module: <class 'biopap.modules.segmentation.Segmentation'>
+  start: -0.2
+  end: 0.8
+  reference_markers:
+    range: 1-69
+  stim_channel: Status
+BaselineCorrection:
+  _biopap_module: <class 'biopap.modules.baseline_correction.BaselineCorrection'>
+  baseline:
+  - -0.2
+  - 0
+SaveOutput:
+  _biopap_module: <class 'biopap.modules.save_output.SaveOutput'>
+  export_formats: fif
+  output_file: ./processed.fif
+  overwrite: true
+
+

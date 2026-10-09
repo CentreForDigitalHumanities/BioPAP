@@ -8,7 +8,8 @@ Example settings in correct format for the config file.
 
 ```yaml
 EventsFromAnnotations:
-    regex:   r'(?<=(^RS232 Trigger: ))(\d+)'
+  _biopap_module: <class 'biopap.modules.events_from_annotations.EventsFromAnnotations'>
+  regex:   r'(?<=(^RS232 Trigger: ))(\d+)'
     
 ```
 The regular expression should match an integer as the first group (code uses `re.search`). For example, this regex:

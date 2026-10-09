@@ -16,10 +16,11 @@ Example settings in correct format for the config file.
 
 ```yaml
 Plot:
-    plot_types: 8
-    save_folder: './examples/data/plots'
-    save_postfix: 'participant1'
-    save_overwrite: False
+  _biopap_module: <class 'biopap.modules.plot.Plot'>
+  plot_types: 8
+  save_folder: './examples/data/plots'
+  save_postfix: 'participant1'
+  save_overwrite: False
 ```
 
 The value of `plot_types` translates to actual types thus:
