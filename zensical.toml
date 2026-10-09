@@ -14,6 +14,7 @@ nav = [
     { "ROI Example" = "tutorials/notebook_roi.md" },
   ] },
   { Modules = [
+    "api/index.md",
     { Anonymize = "api/anonymize.md" },
     { ArtifactReject = "api/artifact_reject.md" },
     { BaselineCorrection = "api/baseline_correction.md" },
@@ -36,10 +37,11 @@ nav = [
 
 [project.theme]
 features = [
-    "content.code.copy",
-    "search.highlight",
-    "content.action.edit", 
-    "content.action.view"
+  "navigation.indexes",
+  "content.code.copy",
+  "search.highlight",
+  "content.action.edit", 
+  "content.action.view"
 ]
 
 [project.plugins.mkdocstrings.handlers.python]
