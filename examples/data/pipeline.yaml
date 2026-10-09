@@ -1,0 +1,78 @@
+Anonymize:
+    daysback: 100
+    experimenter: 'J. Jansen'
+    participant_id: 'AB00123'
+
+Rereference:
+    ref_channels: ['EXG1', 'EXG2']
+
+SetChannelTypeAndMontage:
+    # channel types in mne {'bio', 'chpi', 'dbs', 'dipole', 'ecg', 'ecog', 'eeg', 'emg',
+    # 'eog', 'exci', 'eyetrack', 'fnirs', 'gof', 'gsr', 'ias', 'misc',
+    # 'meg', 'ref_meg', 'resp', 'seeg', 'stim', 'syst', 'temperature'}
+    channel_types:
+        misc: ['EXG1','EXG2','EXG3','EXG4','EXG5','EXG6','EXG7','EXG8','Erg1','Erg2','Plet']
+        gsr: ['GSR1', 'GSR2']
+        resp: ['Resp']
+        temperature: ['Temp']
+    # mne standard montage list run mne.channels.get_builtin_montages() in notebook
+    mne_standard_montage: 'biosemi64'
+
+EOGChannels:
+    ref_channels: ['hEOG', 'vEOG']
+    anode_channels: ['EXG3','EXG5']
+    cathode_channels: ['EXG4','EXG6']
+
+IIRFilter:
+    l_freq: 0.1
+    h_freq: 35
+
+Downsample:
+    sfreq: 500
+Downsample_1000:
+    sfreq: 1000
+
+ApplyICA:
+    method: 'fastica'
+
+Segmentation:
+    # 'list' contains explicit marker ids
+    # 'range' define an inclusive range
+    # leave field blank if not used
+    reference_markers:
+        list:
+        range: 10-69
+    stim_channel: 'Status'
+    start: -0.2
+    end: 1
+
+ArtifactReject:
+    # choose either 'interpolation' or 'nan_replacement'
+    mode: 'interpolation'
+    max_gradient_uv: 50
+    max_amplitude_uv: 75
+    min_activity_uv: 0.5
+    interval_ms: 100
+
+BaselineCorrection:
+    baseline: [-0.2, 0]
+
+#### NEEDS SOME WORK ####
+# BIDSConversion:
+#     eventsfile: 'data/events_metadata.csv'
+#     bids_root: './bids'
+#     subject: null       # always filled from raw.info?
+#     session: '01'       # filled from? 
+#     task: 'testing'     # filled from?
+#     run: '01'           # filled from?
+#     overwrite: True
+#     dataset_description:
+#         name: 'Do people get used to insulting language?'
+#         data_license: 'CC-BY-4.0'
+#         authors: 'Marijn Struiksma'
+#         acknowledgements: ''
+#         how_to_acknowledge: ''
+#         funding: 'NWO 277-89-001'
+#         references_and_links: ''
+#         doi: 'doi:'
+#         dataset_type: 'raw'
