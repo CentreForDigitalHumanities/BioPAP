@@ -11,6 +11,7 @@ A BioPAP pipeline typically follows these steps:
 3. Configure modules with appropriate parameters
 4. Create a pipeline and add processing steps
 5. Run the pipeline and access results
+6. Save the processed results
 
 !!! info "See also"
 
@@ -148,6 +149,19 @@ pipe.raw.info
 # Visualize the processed data
 plot_result = Plot(raw=pipe.raw, title="Processed Data")
 ```
+
+## Save Pipeline configuration
+
+To save the current configuration of a pipeline, you can call the `to_config` method:
+
+```python
+# Save complete Pipeline configuration to 'config.yaml'
+pipe.to_config('./config.yaml')
+```
+
+This configuration file can be used to automatically recreate and run your pipeline. See
+[Batch processing](batch_processing.md) for more information.
+
 
 ## Reset the Pipeline
 

@@ -260,7 +260,7 @@ This method guides you through installing Python, pip, Jupyter, and BioPAP direc
 
 ## Next Steps
 
-- Read the [Building a Pipeline Tutorial](tutorials/building_pipeline.md) to learn how to set up a preprocessing pipeline.
-- Check the [Configuration Tutorial](tutorials/configuration.md) to understand how to customize module parameters.
+- Read the [Building a Pipeline tutorial](tutorials/building_pipeline.md) to learn how to set up a preprocessing pipeline.
+- Check the [Configuration tutorial](tutorials/configuration.md) to understand how to customize module parameters.
 - Explore the [Modules API Documentation](api/) for detailed information about each module.
     
