@@ -63,16 +63,16 @@ A pipeline consists of three main components.
 **Execution environment**  
 : The pipeline can be executed in two different environments:
 
-: - **Interactive mode** using a Jupyter notebook (`pipeline.ipynb`)
+: - **Interactive mode** using Jupyter notebooks (`1_explore_modules.ipynb` and `2_create_pipeline.ipynb`)
 : - **Batch mode** using a Python script (`pipeline.py`)
 
 : Both modes use the same modules and configuration files but serve different purposes during the analysis workflow.
 
 ---
 
-## Interactive Mode (pipeline.ipynb)
+## Interactive Mode (notebooks)
 
-Interactive mode is used when **developing or exploring a pipeline.**
+Interactive mode is used when **exploring modules and developing a pipeline.**
 
 In this mode, the pipeline is executed step by step and intermediate results can be inspected visually. Module settings from the configuration file can be overridden easily in the notebook to try different settings. 
 
@@ -132,7 +132,7 @@ This approach allows pipelines to remain largely automated while still supportin
 
 A typical process would look something like:
 
-**1. Develop the pipeline in a notebook**
+**1. Develop the pipeline with the notebooks**
 
 Use (a subset of) a single participant dataset, and:  
 - explore modules  
